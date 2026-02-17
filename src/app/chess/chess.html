@@ -1,0 +1,32 @@
+<div class="chess-container">
+  <mat-card>
+    <mat-card-content>
+      <div class="board-wrapper">
+        <div #chessboard class="chessboard"></div>
+      </div>
+      <mat-card-content>
+        <p>
+          {{ status() }}
+        </p>
+      </mat-card-content>
+      <mat-card-actions class="button-group">
+        <button mat-raised-button color="primary" (click)="reset()">
+          <mat-icon>refresh</mat-icon>
+          New Game
+        </button>
+        <button mat-raised-button color="accent" (click)="undo()">
+          <mat-icon>undo</mat-icon>
+          Undo
+        </button>
+        <mat-form-field appearance="outline">
+          <mat-label>FEN Position</mat-label>
+          <input matInput [(ngModel)]="fen" name="fen" />
+        </mat-form-field>
+        <button mat-raised-button color="accent" (click)="loadFen()">
+          <mat-icon>upload</mat-icon>
+          Load FEN
+        </button>
+      </mat-card-actions>
+    </mat-card-content>
+  </mat-card>
+</div>
