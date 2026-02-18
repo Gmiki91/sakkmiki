@@ -1,38 +1,38 @@
-import { Component, AfterViewInit, ViewChild, ElementRef, signal } from '@angular/core';
+import { Component, AfterViewInit, ViewChild, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Chess, SQUARES, Color } from 'chess.js';
-import { Chessground } from '@lichess-org/chessground';
 import { Key } from '@lichess-org/chessground/types';
-import type { Api } from '@lichess-org/chessground/api';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
+import { Config } from '@lichess-org/chessground/config';
+import { ChessBoard } from '../chess-board/chess-board';
 
 @Component({
-  selector: 'app-chess',
-  templateUrl: './chess.html',
-  styleUrls: ['./chess.scss'],
-  imports: [ 
+  selector: 'app-student-table',
+  templateUrl: './student-table.html',
+  styleUrls: ['./student-table.scss'],
+  imports: [
     CommonModule,
     FormsModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
     MatInputModule,
+    ChessBoard,
   ],
 })
-export class ChessComponent implements AfterViewInit {
-  @ViewChild('chessboard') boardElement!: ElementRef;
-  private api?: Api;
-  private chess = new Chess();
+export class StudentTable implements AfterViewInit {
+  @ViewChild('chessBoard') chessBoard!: ChessBoard;
   status = signal<string>('White to move');
   fen = signal<string>('');
+  private chess = new Chess();
 
-  ngAfterViewInit() {
-    this.api = Chessground(this.boardElement.nativeElement, {
+  ngAfterViewInit(): void {
+    const boardConfig: Config = {
       fen: this.chess.fen(),
       orientation: 'white',
       coordinates: true,
@@ -41,7 +41,7 @@ export class ChessComponent implements AfterViewInit {
         color: 'white',
         dests: this.getValidMoves(),
         events: {
-          after: (orig, dest) => this.onMove(orig, dest),
+          after: (orig, dest) => this.handleMove( orig, dest),
         },
       },
       draggable: {
@@ -51,8 +51,9 @@ export class ChessComponent implements AfterViewInit {
       highlight: {
         lastMove: true,
         check: true,
-      }
-    });
+      },
+    };
+    this.chessBoard.set(boardConfig);
   }
 
   // Get valid moves for all pieces
@@ -70,10 +71,10 @@ export class ChessComponent implements AfterViewInit {
     return dests;
   }
 
-  onMove(orig: Key, dest: Key) {
+  handleMove(orig: Key, dest: Key ) {
     try {
       // Try to make the move in chess.js
-      const move = this.chess.move({ from: orig, to: dest });
+      const move = this.chess.move({from:orig, to:dest});
       if (move) {
         this.updateBoard();
         this.updateStatus();
@@ -81,7 +82,7 @@ export class ChessComponent implements AfterViewInit {
     } catch (e) {
       // Invalid move - revert
       console.error('Invalid move:', e);
-      this.api?.set({
+      this.chessBoard.set({
         fen: this.chess.fen(),
       });
     }
@@ -89,14 +90,14 @@ export class ChessComponent implements AfterViewInit {
 
   updateStatus() {
     if (this.chess.isCheckmate()) {
-      this.checkKing(this.chess.turn())
+      this.checkKing(this.chess.turn());
       this.status.update(
         () => 'Checkmate! ' + (this.chess.turn() === 'w' ? 'Black' : 'White') + ' wins!',
       );
     } else if (this.chess.isDraw()) {
       this.status.update(() => 'Draw!');
     } else if (this.chess.isCheck()) {
-      this.checkKing(this.chess.turn())
+      this.checkKing(this.chess.turn());
       this.status.update(
         () => 'Check! ' + (this.chess.turn() === 'w' ? 'White' : 'Black') + ' to move',
       );
@@ -105,39 +106,34 @@ export class ChessComponent implements AfterViewInit {
     }
   }
 
-  updateBoard(){
-    this.api?.set({
-          fen: this.chess.fen(),
-          turnColor: this.chess.turn() === 'w' ? 'white' : 'black',
-          movable: {
-            color: this.chess.turn() === 'w' ? 'white' : 'black',
-            dests: this.getValidMoves(),
-          },
-        });
-  }
-
-  checkKing(color:Color){
-    this.api?.set({check:color==='w' ? 'white':'black'})
-  }
-
-  reset() {
-    this.chess.reset();
-    this.api?.set({
+  updateBoard() {
+    this.chessBoard.set({
       fen: this.chess.fen(),
-      turnColor: 'white',
+      turnColor: this.chess.turn() === 'w' ? 'white' : 'black',
       movable: {
-        color: 'white',
+        color: this.chess.turn() === 'w' ? 'white' : 'black',
         dests: this.getValidMoves(),
       },
+      highlight: {
+        lastMove: true,
+        check:true
+      },
     });
-    this.status.update(() => 'White to move');
+  }
+
+  checkKing(color: Color) {
+    this.chessBoard.set({ check: color === 'w' ? 'white' : 'black' });
   }
 
   undo() {
     this.chess.undo();
-    this.api?.set({
+    this.chessBoard.set({
       fen: this.chess.fen(),
       turnColor: this.chess.turn() === 'w' ? 'white' : 'black',
+      highlight: {
+        lastMove: false,
+        check: this.chess.isCheck()||this.chess.isCheckmate()
+      },
       movable: {
         color: this.chess.turn() === 'w' ? 'white' : 'black',
         dests: this.getValidMoves(),
@@ -150,7 +146,7 @@ export class ChessComponent implements AfterViewInit {
     const fen = this.fen();
     try {
       this.chess.load(fen);
-      this.api?.set({ fen });
+      this.chessBoard.set({ fen });
       this.updateStatus();
       this.updateBoard();
     } catch (error) {
