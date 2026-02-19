@@ -1,3 +1,22 @@
- <app-chess-board #chessBoard></app-chess-board>
 
- 
+<!-- blacks -->
+<div class="row">
+  <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'king', 'black')">♚</div>
+  <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'queen', 'black')">♛</div>
+  <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'rook', 'black')">♜</div>
+  <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'bishop', 'black')">♝</div>
+  <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'knight', 'black')">♞</div>
+  <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'pawn', 'black')">♟</div>
+</div>
+
+<app-chess-board #chessBoard></app-chess-board>
+
+<!-- whites -->
+<div class="row">
+  <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'king', 'white')">♔</div>
+  <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'queen', 'white')">♕</div>
+  <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'rook', 'white')">♖</div>
+  <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'bishop', 'white')">♗</div>
+  <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'knight', 'white')">♘</div>
+  <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'pawn', 'white')">♙</div>
+</div>

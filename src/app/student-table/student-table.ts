@@ -53,7 +53,7 @@ export class StudentTable implements AfterViewInit {
         check: true,
       },
     };
-    this.chessBoard.set(boardConfig);
+    this.chessBoard.api?.set(boardConfig);
   }
 
   // Get valid moves for all pieces
@@ -82,7 +82,7 @@ export class StudentTable implements AfterViewInit {
     } catch (e) {
       // Invalid move - revert
       console.error('Invalid move:', e);
-      this.chessBoard.set({
+      this.chessBoard.api?.set({
         fen: this.chess.fen(),
       });
     }
@@ -107,7 +107,7 @@ export class StudentTable implements AfterViewInit {
   }
 
   updateBoard() {
-    this.chessBoard.set({
+    this.chessBoard.api?.set({
       fen: this.chess.fen(),
       turnColor: this.chess.turn() === 'w' ? 'white' : 'black',
       movable: {
@@ -122,12 +122,12 @@ export class StudentTable implements AfterViewInit {
   }
 
   checkKing(color: Color) {
-    this.chessBoard.set({ check: color === 'w' ? 'white' : 'black' });
+    this.chessBoard.api?.set({ check: color === 'w' ? 'white' : 'black' });
   }
 
   undo() {
     this.chess.undo();
-    this.chessBoard.set({
+    this.chessBoard.api?.set({
       fen: this.chess.fen(),
       turnColor: this.chess.turn() === 'w' ? 'white' : 'black',
       highlight: {
@@ -146,7 +146,7 @@ export class StudentTable implements AfterViewInit {
     const fen = this.fen();
     try {
       this.chess.load(fen);
-      this.chessBoard.set({ fen });
+      this.chessBoard.api?.set({ fen });
       this.updateStatus();
       this.updateBoard();
     } catch (error) {
