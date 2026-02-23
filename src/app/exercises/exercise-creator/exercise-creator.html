@@ -1,22 +1,43 @@
+<div class="container">
+  <div class="column">
+    <!-- blacks -->
+    <div class="row">
+      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'king', 'black')">♚</div>
+      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'queen', 'black')">♛</div>
+      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'rook', 'black')">♜</div>
+      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'bishop', 'black')">♝</div>
+      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'knight', 'black')">♞</div>
+      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'pawn', 'black')">♟</div>
+    </div>
 
-<!-- blacks -->
-<div class="row">
-  <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'king', 'black')">♚</div>
-  <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'queen', 'black')">♛</div>
-  <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'rook', 'black')">♜</div>
-  <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'bishop', 'black')">♝</div>
-  <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'knight', 'black')">♞</div>
-  <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'pawn', 'black')">♟</div>
-</div>
+    <app-chess-board [config]="boardConfig()" #chessBoard></app-chess-board>
 
-<app-chess-board #chessBoard></app-chess-board>
+    <!-- whites -->
+    <div class="row">
+      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'king', 'white')">♔</div>
+      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'queen', 'white')">♕</div>
+      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'rook', 'white')">♖</div>
+      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'bishop', 'white')">♗</div>
+      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'knight', 'white')">♘</div>
+      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'pawn', 'white')">♙</div>
+    </div>
 
-<!-- whites -->
-<div class="row">
-  <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'king', 'white')">♔</div>
-  <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'queen', 'white')">♕</div>
-  <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'rook', 'white')">♖</div>
-  <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'bishop', 'white')">♗</div>
-  <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'knight', 'white')">♘</div>
-  <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'pawn', 'white')">♙</div>
+  </div>
+  <div class="column">
+    <mat-radio-group [(ngModel)]="turnOrder">
+      <mat-radio-button value="w">White to move</mat-radio-button>
+      <mat-radio-button value="b">Black to move</mat-radio-button>
+    </mat-radio-group>
+    <div class="column">
+      <span>White castling rights</span>
+      <mat-checkbox [(ngModel)]="whiteCastlingKingSide">O-O</mat-checkbox>
+      <mat-checkbox [(ngModel)]="whiteCastlingQueenSide">O-O-O</mat-checkbox>
+    </div>
+    <div class="column">
+      <span>Black castling rights</span>
+      <mat-checkbox [(ngModel)]="blackCastlingKingSide">O-O</mat-checkbox>
+      <mat-checkbox [(ngModel)]="blackCastlingQueenSide">O-O-O</mat-checkbox>
+    </div>
+    <button (click)="save()">Save</button>
+  </div>
 </div>

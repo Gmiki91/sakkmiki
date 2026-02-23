@@ -1,18 +1,24 @@
-.row{
-    display:flex;
-}
-.piece{
-  width: 56px;
-  height: 56px;
-  font-size: 48px;
-  cursor: pointer;
+.container {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  
-  &:hover {
-    transform: scale(1.15);
+  .row {
+    display: flex;
   }
+  .column {
+    display: flex;
+    flex-direction: column;
+  }
+  .piece {
+    width: 56px;
+    height: 56px;
+    font-size: 48px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
 
+    &:hover {
+      transform: scale(1.15);
+    }
+  }
 }
