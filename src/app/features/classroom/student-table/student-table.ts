@@ -1,16 +1,17 @@
-import { Component, AfterViewInit, ViewChild, signal } from '@angular/core';
+import { Component, ViewChild, signal, inject,  } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Chess, SQUARES, Color } from 'chess.js';
+import { Chess, Color } from 'chess.js';
 import { Key } from '@lichess-org/chessground/types';
-
+import { boardConfig, getValidMoves } from '../../../shared/utils/chess.utils';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
 import { Config } from '@lichess-org/chessground/config';
-import { ChessBoard } from '../chess-board/chess-board';
-
+import { ChessBoard } from '../../../shared/components/chess-board/chess-board';
+import { ExerciseService } from '../../exercises/services/exercise.service';
+import {MatTooltipModule} from '@angular/material/tooltip';
 @Component({
   selector: 'app-student-table',
   templateUrl: './student-table.html',
@@ -22,24 +23,26 @@ import { ChessBoard } from '../chess-board/chess-board';
     MatButtonModule,
     MatIconModule,
     MatInputModule,
+    MatTooltipModule,
     ChessBoard,
   ],
 })
-export class StudentTable implements AfterViewInit {
+export class StudentTable {
   @ViewChild('chessBoard') chessBoard!: ChessBoard;
+  exerciseService = inject(ExerciseService);
+  exerciseList = this.exerciseService.exerciseLists()[0];
+  exIndex = signal<number>(0);
   status = signal<string>('White to move');
   fen = signal<string>('');
   private chess = new Chess();
-
-  ngAfterViewInit(): void {
-    const boardConfig: Config = {
-      fen: this.chess.fen(),
+  boardConfig= signal<Partial<Config>>({
+      fen: this.exerciseList.exercises[this.exIndex()]?.fen || this.chess.fen(),
       orientation: 'white',
-      coordinates: true,
+      coordinates: false,
       movable: {
         free: false,
         color: 'white',
-        dests: this.getValidMoves(),
+        dests: getValidMoves(this.chess),
         events: {
           after: (orig, dest) => this.handleMove( orig, dest),
         },
@@ -52,31 +55,27 @@ export class StudentTable implements AfterViewInit {
         lastMove: true,
         check: true,
       },
-    };
-    this.chessBoard.api?.set(boardConfig);
-  }
+    });
+  
+  
 
-  // Get valid moves for all pieces
-  getValidMoves() {
-    const dests = new Map();
-    for (const square of SQUARES) {
-      const moves = this.chess.moves({ square: square, verbose: true });
-      if (moves.length > 0) {
-        dests.set(
-          square,
-          moves.map((m) => m.to),
-        );
-      }
-    }
-    return dests;
+  nextExercise(){
+    this.exIndex.update(n=>n+1);
+    this.loadFen();
   }
+  previousExercise(){
+this.exIndex.update(n=>n-1);
+this.loadFen();
+  }
+  // Get valid moves for all pieces
+  
 
   handleMove(orig: Key, dest: Key ) {
     try {
       // Try to make the move in chess.js
       const move = this.chess.move({from:orig, to:dest});
       if (move) {
-        this.updateBoard();
+        this.chessBoard.api?.set(boardConfig(this.chess));
         this.updateStatus();
       }
     } catch (e) {
@@ -106,21 +105,6 @@ export class StudentTable implements AfterViewInit {
     }
   }
 
-  updateBoard() {
-    this.chessBoard.api?.set({
-      fen: this.chess.fen(),
-      turnColor: this.chess.turn() === 'w' ? 'white' : 'black',
-      movable: {
-        color: this.chess.turn() === 'w' ? 'white' : 'black',
-        dests: this.getValidMoves(),
-      },
-      highlight: {
-        lastMove: true,
-        check:true
-      },
-    });
-  }
-
   checkKing(color: Color) {
     this.chessBoard.api?.set({ check: color === 'w' ? 'white' : 'black' });
   }
@@ -136,22 +120,25 @@ export class StudentTable implements AfterViewInit {
       },
       movable: {
         color: this.chess.turn() === 'w' ? 'white' : 'black',
-        dests: this.getValidMoves(),
+        dests: getValidMoves(this.chess),
       },
     });
     this.updateStatus();
   }
 
   loadFen() {
-    const fen = this.fen();
-    try {
-      this.chess.load(fen);
-      this.chessBoard.api?.set({ fen });
-      this.updateStatus();
-      this.updateBoard();
-    } catch (error) {
-      alert('Invalid FEN!');
-    }
+    // this.chessBoard.api.set({ fen:this.exerciseList()[this.exIndex()]?.fen });
+    // console.log(this.exerciseList()[this.exIndex()]?.fen)
+    // const fen = this.exerciseList()[this.exIndex()]?.fen //this.fen||'';
+    // console.log(fen)
+    // try {
+    //   this.chess.load(fen);
+    //   this.chessBoard.api.set({ fen:fen });
+    //   this.updateStatus();
+    //   this.updateBoard();
+    // } catch (error) {
+    //   alert('Invalid FEN!');
+    // }
   }
 
   // flipBoard() {

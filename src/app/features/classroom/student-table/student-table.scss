@@ -1,6 +1,6 @@
 .chess-container {
   padding: 20px;
-  max-width: 600px;
+  
   margin: 0 auto;
 }
 
@@ -9,12 +9,6 @@
   gap: 12px;
   justify-content: center;
   margin-bottom: 24px;
-  
-  button {
-    mat-icon {
-      margin-right: 8px;
-    }
-  }
 }
 
 .board-wrapper {
