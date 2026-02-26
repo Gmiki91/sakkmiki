@@ -2,10 +2,12 @@
   display: flex;
   .row {
     display: flex;
+    align-items:center;
   }
   .column {
     display: flex;
     flex-direction: column;
+    padding:15px
   }
   .piece {
     width: 56px;
@@ -20,5 +22,12 @@
     &:hover {
       transform: scale(1.15);
     }
+  }
+  .step{
+    cursor:pointer;
+  }
+  .radio-group{
+    display:flex;
+    flex-direction: column;
   }
 }

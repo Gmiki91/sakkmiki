@@ -1,0 +1,27 @@
+<div class="container">
+  
+  <div class="sidebar" [class.loading]="exerciseService.isLoading()">
+    @if(exerciseService.isLoading()) {
+      <div class="spinner-overlay">
+        <mat-spinner diameter="32"></mat-spinner>
+      </div>
+    }
+   
+    @for (list of exerciseService.exerciseLists(); track $index) {
+    <app-exercise-list [list]="list"></app-exercise-list>
+    }
+      @if (isListCreationActive()) {
+    <mat-form-field>
+      <mat-label>Lista címe</mat-label>
+      <input matInput [(ngModel)]="title" />
+    </mat-form-field>
+  }
+  <button mat-button (click)="addList()">
+    {{ isListCreationActive() ? 'Save list' : '+New list' }}
+  </button>
+
+  </div>
+  <main class="content">
+    <router-outlet></router-outlet>  
+  </main>
+</div>

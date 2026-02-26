@@ -1,4 +1,4 @@
-<div class="container">
+  <div class="container">
   <div class="column">
     <!-- blacks -->
     <div class="row">
@@ -23,21 +23,29 @@
     </div>
 
   </div>
+  
   <div class="column">
-    <mat-radio-group [(ngModel)]="turnOrder">
+    <mat-radio-group class="radio-group" [(ngModel)]="turnOrder">
       <mat-radio-button value="w">White to move</mat-radio-button>
       <mat-radio-button value="b">Black to move</mat-radio-button>
     </mat-radio-group>
     <div class="column">
       <span>White castling rights</span>
-      <mat-checkbox [(ngModel)]="whiteCastlingKingSide">O-O</mat-checkbox>
+      <mat-checkbox  [(ngModel)]="whiteCastlingKingSide">O-O</mat-checkbox>
       <mat-checkbox [(ngModel)]="whiteCastlingQueenSide">O-O-O</mat-checkbox>
     </div>
     <div class="column">
       <span>Black castling rights</span>
-      <mat-checkbox [(ngModel)]="blackCastlingKingSide">O-O</mat-checkbox>
+      <mat-checkbox  [(ngModel)]="blackCastlingKingSide">O-O</mat-checkbox>
       <mat-checkbox [(ngModel)]="blackCastlingQueenSide">O-O-O</mat-checkbox>
     </div>
-    <button (click)="save()">Save</button>
+        <mat-form-field class="example-full-width">
+      <mat-label>Cím</mat-label>
+      <input type="text" [(ngModel)]="title" matInput>
+    </mat-form-field>
+    <button mat-button (click)="resetBoard()">reset</button>
+    <button mat-button (click)="clearBoard()">clear</button>
+    <button mat-button (click)="save()">save</button>
+
   </div>
-</div>
+  </div>

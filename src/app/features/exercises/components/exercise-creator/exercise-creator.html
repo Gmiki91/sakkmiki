@@ -1,0 +1,24 @@
+<div class="container">
+  <h3>{{exercise().title}}</h3>
+    <app-chess-board [config]="boardConfig()" #chessBoard></app-chess-board>
+  <div class="column">
+    @for(solution of exercise().solutions; track $index; let i = $index){
+      <div class="row">
+        @for(step of solution; track $index;let j = $index; let li=$last){
+          <span class="step" (click)="loadStep(i,j)" >{{j+1}}.{{step}} </span>
+          @if(!li){<pre>, </pre>}
+        }
+        <button mat-icon-button (click)="deleteSolution(i)"><mat-icon>close</mat-icon></button>
+      </div>
+    } 
+     @if(isRecording()){
+      <span readonly>{{recordingText()}}</span>
+        <button mat-button (click)="cancelRecording()">cancel</button>
+    }
+    <button mat-button (click)="addSolution()">+ solution</button>
+    <!-- <button mat-button (click)="addMistake()">Add specific mistake</button> -->
+    <button mat-button (click)="addHint()">Default hint</button>
+
+    <button mat-button (click)="save()">Save</button>
+  </div>
+</div>

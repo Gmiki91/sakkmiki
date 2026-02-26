@@ -1,37 +1,40 @@
-import { Component, inject, ViewChild, signal, model } from '@angular/core';
-import { ChessBoard } from '../../chess-board/chess-board';
-import { Color, Key, Role } from '@lichess-org/chessground/types';
+import { AfterViewInit, Component, inject, model, signal, ViewChild } from '@angular/core';
+import { Color, Role } from '@lichess-org/chessground/types';
 import { Config } from '@lichess-org/chessground/config';
 import { Chess } from 'chess.js';
-import { ExerciseService } from '../exercise.service';
+import { ChessBoard } from '../../../../shared/components/chess-board/chess-board';
 import { MatRadioModule } from '@angular/material/radio';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FormsModule } from '@angular/forms';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatInputModule } from '@angular/material/input';
+import { ExerciseService } from '../../services/exercise.service';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Exercise, ExerciseInput } from '../../models/exercise.model';
 @Component({
-  selector: 'app-exercise-creator',
-  imports: [ChessBoard, MatRadioModule, MatCheckboxModule, FormsModule],
-  templateUrl: './exercise-creator.html',
-  styleUrl: './exercise-creator.scss',
+  selector: 'app-board-creator',
+  imports: [ChessBoard, FormsModule, MatRadioModule, MatCheckboxModule, MatInputModule],
+  templateUrl: './board-creator.html',
+  styleUrl: './board-creator.scss',
 })
-export class ExerciseCreator {
+export class BoardCreator implements AfterViewInit {
   @ViewChild('chessBoard') chessBoard!: ChessBoard;
   exerciseService = inject(ExerciseService);
+  title = model('');
   whiteCastlingKingSide = model(true);
   whiteCastlingQueenSide = model(true);
   blackCastlingKingSide = model(true);
   blackCastlingQueenSide = model(true);
   turnOrder = model<'w' | 'b'>('w');
   private chess = new Chess();
+  private router = inject(Router);
+  private activatedRoute = inject(ActivatedRoute);
 
   boardConfig = signal<Config>({
-    fen: this.chess.fen(),
+    // fen: this.chess.fen(),
     orientation: 'white',
     coordinates: false,
     movable: {
       free: true,
-      events: {
-        after: (orig, dest) => this.handleMove(orig, dest),
-      },
     },
     draggable: {
       enabled: true,
@@ -39,7 +42,7 @@ export class ExerciseCreator {
     },
     highlight: {
       lastMove: false,
-    },
+    }
   });
 
   ngAfterViewInit(): void {
@@ -48,15 +51,37 @@ export class ExerciseCreator {
     this.addDropListener(board);
   }
 
-  handleMove(orig: Key, dest: Key) {}
-
   onDragStart(event: DragEvent, role: Role, color: Color) {
     event.dataTransfer?.setData('role', role);
     event.dataTransfer?.setData('color', color);
   }
 
-  save() {
-    this.exerciseService.addExercise(this.buildFen());
+  resetBoard() {
+    const fen = `rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR` + this.fenAppendix();
+    this.updateFen(fen);
+  }
+  clearBoard() {
+    const fen = `8/8/8/8/8/8/8/8 w - - 0 1`;
+    this.updateFen(fen);
+  }
+
+  async save() {
+    const fen = this.chessBoard.api.getFen() + this.fenAppendix();
+    try {
+      this.chess.load(fen);
+      const exercise: ExerciseInput = {
+        title: this.title(),
+        fen: fen,
+        solutions: [],
+      };
+      const listId = this.activatedRoute.snapshot.paramMap.get('listId');
+      if (!listId) return;
+      const ex =  await this.exerciseService.addExercise(listId, exercise);
+      if(!ex) return;
+      this.router.navigate([`/exercises/edit/${ex.id}`]);
+    } catch (e) {
+      alert((e as Error).message);
+    }
   }
 
   private onDrop(event: DragEvent) {
@@ -82,12 +107,17 @@ export class ExerciseCreator {
     });
   }
 
-  private buildFen(): string {
+  private fenAppendix(): string {
     const castling =
       (this.whiteCastlingKingSide() ? 'K' : '') +
         (this.whiteCastlingQueenSide() ? 'Q' : '') +
         (this.blackCastlingKingSide() ? 'k' : '') +
         (this.blackCastlingQueenSide() ? 'q' : '') || '-';
-    return this.chessBoard.api.getFen() + ` ${this.turnOrder()} ${castling} - 0 1`;
+    return ` ${this.turnOrder()} ${castling} - 0 1`;
+  }
+
+  private updateFen(fen: string) {
+    this.chessBoard.api.set({ fen });
+    this.boardConfig.update((value) => ({ ...value, fen }));
   }
 }
