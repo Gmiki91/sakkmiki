@@ -15,15 +15,21 @@ export class ChessBoard implements AfterViewInit {
   api!: Api;
 
   constructor() {
-    effect(() => {      
+    effect(() => {
       const config = this.config();
       if (this.api && config) {
         this.api.set(config);
       }
     });
   }
-  
+
   ngAfterViewInit(): void {
-    this.api = Chessground(this.boardElement.nativeElement, this.config());
+    this.api = Chessground(this.boardElement.nativeElement, {
+      ...this.config(),
+      animation: {
+        enabled: true,
+        duration: 400,
+      },
+    });
   }
 }
