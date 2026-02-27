@@ -1,11 +1,7 @@
 <div class="container">
-  <div class="header">
-    <h3 (click)="selectExercise(list().exercises[0])">{{ list().title }}</h3>
-    <button mat-button (click)="addExercise(list().id)">+ New exercise</button>
-  </div>
   <mat-list>
     @for (exercise of list().exercises; track $index) {
-      <mat-list-item class="clickable" (click)="selectExercise(exercise)">{{ exercise.title }}</mat-list-item>
+      <mat-list-item class="clickable" (click)="selectExercise.emit(exercise)">{{ exercise.title }}</mat-list-item>
     }
   </mat-list>
 </div>

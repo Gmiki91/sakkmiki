@@ -11,17 +11,19 @@ import { Config } from '@lichess-org/chessground/config';
 })
 export class ChessBoard implements AfterViewInit {
   @ViewChild('board') boardElement!: ElementRef;
-  config = input.required<Config>();
+  config = input<Config>();
   api!: Api;
 
   constructor() {
-    effect(() => {
-      if (this.api) {
-        this.api.set(this.config());
+    effect(() => {      
+      const config = this.config();
+      if (this.api && config) {
+        this.api.set(config);
       }
     });
   }
+  
   ngAfterViewInit(): void {
-    this.api = Chessground(this.boardElement.nativeElement,this.config());
+    this.api = Chessground(this.boardElement.nativeElement, this.config());
   }
 }

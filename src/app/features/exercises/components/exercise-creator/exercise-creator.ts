@@ -1,4 +1,12 @@
-import { Component, inject, ViewChild, signal, computed } from '@angular/core';
+import {
+  Component,
+  inject,
+  ViewChild,
+  signal,
+  computed,
+  OnInit,
+  WritableSignal,
+} from '@angular/core';
 import { ChessBoard } from '../../../../shared/components/chess-board/chess-board';
 import { Key } from '@lichess-org/chessground/types';
 import { Config } from '@lichess-org/chessground/config';
@@ -10,42 +18,60 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FormsModule } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
 import { boardConfig, getValidMoves } from '../../../../shared/utils/chess.utils';
+import { Exercise } from '../../models/exercise.model';
+import { ActivatedRoute } from '@angular/router';
 @Component({
   selector: 'app-exercise-creator',
   imports: [ChessBoard, MatRadioModule, MatButtonModule, MatCheckboxModule, FormsModule, MatIcon],
   templateUrl: './exercise-creator.html',
   styleUrl: './exercise-creator.scss',
 })
-export class ExerciseCreator {
+export class ExerciseCreator implements OnInit {
   @ViewChild('chessBoard') chessBoard!: ChessBoard;
   exerciseService = inject(ExerciseService);
-  exercise = this.exerciseService.getSelectedExercise();
   isRecording = signal(false);
 
   recording = signal<string[]>([]);
   recordingText = computed(() => this.recording().join(', '));
   defaultHint = '';
-  private chess = new Chess(this.exercise().fen);
+  exercise!: WritableSignal<Exercise>;
+  boardConfig =signal<Config|undefined>(undefined);
+  private chess!: Chess;
+  private route = inject(ActivatedRoute);
 
-  boardConfig = signal<Config>({
-    fen: this.exercise().fen,
-    orientation: 'white',
-    coordinates: false,
-    movable: {
-      free: false,
-      dests: getValidMoves(this.chess),
-      events: {
-        after: (orig, dest) => this.handleMove(orig, dest),
-      },
-    },
-    draggable: {
-      enabled: true,
-      deleteOnDropOff: true,
-    },
-    highlight: {
-      lastMove: false,
-    },
-  });
+  ngOnInit(): void {
+    this.route.paramMap.subscribe((params) => {
+      const exerciseId = params.get('exerciseId');
+      const found = this.exerciseService
+        .exerciseLists()
+        .flatMap((list) => list.exercises)
+        .find((ex) => ex.id === exerciseId);
+
+      if (!found) return;
+      this.exercise = signal(found);
+      this.chess = new Chess(found.fen);
+
+      this.boardConfig = signal({
+        fen: found.fen,
+        orientation: 'white',
+        coordinates: false,
+        movable: {
+          free: false,
+          dests: getValidMoves(this.chess),
+          events: {
+            after: (orig, dest) => this.handleMove(orig, dest),
+          },
+        },
+        draggable: {
+          enabled: true,
+          deleteOnDropOff: true,
+        },
+        highlight: {
+          lastMove: false,
+        },
+      });
+    });
+  }
 
   handleMove(orig: Key, dest: Key) {
     try {
@@ -110,7 +136,7 @@ export class ExerciseCreator {
     this.chessBoard.api?.set(boardConfig(this.chess, false));
   }
 
-  private saveRecording(){
+  private saveRecording() {
     if (this.recording().length > 0) {
       this.exercise.update((ex) => ({
         ...ex,

@@ -14,7 +14,7 @@ const DEFAULT_EXERCISE: Exercise = {
 @Injectable({ providedIn: 'root' })
 export class ExerciseService {
   supabase = inject(SupabaseService);
-  selectedExercise = signal<Exercise>(DEFAULT_EXERCISE);
+  // selectedExercise = signal<Exercise>(DEFAULT_EXERCISE);
   exerciseLists = signal<ExerciseList[]>([]);
   isLoading = signal<boolean>(false);
   private snackbar = inject(MatSnackBar);
@@ -45,7 +45,6 @@ export class ExerciseService {
           list.id === listId ? { ...list, exercises: [...list.exercises, newEx] } : list,
         ),
       );
-      // this.setSelectedExercise(newEx);
       return newEx;
     });
   }
@@ -62,13 +61,6 @@ export class ExerciseService {
         duration: 3000,
       });
     });
-  }
-
-  setSelectedExercise(exercise: Exercise) {
-    this.selectedExercise.set(exercise);
-  }
-  getSelectedExercise() {
-    return this.selectedExercise;
   }
 
   getListById(id: string): boolean {
