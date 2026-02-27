@@ -23,6 +23,11 @@
   border-radius: 4px;
 }
 
+.feedback{
+  display:flex;
+  justify-content: space-between;
+}
+
 @media (max-width: 600px) {
   .chess-container {
     padding: 8px;

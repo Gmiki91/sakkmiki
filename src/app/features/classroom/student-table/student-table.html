@@ -1,26 +1,29 @@
 <div class="chess-container">
   <mat-card>
+    <mat-card-header>
+       <mat-card-title>{{currentExercise()?.title}} - {{timer()}}</mat-card-title>
+    </mat-card-header>
     <mat-card-content>
+      @if(this.boardConfig()){
       <div class="board-wrapper">
-        <app-chess-board #chessBoard [config]="boardConfig()"> </app-chess-board>
+        <app-chess-board #chessBoard [config]="boardConfig()!"> </app-chess-board>
       </div>
+    }
       <mat-card-content>
-        <p>
-          {{ status() }}
-        </p>
+        <div class="feedback">
+          <span>{{ status() }}</span>
+          <span>{{ feedback() }}</span>
+        </div>
+        
       </mat-card-content>
       <mat-card-actions class="button-group">
         <button mat-icon-button color="accent" matTooltip="undo" (click)="undo()">
           <mat-icon>undo</mat-icon>
         </button>
-        <!-- <mat-form-field appearance="outline">
-          <mat-label>FEN Position</mat-label>
-          <input matInput [(ngModel)]="fen" name="fen" />
-        </mat-form-field> -->
-        <button mat-icon-button color="accent" matTooltip="Load FEN" (click)="loadFen()">
+        <!-- <button mat-icon-button color="accent" matTooltip="Load FEN" (click)="loadFen()">
           <mat-icon>upload</mat-icon>
        
-        </button>
+        </button> -->
         <button mat-icon-button color="accent" (click)="previousExercise()" matTooltip="previous exercis"><mat-icon>arrow_back</mat-icon></button>
         <button mat-icon-button color="accent" (click)="nextExercise()" matTooltip="next exercise"><mat-icon>arrow_forward</mat-icon></button>
       </mat-card-actions>
