@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Exercise, ExerciseInput } from '../../features/exercises/models/exercise.model';
+import { Exercise, ExerciseInput } from '../../shared/models/exercise.model';
 @Injectable({
   providedIn: 'root',
 })
@@ -42,7 +42,6 @@ export class SupabaseService {
 }
 
 async updateExercise(exercise:Exercise){
-  console.log(exercise)
    const { data, error } = await this.supabase
     .from('exercises')
     .update({
@@ -54,8 +53,6 @@ async updateExercise(exercise:Exercise){
     .select();
   
   if (error) throw error;
-  console.log(data);
-  console.log(error)
   return data[0];
 }
 

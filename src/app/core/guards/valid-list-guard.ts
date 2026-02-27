@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { ExerciseService } from '../../features/exercises/services/exercise.service';
+import { ExerciseService } from '../services/exercise.service';
 
 export const validListGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);

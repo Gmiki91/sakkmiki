@@ -1,13 +1,13 @@
 import { Component, inject, signal, model, OnInit } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
-import { ExerciseList } from '../exercise-list/exercise-list';
-import { ExerciseService } from '../../services/exercise.service';
-import { ExerciseListInput } from '../../models/exercise-list.model';
+import { ExerciseList } from '../../../shared/components/exercise-list/exercise-list';
+import { ExerciseListInput } from '../../../shared/models/exercise-list.model';
 import { MatFormField, MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
-import { Exercise } from '../../models/exercise.model';
+import { Exercise } from '../../../shared/models/exercise.model';
+import { ExerciseService } from '../../../core/services/exercise.service';
 @Component({
   selector: 'app-exercises-layout',
   imports: [
@@ -22,14 +22,12 @@ import { Exercise } from '../../models/exercise.model';
   templateUrl: './exercises-layout.html',
   styleUrl: './exercises-layout.scss',
 })
-export class ExercisesLayout implements OnInit {
+export class ExercisesLayout  {
   exerciseService = inject(ExerciseService);
   isListCreationActive = signal<boolean>(false);
   title = model<string>('');
   router = inject(Router);
-  ngOnInit() {
-    this.exerciseService.loadExerciseLists();
-  }
+  
   addExercise(listId: string) {
     this.router.navigate([`/exercises/create/${listId}`]);
   }

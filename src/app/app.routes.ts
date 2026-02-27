@@ -1,8 +1,8 @@
 import { Routes } from '@angular/router';
 
-import { ExercisesLayout } from './features/exercises/components/exercises-layout/exercises-layout';
-import { BoardCreator } from './features/exercises/components/board-creator/board-creator';
-import { ExerciseCreator } from './features/exercises/components/exercise-creator/exercise-creator';
+import { ExercisesLayout } from './features/exercises/exercises-layout/exercises-layout';
+import { BoardCreator } from './features/exercises/board-creator/board-creator';
+import { ExerciseCreator } from './features/exercises/exercise-creator/exercise-creator';
 import { Lobby } from './features/lobby/lobby';
 import { validListGuard } from './core/guards/valid-list-guard';
 import { validExerciseGuard } from './core/guards/valid-exercise-guard';

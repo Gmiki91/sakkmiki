@@ -2,14 +2,14 @@ import { AfterViewInit, Component, inject, model, signal, ViewChild } from '@ang
 import { Color, Role } from '@lichess-org/chessground/types';
 import { Config } from '@lichess-org/chessground/config';
 import { Chess } from 'chess.js';
-import { ChessBoard } from '../../../../shared/components/chess-board/chess-board';
+import { ChessBoard } from '../../../shared/components/chess-board/chess-board';
 import { MatRadioModule } from '@angular/material/radio';
 import { FormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatInputModule } from '@angular/material/input';
-import { ExerciseService } from '../../services/exercise.service';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Exercise, ExerciseInput } from '../../models/exercise.model';
+import { ExerciseInput } from '../../../shared/models/exercise.model';
+import { ExerciseService } from '../../../core/services/exercise.service';
 @Component({
   selector: 'app-board-creator',
   imports: [ChessBoard, FormsModule, MatRadioModule, MatCheckboxModule, MatInputModule],

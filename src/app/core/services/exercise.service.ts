@@ -1,8 +1,9 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { SupabaseService } from '../../../core/services/supabase.service';
-import { Exercise, ExerciseInput } from '../models/exercise.model';
-import { ExerciseList, ExerciseListInput } from '../models/exercise-list.model';
+import { ExerciseList, ExerciseListInput } from '../../shared/models/exercise-list.model';
+import { Exercise, ExerciseInput } from '../../shared/models/exercise.model';
+import { SupabaseService } from './supabase.service';
+
 const DEFAULT_EXERCISE: Exercise = {
   id: 'lolno',
   fen: '3k4/8/8/8/8/8/4R3/4K3 w - - 0 1',

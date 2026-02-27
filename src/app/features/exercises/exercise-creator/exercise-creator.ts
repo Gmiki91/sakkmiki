@@ -7,19 +7,19 @@ import {
   OnInit,
   WritableSignal,
 } from '@angular/core';
-import { ChessBoard } from '../../../../shared/components/chess-board/chess-board';
+import { ChessBoard } from '../../../shared/components/chess-board/chess-board';
 import { Key } from '@lichess-org/chessground/types';
 import { Config } from '@lichess-org/chessground/config';
 import { Chess } from 'chess.js';
-import { ExerciseService } from '../../services/exercise.service';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FormsModule } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
-import { boardConfig, getValidMoves } from '../../../../shared/utils/chess.utils';
-import { Exercise } from '../../models/exercise.model';
+import { boardConfig, getValidMoves } from '../../../shared/utils/chess.utils';
+import { Exercise } from '../../../shared/models/exercise.model';
 import { ActivatedRoute } from '@angular/router';
+import { ExerciseService } from '../../../core/services/exercise.service';
 @Component({
   selector: 'app-exercise-creator',
   imports: [ChessBoard, MatRadioModule, MatButtonModule, MatCheckboxModule, FormsModule, MatIcon],
