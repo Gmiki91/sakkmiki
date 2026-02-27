@@ -1,13 +1,21 @@
 <div class="classroom-container">
-
-    <div class="teacher-table-wrapper">
-        <app-teacher-table></app-teacher-table>
+  <div class="teacher-table-wrapper">
+    <app-teacher-table></app-teacher-table>
+    <div class="list">
+      @for (list of exerciseService.exerciseLists(); track $index) {
+        <h3>{{ list.title }}</h3> <button (click)="loadListToAll(list)">Load to all</button>
+        <app-exercise-list
+          [list]="list"
+          (selectExercise)="loadExerciseToDemo($event)"
+        ></app-exercise-list>
+      }
     </div>
-    <div class="student-table-wrapper">
-        <app-student-table></app-student-table>
-        <app-student-table></app-student-table>
-        <app-student-table></app-student-table>
-        <app-student-table></app-student-table>
-    </div>
-    
+  </div>
+  <div class="student-table-wrapper">
+    <!-- will be a for cycle in the future -->
+    <app-student-table></app-student-table>
+    <app-student-table></app-student-table>
+    <app-student-table></app-student-table>
+    <app-student-table></app-student-table>
+  </div>
 </div>

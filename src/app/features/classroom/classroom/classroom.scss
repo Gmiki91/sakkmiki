@@ -3,13 +3,16 @@
   grid-template-columns: 1fr 2fr; // 1/3 and 2/3
   height: 100%;
 
-
-}
-.teacher-table-wrapper{
+  .list{
+    max-height:50vh;
+    overflow-y: auto;
+  }
+  .teacher-table-wrapper{
     
-}
-.student-table-wrapper{
-   display: grid;
-  grid-template-columns: repeat(3, 1fr); // 3 per row
-  gap: 1rem; // optional spacing
+  }
+  .student-table-wrapper{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); // 3 per row
+    gap: 1rem; // optional spacing
+  }
 }
