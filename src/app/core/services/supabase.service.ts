@@ -6,17 +6,17 @@ import { Exercise, ExerciseInput } from '../../shared/models/exercise.model';
   providedIn: 'root',
 })
 export class SupabaseService {
-  private supabase: SupabaseClient;
+  readonly client: SupabaseClient;
 
   constructor() {
-    this.supabase = createClient(
+    this.client = createClient(
       environment.supabaseUrl,
       environment.supabaseKey
     );
   }
 
   async saveExerciseList(title:string){
-    const { data, error } = await this.supabase
+    const { data, error } = await this.client
     .from('exercise_lists')
     .insert({title})
     .select();
@@ -26,7 +26,7 @@ export class SupabaseService {
   }
 
   async saveExercise(exercise: ExerciseInput):Promise<Exercise> {
-  const { data, error } = await this.supabase
+  const { data, error } = await this.client
     .from('exercises')
     .insert({
       title: exercise.title,
@@ -42,7 +42,7 @@ export class SupabaseService {
 }
 
 async updateExercise(exercise:Exercise){
-   const { data, error } = await this.supabase
+   const { data, error } = await this.client
     .from('exercises')
     .update({
       solutions: exercise.solutions,
@@ -57,7 +57,7 @@ async updateExercise(exercise:Exercise){
 }
 
 async addExerciseToList(exerciseId: string, listId: string, position: number) {
-  const { error } = await this.supabase
+  const { error } = await this.client
     .from('exercise_list_items')
     .insert({ exercise_id: exerciseId, list_id: listId, position });
   
@@ -66,7 +66,7 @@ async addExerciseToList(exerciseId: string, listId: string, position: number) {
 
   
   async getExercises() {
-    const { data, error } = await this.supabase
+    const { data, error } = await this.client
       .from('exercises')
       .select('*');
     
@@ -75,7 +75,7 @@ async addExerciseToList(exerciseId: string, listId: string, position: number) {
   }
 
   async getExerciseLists() {
-  const { data, error } = await this.supabase
+  const { data, error } = await this.client
     .from('exercise_lists')
     .select(`
       *,
