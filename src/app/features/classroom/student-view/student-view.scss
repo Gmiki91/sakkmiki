@@ -1,0 +1,33 @@
+.chess-container {
+  padding: 20px;
+  margin: 0 auto;
+}
+
+.board-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.feedback {
+  display: flex;
+  justify-content: space-between;
+  min-height: 24px;
+}
+
+.gathered-label {
+  color: var(--mat-sys-primary);
+  font-style: italic;
+}
+
+.button-group {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+@media (max-width: 600px) {
+  .chess-container {
+    padding: 8px;
+  }
+}
