@@ -71,6 +71,7 @@ export class StudentView implements AfterViewInit {
   });
 
   private chess = new Chess();
+  private isGathered = false;
 
   // --- Gather/disperse: snapshot of exercise state ---
   private frozenExIndex: number | null = null;
@@ -137,6 +138,7 @@ export class StudentView implements AfterViewInit {
         this.chess = new Chess(exercise.fen);
         this.moveHistory.set([]);
         this.feedback.set('');
+        this.chessBoard?.api?.set({ lastMove: [] });
       }
     });
 
@@ -166,6 +168,7 @@ export class StudentView implements AfterViewInit {
     effect(() => {
       const fen = this.realtimeService.teacherFen();
       const shapes = this.realtimeService.teacherShapes();
+      console.log(shapes)
       if (this.realtimeService.mode() === 'gathered' && fen) {
         this.chessBoard?.api?.set({ fen, drawable: { shapes } });
       } else {
@@ -280,19 +283,31 @@ export class StudentView implements AfterViewInit {
 
   // --- Gather / Disperse ---
   private onGather() {
-    // Freeze current exercise state
-    this.frozenExIndex = this.exIndex();
+    this.isGathered = true;
     this.frozenFen = this.chess.fen();
-    this.frozenMoveHistory = this.moveHistory();
+    this.frozenMoveHistory = [...this.moveHistory()];
+    this.chessBoard?.api?.set({ lastMove: [], drawable: { shapes: [] } });
   }
 
   private onDisperse() {
     // Restore frozen state if we were gathered
-    if (this.frozenFen === null) return;
-    this.chess.load(this.frozenFen);
+    if (!this.isGathered) return;
+    this.isGathered = false;
+    this.chess.load(this.frozenFen!);
     this.moveHistory.set(this.frozenMoveHistory ?? []);
     this.frozenFen = null;
     this.frozenMoveHistory = null;
+     this.chessBoard?.api?.set({ 
+    fen: this.chess.fen(),
+    lastMove: [],
+    drawable: { shapes: [] },
+    movable: {
+      free: false,
+      color: this.playerColor(),
+      dests: getValidMoves(this.chess),
+    },
+    turnColor: this.chess.turn() === 'w' ? 'white' : 'black',
+  });
   }
 
   private updateBoard(lastMove?: [Key, Key]) {

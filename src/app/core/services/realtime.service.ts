@@ -162,9 +162,12 @@ export class RealtimeService {
   private handleBroadcast(event: BroadcastEvent): void {
     switch (event.type) {
       case 'gather':
+        this.teacherShapes.set([]);
+        this.studentShapes.set({name:this.studentName,shapes:[]})
         this.mode.set('gathered');
         break;
       case 'disperse':
+          this.teacherShapes.set([]);
         this.mode.set('normal');
         break;
       case 'teacher_move':
