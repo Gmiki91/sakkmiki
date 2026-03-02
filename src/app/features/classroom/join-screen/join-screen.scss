@@ -1,0 +1,22 @@
+.join-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: calc(100vh - 64px);
+}
+
+.join-card {
+  width: 100%;
+  max-width: 360px;
+  padding: 8px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.error {
+  color: var(--mat-sys-error);
+  font-size: 0.85rem;
+  margin-top: -8px;
+}
