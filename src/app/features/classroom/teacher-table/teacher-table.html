@@ -1,1 +1,19 @@
-<app-student-table></app-student-table> 
+<div class="teacher-table">
+  <div class="board-wrapper">
+    <app-chess-board #chessBoard [config]="boardConfig()"></app-chess-board>
+  </div>
+  <div class="controls">
+    <button mat-raised-button color="primary" (click)="gather()" matTooltip="Students follow your board">
+      Gather
+    </button>
+    <button mat-raised-button (click)="disperse()" matTooltip="Students return to their exercises">
+      Disperse
+    </button>
+    <button mat-icon-button (click)="resetBoard()" matTooltip="Reset to starting position">
+      <mat-icon>refresh</mat-icon>
+    </button>
+    <button mat-icon-button (click)="clearBoard()" matTooltip="Clear board">
+      <mat-icon>delete</mat-icon>
+    </button>
+  </div>
+</div>
