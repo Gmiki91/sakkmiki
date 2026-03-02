@@ -18,7 +18,14 @@ export class ChessBoard implements AfterViewInit {
     effect(() => {
       const config = this.config();
       if (this.api && config) {
-        this.api.set(config);
+        const existingShapes = this.api.state.drawable.shapes;
+        this.api.set({
+          ...config,
+          drawable: {
+            ...config.drawable,
+            shapes: config.drawable?.shapes ?? existingShapes,
+          },
+        });
       }
     });
   }

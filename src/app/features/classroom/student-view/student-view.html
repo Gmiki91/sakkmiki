@@ -5,17 +5,15 @@
         @if (realtimeService.mode() === 'gathered') {
           <span class="gathered-label">📡 Following teacher</span>
         } @else {
-          {{ currentExercise()?.title }} — {{ timer() }}s
+          {{ currentExercise()?.title }} 
         }
       </mat-card-title>
     </mat-card-header>
 
     <mat-card-content>
-      @if (boardConfig()) {
         <div class="board-wrapper">
           <app-chess-board #chessBoard [config]="boardConfig()!"></app-chess-board>
         </div>
-      }
 
       <div class="feedback">
         <span>{{ status() }}</span>

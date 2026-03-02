@@ -7,7 +7,7 @@ import {
   linkedSignal,
   WritableSignal,
   effect,
-  OnDestroy,
+  AfterViewInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Chess, Move } from 'chess.js';
@@ -21,6 +21,7 @@ import { ChessBoard } from '../../../shared/components/chess-board/chess-board';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ClassroomService } from '../classroom.service';
 import { RealtimeService } from '../../../core/services/realtime.service';
+import { Exercise } from '../../../shared/models/exercise.model';
 
 @Component({
   selector: 'app-student-view',
@@ -35,7 +36,7 @@ import { RealtimeService } from '../../../core/services/realtime.service';
     ChessBoard,
   ],
 })
-export class StudentView implements OnDestroy {
+export class StudentView implements AfterViewInit {
   @ViewChild('chessBoard') chessBoard!: ChessBoard;
 
   classroomService = inject(ClassroomService);
@@ -69,8 +70,6 @@ export class StudentView implements OnDestroy {
     return chess.turn() === 'w' ? 'white' : 'black';
   });
 
-  timer = signal(0);
-  private intervalHandler = 0;
   private chess = new Chess();
 
   // --- Gather/disperse: snapshot of exercise state ---
@@ -102,9 +101,15 @@ export class StudentView implements OnDestroy {
 
     // Normal mode — own exercise
     const exercise = this.currentExercise();
-    if (!exercise) return null;
+    if (!exercise)
+      return {
+        fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+        orientation: 'white',
+        coordinates: false,
+        movable: { free: true, color: 'white' },
+        draggable: { enabled: true },
+      };
 
-    this.chess = new Chess(exercise.fen);
     return {
       fen: exercise.fen,
       orientation: 'white',
@@ -120,41 +125,18 @@ export class StudentView implements OnDestroy {
       },
       draggable: { enabled: true, showGhost: true },
       highlight: { lastMove: true, check: true },
+      drawable: { enabled: true, visible: true },
     };
   });
 
   constructor() {
-    // React to mode changes
+    // Reset chess state when exercise changes
     effect(() => {
-      const mode = this.realtimeService.mode();
-      if (mode === 'gathered') {
-        this.onGather();
-      } else {
-        this.onDisperse();
-      }
-    });
-
-    // React to teacher shapes while gathered
-    effect(() => {
-      const shapes = this.realtimeService.teacherShapes();
-      if (this.realtimeService.mode() === 'gathered') {
-        this.chessBoard?.api?.set({ drawable: { shapes } });
-      }
-    });
-
-    // React to teacher fen while gathered
-    effect(() => {
-      const fen = this.realtimeService.teacherFen();
-      if (this.realtimeService.mode() === 'gathered' && fen) {
-        this.chessBoard?.api?.set({ fen });
-      }
-    });
-
-    // Start timer when exercise changes
-    effect(() => {
-      this.currentExercise();
-      if (this.realtimeService.mode() === 'normal') {
-        this.startTimer();
+      const exercise = this.currentExercise();
+      if (exercise) {
+        this.chess = new Chess(exercise.fen);
+        this.moveHistory.set([]);
+        this.feedback.set('');
       }
     });
 
@@ -166,15 +148,51 @@ export class StudentView implements OnDestroy {
         fen,
         status: this.status(),
         feedback: this.feedback(),
-        timer: this.timer(),
+        exIndex: this.exIndex(),
       });
+    });
+
+    // React to mode changes
+    effect(() => {
+      const mode = this.realtimeService.mode();
+      if (mode === 'gathered') {
+        this.onGather();
+      } else {
+        this.onDisperse();
+      }
+    });
+
+    // React to teacher fen and shapes together (both only relevant when gathered)
+    effect(() => {
+      const fen = this.realtimeService.teacherFen();
+      const shapes = this.realtimeService.teacherShapes();
+      if (this.realtimeService.mode() === 'gathered' && fen) {
+        this.chessBoard?.api?.set({ fen, drawable: { shapes } });
+      } else {
+        this.chessBoard?.api?.set({ drawable: { shapes } });
+      }
+    });
+
+    // Incoming exercise list from teacher
+    effect(() => {
+      const exercises = this.realtimeService.loadedExercises();
+      if (exercises.length > 0) {
+        this.classroomService.loadedList.set(exercises as Exercise[]);
+      }
     });
   }
 
-  ngOnDestroy(): void {
-    clearInterval(this.intervalHandler);
+  ngAfterViewInit(): void {
+    const el = this.chessBoard.boardElement.nativeElement as HTMLElement;
+    el.addEventListener('contextmenu', (e) => e.preventDefault());
+    el.addEventListener('mouseup', (e: MouseEvent) => {
+      if (e.button !== 0 && e.button !== 2) return;
+      setTimeout(() => {
+        const shapes = this.chessBoard.api?.state.drawable.shapes ?? [];
+        this.realtimeService.sendStudentShapes(shapes);
+      }, 0);
+    });
   }
-
   // --- Move handling ---
   handleMove(orig: Key, dest: Key) {
     try {
@@ -182,6 +200,12 @@ export class StudentView implements OnDestroy {
       if (move) {
         this.analyze(move);
         this.updateStatus();
+        this.realtimeService.updatePresence({
+          fen: this.chess.fen(),
+          status: this.status(),
+          feedback: this.feedback(),
+          exIndex: this.exIndex(),
+        });
       }
     } catch (e) {
       console.error('Invalid move:', e);
@@ -194,22 +218,30 @@ export class StudentView implements OnDestroy {
     if (!ex) return;
 
     const newHistory = [...this.moveHistory(), move.san];
-    const solutions = ex.solutions;
     const mistakes = ex.commonMistakes ?? [];
-    const solution = solutions.find((line) => newHistory.every((m, i) => line[i] === m));
+    const solution = ex.solutions.find((line) => newHistory.every((m, i) => line[i] === m));
 
     if (solution) {
       this.moveHistory.set(newHistory);
-      const isSolved = solutions.some((line) => line.length === newHistory.length);
+      const isSolved = ex.solutions.some((line) => line.length === newHistory.length);
       if (isSolved) {
         this.feedback.set('Solved! ✓');
         setTimeout(() => this.nextExercise(), 2000);
       } else {
-        this.feedback.set('Good move!');
         const nextIndex = newHistory.length;
         const computerMove = this.chess.move(solution[nextIndex]);
+        const updatedHistory = [...newHistory, solution[nextIndex]];
         this.updateBoard([computerMove.from as Key, computerMove.to as Key]);
         this.moveHistory.set([...newHistory, solution[nextIndex]]);
+        const isSolvedAfterComputer = ex.solutions.some(
+          (line) => line.length === updatedHistory.length,
+        );
+        if (isSolvedAfterComputer) {
+          this.feedback.set('Solved! ✓');
+          setTimeout(() => this.nextExercise(), 2000);
+        } else {
+          this.feedback.set('Good move!');
+        }
       }
     } else {
       this.chess.undo();
@@ -243,16 +275,7 @@ export class StudentView implements OnDestroy {
       this.feedback.set('');
     } else {
       this.status.set('All done! 🎉');
-      clearInterval(this.intervalHandler);
     }
-  }
-
-  startTimer() {
-    clearInterval(this.intervalHandler);
-    this.timer.set(0);
-    this.intervalHandler = setInterval(() => {
-      this.timer.update((s) => s + 1);
-    }, 1000);
   }
 
   // --- Gather / Disperse ---
@@ -261,7 +284,6 @@ export class StudentView implements OnDestroy {
     this.frozenExIndex = this.exIndex();
     this.frozenFen = this.chess.fen();
     this.frozenMoveHistory = this.moveHistory();
-    clearInterval(this.intervalHandler);
   }
 
   private onDisperse() {
@@ -271,7 +293,6 @@ export class StudentView implements OnDestroy {
     this.moveHistory.set(this.frozenMoveHistory ?? []);
     this.frozenFen = null;
     this.frozenMoveHistory = null;
-    this.startTimer();
   }
 
   private updateBoard(lastMove?: [Key, Key]) {
