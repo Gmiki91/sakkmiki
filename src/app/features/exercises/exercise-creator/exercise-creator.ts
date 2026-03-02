@@ -20,6 +20,7 @@ import { boardConfig, getValidMoves } from '../../../shared/utils/chess.utils';
 import { Exercise } from '../../../shared/models/exercise.model';
 import { ActivatedRoute } from '@angular/router';
 import { ExerciseService } from '../../../core/services/exercise.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 @Component({
   selector: 'app-exercise-creator',
   imports: [ChessBoard, MatRadioModule, MatButtonModule, MatCheckboxModule, FormsModule, MatIcon],
@@ -35,9 +36,10 @@ export class ExerciseCreator implements OnInit {
   recordingText = computed(() => this.recording().join(', '));
   defaultHint = '';
   exercise!: WritableSignal<Exercise>;
-  boardConfig =signal<Config|undefined>(undefined);
+  boardConfig = signal<Config | undefined>(undefined);
   private chess!: Chess;
   private route = inject(ActivatedRoute);
+  private snackbar = inject(MatSnackBar);
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {
@@ -138,10 +140,35 @@ export class ExerciseCreator implements OnInit {
 
   private saveRecording() {
     if (this.recording().length > 0) {
+      const error = this.validateRecording(this.recording());
+      if (error) {
+        this.snackbar.open(error, '', { duration: 3000 });
+        return;
+      }
       this.exercise.update((ex) => ({
         ...ex,
-        solutions: [...ex.solutions, this.recording()]
+        solutions: [...ex.solutions, this.recording()],
       }));
     }
+  }
+
+  private validateRecording(newSolution: string[]): string | null {
+    for (const existing of this.exercise().solutions) {
+      // find how far the two lines are identical
+      const commonLength = Math.min(existing.length, newSolution.length);
+      let divergesAt = -1;
+      for (let i = 0; i < commonLength; i++) {
+        if (existing[i] !== newSolution[i]) {
+          divergesAt = i;
+          break;
+        }
+      }
+      // if divergence happens at an even index (0,2,4...) thats a player move -> ok
+      // if divergence happens at an odd index (1,3,5...) thats a computer move -> conflict
+      if (divergesAt !== -1 && divergesAt % 2 === 1) {
+        return `Conflict at move ${Math.ceil(divergesAt / 2) + 1}: computer already has a different response recorded for this position.`;
+      }
+    }
+    return null;
   }
 }
