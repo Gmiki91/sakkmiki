@@ -2,7 +2,7 @@
 
   <!-- Left panel: teacher board + exercise list -->
   <div class="teacher-panel">
-    <app-teacher-table></app-teacher-table>
+    <app-teacher-table (onGather)="freezeTimers()" (onDisperse)="resumeTimers()"></app-teacher-table>
 
     <div class="exercise-lists">
       @for (list of exerciseService.exerciseLists(); track $index) {

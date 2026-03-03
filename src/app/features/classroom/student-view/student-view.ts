@@ -74,7 +74,7 @@ export class StudentView implements AfterViewInit {
   private isGathered = false;
 
   // --- Gather/disperse: snapshot of exercise state ---
-  private frozenExIndex: number | null = null;
+  private lastResetExerciseId: string | null = null;
   private frozenFen: string | null = null;
   private frozenMoveHistory: string[] | null = null;
 
@@ -134,7 +134,8 @@ export class StudentView implements AfterViewInit {
     // Reset chess state when exercise changes
     effect(() => {
       const exercise = this.currentExercise();
-      if (exercise) {
+       if (exercise && exercise.id !== this.lastResetExerciseId) {
+        this.lastResetExerciseId = exercise.id;
         this.chess = new Chess(exercise.fen);
         this.moveHistory.set([]);
         this.feedback.set('');
@@ -168,7 +169,6 @@ export class StudentView implements AfterViewInit {
     effect(() => {
       const fen = this.realtimeService.teacherFen();
       const shapes = this.realtimeService.teacherShapes();
-      console.log(shapes)
       if (this.realtimeService.mode() === 'gathered' && fen) {
         this.chessBoard?.api?.set({ fen, drawable: { shapes } });
       } else {
@@ -274,8 +274,6 @@ export class StudentView implements AfterViewInit {
     const size = this.classroomService.loadedList().length - 1;
     if (this.exIndex() < size) {
       this.exIndex.update((n) => n + 1);
-      this.moveHistory.set([]);
-      this.feedback.set('');
     } else {
       this.status.set('All done! 🎉');
     }
@@ -297,17 +295,20 @@ export class StudentView implements AfterViewInit {
     this.moveHistory.set(this.frozenMoveHistory ?? []);
     this.frozenFen = null;
     this.frozenMoveHistory = null;
-     this.chessBoard?.api?.set({ 
-    fen: this.chess.fen(),
-    lastMove: [],
-    drawable: { shapes: [] },
-    movable: {
-      free: false,
-      color: this.playerColor(),
-      dests: getValidMoves(this.chess),
-    },
-    turnColor: this.chess.turn() === 'w' ? 'white' : 'black',
-  });
+    setTimeout(()=>{
+
+      this.chessBoard?.api?.set({ 
+        fen: this.chess.fen(),
+        lastMove: [],
+        drawable: { shapes: [] },
+        movable: {
+          free: false,
+          color: this.playerColor(),
+          dests: getValidMoves(this.chess),
+        },
+        turnColor: this.chess.turn() === 'w' ? 'white' : 'black',
+      });
+    },0);
   }
 
   private updateBoard(lastMove?: [Key, Key]) {

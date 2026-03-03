@@ -1,6 +1,5 @@
-import { Component, ViewChild, AfterViewInit, inject, signal } from '@angular/core';
+import { Component, ViewChild, AfterViewInit, inject, signal, output } from '@angular/core';
 import { Chess } from 'chess.js';
-import { Key } from '@lichess-org/chessground/types';
 import { Config } from '@lichess-org/chessground/config';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -17,7 +16,8 @@ import { boardConfig } from '../../../shared/utils/chess.utils';
 })
 export class TeacherTable implements AfterViewInit {
   @ViewChild('chessBoard') chessBoard!: ChessBoard;
-
+  onGather = output<void>();
+  onDisperse = output<void>();
   realtimeService = inject(RealtimeService);
   private chess = new Chess();
 
@@ -27,7 +27,7 @@ export class TeacherTable implements AfterViewInit {
     movable: {
       free: true,
       events: {
-        after: (orig, dest) => this.handleMove(orig, dest),
+        after: () => this.handleMove(),
       },
     },
     draggable: {
@@ -55,27 +55,21 @@ export class TeacherTable implements AfterViewInit {
     });
   }
 
-  handleMove(orig: Key, dest: Key) {
-    try {
-      const move = this.chess.move({ from: orig, to: dest });
-      if (move) {
-        this.realtimeService.sendTeacherMove(move);
-        this.chessBoard.api?.set(boardConfig(this.chess));
-      }
-    } catch (e) {
-      this.chessBoard.api?.set({ fen: this.chess.fen() });
-    }
+  handleMove() {
+    this.realtimeService.sendTeacherFen(this.chessBoard.api.getFen());
   }
 
   gather(): void {
     this.realtimeService.sendTeacherFen(this.chess.fen());
     this.realtimeService.gather();
     this.realtimeService.mode.set('gathered');
+    this.onGather.emit();
   }
 
   disperse(): void {
     this.realtimeService.disperse();
     this.realtimeService.mode.set('normal');
+     this.onDisperse.emit();
   }
 
   resetBoard(): void {

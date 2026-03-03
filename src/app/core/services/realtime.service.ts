@@ -17,7 +17,6 @@ export type ClassroomMode = 'normal' | 'gathered';
 type BroadcastEvent =
   | { type: 'gather' }
   | { type: 'disperse' }
-  | { type: 'teacher_move'; move: Move }
   | { type: 'teacher_fen'; fen: string }
   | { type: 'shapes'; shapes: DrawShape[]; target: 'all' | string }
   | { type: 'student_shapes'; shapes: DrawShape[]; studentName: string }
@@ -77,10 +76,6 @@ export class RealtimeService {
 
   disperse(): void {
     this.broadcast({ type: 'disperse' });
-  }
-
-  sendTeacherMove(move: Move): void {
-    this.broadcast({ type: 'teacher_move', move });
   }
 
   sendTeacherFen(fen: string): void {
@@ -169,9 +164,6 @@ export class RealtimeService {
       case 'disperse':
           this.teacherShapes.set([]);
         this.mode.set('normal');
-        break;
-      case 'teacher_move':
-        this.teacherFen.set(event.move.after);
         break;
       case 'teacher_fen':
         this.teacherFen.set(event.fen);
