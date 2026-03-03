@@ -129,6 +129,10 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
     this.realtimeService.disperse();
   }
 
+  getExerciseName(exIndex: number): string {
+    return this.classroomService.loadedList()[exIndex]?.title ?? 'No exercise loaded';
+  }
+
   private attachStudentBoardListeners(): void {
     this.studentBoards.forEach((board, index) => {
       const el = board.boardElement?.nativeElement as HTMLElement;

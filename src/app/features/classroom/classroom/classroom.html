@@ -24,7 +24,7 @@
       <mat-card class="student-card">
         <mat-card-header>
           <mat-card-title>{{ student.name }}</mat-card-title>
-          <mat-card-subtitle>{{ studentTimers()[student.name]}}s</mat-card-subtitle>
+          <mat-card-subtitle>{{getExerciseName(student.exIndex)}} - {{ studentTimers()[student.name]}}</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
           @if (student.fen) {
