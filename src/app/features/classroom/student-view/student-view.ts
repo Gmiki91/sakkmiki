@@ -146,7 +146,7 @@ export class StudentView implements AfterViewInit {
     // Push presence on any state change
     effect(() => {
       const exercise = this.currentExercise();
-      const fen = exercise ? this.chess.fen() : '';
+      const fen = exercise ? this.chess.fen() : STARTING_FEN;
       this.realtimeService.updatePresence({
         fen,
         status: this.status(),
