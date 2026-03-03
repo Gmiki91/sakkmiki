@@ -12,7 +12,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { Chess, Move } from 'chess.js';
 import { Key } from '@lichess-org/chessground/types';
-import { boardConfig, getValidMoves } from '../../../shared/utils/chess.utils';
+import { boardConfig, getValidMoves, STARTING_FEN } from '../../../shared/utils/chess.utils';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -104,7 +104,7 @@ export class StudentView implements AfterViewInit {
     const exercise = this.currentExercise();
     if (!exercise)
       return {
-        fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+        fen: STARTING_FEN,
         orientation: 'white',
         coordinates: false,
         movable: { free: true, color: 'white' },

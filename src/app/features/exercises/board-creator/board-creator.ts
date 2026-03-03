@@ -10,6 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ExerciseInput } from '../../../shared/models/exercise.model';
 import { ExerciseService } from '../../../core/services/exercise.service';
+import { EMPTY_BOARD_FEN } from '../../../shared/utils/chess.utils';
 @Component({
   selector: 'app-board-creator',
   imports: [ChessBoard, FormsModule, MatRadioModule, MatCheckboxModule, MatInputModule],
@@ -61,8 +62,7 @@ export class BoardCreator implements AfterViewInit {
     this.updateFen(fen);
   }
   clearBoard() {
-    const fen = `8/8/8/8/8/8/8/8 w - - 0 1`;
-    this.updateFen(fen);
+    this.updateFen(EMPTY_BOARD_FEN);
   }
 
   async save() {

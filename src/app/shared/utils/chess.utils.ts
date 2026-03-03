@@ -1,7 +1,8 @@
 import { Config } from '@lichess-org/chessground/config';
 import { Key } from '@lichess-org/chessground/types';
 import { Chess, SQUARES } from 'chess.js';
-
+export const STARTING_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+export const EMPTY_BOARD_FEN = '8/8/8/8/8/8/8/8 w - - 0 1';
 export const getValidMoves = (chess: Chess): Map<Key, Key[]> => {
   const dests = new Map<Key, Key[]>();
   for (const square of SQUARES) {

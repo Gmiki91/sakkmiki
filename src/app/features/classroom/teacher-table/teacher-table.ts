@@ -1,12 +1,11 @@
 import { Component, ViewChild, AfterViewInit, inject, signal, output } from '@angular/core';
-import { Chess } from 'chess.js';
 import { Config } from '@lichess-org/chessground/config';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ChessBoard } from '../../../shared/components/chess-board/chess-board';
 import { RealtimeService } from '../../../core/services/realtime.service';
-import { boardConfig } from '../../../shared/utils/chess.utils';
+import { EMPTY_BOARD_FEN, STARTING_FEN } from '../../../shared/utils/chess.utils';
 
 @Component({
   selector: 'app-teacher-table',
@@ -19,7 +18,6 @@ export class TeacherTable implements AfterViewInit {
   onGather = output<void>();
   onDisperse = output<void>();
   realtimeService = inject(RealtimeService);
-  private chess = new Chess();
 
   boardConfig = signal<Config>({
     orientation: 'white',
@@ -60,7 +58,7 @@ export class TeacherTable implements AfterViewInit {
   }
 
   gather(): void {
-    this.realtimeService.sendTeacherFen(this.chess.fen());
+    this.realtimeService.sendTeacherFen(this.chessBoard.api.getFen());
     this.realtimeService.gather();
     this.realtimeService.mode.set('gathered');
     this.onGather.emit();
@@ -73,16 +71,14 @@ export class TeacherTable implements AfterViewInit {
   }
 
   resetBoard(): void {
-    this.chess = new Chess();
-    const fen = this.chess.fen();
-    this.chessBoard.api?.set({ fen });
+    const fen = STARTING_FEN
+    this.chessBoard.api?.set({ fen,lastMove:[] });
     this.realtimeService.sendTeacherFen(fen);
   }
 
   clearBoard(): void {
-    const fen = '8/8/8/8/8/8/8/8 w - - 0 1';
-    this.chess.load(fen);
-    this.chessBoard.api?.set({ fen });
+    const fen = EMPTY_BOARD_FEN;
+    this.chessBoard.api?.set({ fen,lastMove:[] });
     this.realtimeService.sendTeacherFen(fen);
   }
 }
