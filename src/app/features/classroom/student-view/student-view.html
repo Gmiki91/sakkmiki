@@ -5,7 +5,9 @@
         @if (realtimeService.mode() === 'gathered') {
           <span class="gathered-label">📡 Following teacher</span>
         } @else {
-          {{ currentExercise()?.title }} 
+          <span>
+             Szia {{ realtimeService.studentName() }}!
+          </span>
         }
       </mat-card-title>
     </mat-card-header>

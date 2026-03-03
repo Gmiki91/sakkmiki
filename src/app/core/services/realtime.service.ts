@@ -1,7 +1,6 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { DrawShape } from '@lichess-org/chessground/draw';
-import { Move } from 'chess.js';
 import { SupabaseService } from './supabase.service';
 
 export type StudentPresence = {
@@ -26,7 +25,7 @@ type BroadcastEvent =
 export class RealtimeService {
   private supabase = inject(SupabaseService);
   private channel!: RealtimeChannel;
-  private studentName = '';
+  studentName = signal('');
 
   onStudentsUpdate: ((students: StudentPresence[]) => void) | null = null;
 
@@ -95,7 +94,7 @@ export class RealtimeService {
   // ----------------------------------------------------------------
 
   joinAsStudent(name: string, onJoined: () => void): void {
-    this.studentName = name;
+    this.studentName.set(name);
     this.channel = this.supabase.client
       .channel('classroom')
       .on('broadcast', { event: 'classroom' }, ({ payload }: { payload: BroadcastEvent }) => {
@@ -124,7 +123,7 @@ export class RealtimeService {
   }
 
   sendStudentShapes(shapes: DrawShape[]): void {
-    this.broadcast({ type: 'student_shapes', shapes, studentName: this.studentName });
+    this.broadcast({ type: 'student_shapes', shapes, studentName: this.studentName() });
   }
 
   // ----------------------------------------------------------------
@@ -158,7 +157,7 @@ export class RealtimeService {
     switch (event.type) {
       case 'gather':
         this.teacherShapes.set([]);
-        this.studentShapes.set({name:this.studentName,shapes:[]})
+        this.studentShapes.set({name:this.studentName(),shapes:[]})
         this.mode.set('gathered');
         break;
       case 'disperse':
@@ -169,7 +168,7 @@ export class RealtimeService {
         this.teacherFen.set(event.fen);
         break;
       case 'shapes':
-        if (event.target === 'all' || event.target === this.studentName) {
+        if (event.target === 'all' || event.target === this.studentName()) {
           this.teacherShapes.set(event.shapes);
         }
         break;
