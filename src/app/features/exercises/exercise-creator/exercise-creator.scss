@@ -1,14 +1,26 @@
 .container {
   display: flex;
+  gap: 24px;
+  padding: 16px;
+
+  app-chess-board {
+    display: block;
+    width: 400px;
+    height: 400px;
+  }
+
   .row {
     display: flex;
-    align-items:center;
+    align-items: center;
+    gap: 4px;
   }
+
   .column {
     display: flex;
     flex-direction: column;
-    padding:15px
+    padding: 15px;
   }
+
   .piece {
     width: 56px;
     height: 56px;
@@ -23,11 +35,13 @@
       transform: scale(1.15);
     }
   }
-  .step{
-    cursor:pointer;
+
+  .step {
+    cursor: pointer;
   }
-  .radio-group{
-    display:flex;
+
+  .radio-group {
+    display: flex;
     flex-direction: column;
   }
 }
