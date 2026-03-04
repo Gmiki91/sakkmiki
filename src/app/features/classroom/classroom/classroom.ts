@@ -115,15 +115,16 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
     // freeze all student timers
     Object.keys(this.timerIntervals).forEach((name) => {
       clearInterval(this.timerIntervals[name]);
+      delete this.timerIntervals[name];
     });
     this.realtimeService.gather();
   }
 
   resumeTimers() {
     // resume all student timers
-    Object.keys(this.timerIntervals).forEach((name) => {
-      this.timerIntervals[name] = setInterval(() => {
-        this.studentTimers.update((t) => ({ ...t, [name]: (t[name] ?? 0) + 1 }));
+    this.realtimeService.students().forEach((student) => {
+      this.timerIntervals[student.name] = setInterval(() => {
+        this.studentTimers.update((t) => ({ ...t, [student.name]: (t[student.name] ?? 0) + 1 }));
       }, 1000);
     });
     this.realtimeService.disperse();
