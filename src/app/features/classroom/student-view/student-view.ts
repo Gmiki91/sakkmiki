@@ -12,7 +12,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { Chess, Move } from 'chess.js';
 import { Key } from '@lichess-org/chessground/types';
-import { boardConfig, getValidMoves, STARTING_FEN } from '../../../shared/utils/chess.utils';
+import { boardConfig, getValidMoves, initChessJs, STARTING_FEN } from '../../../shared/utils/chess.utils';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -54,21 +54,12 @@ export class StudentView implements AfterViewInit {
 
   status: WritableSignal<string> = linkedSignal({
     source: () => this.currentExercise(),
-    computation: (exercise) => {
-      if (!exercise) return '';
-      const chess = new Chess(exercise.fen);
-      return chess.turn() === 'w' ? 'White to move' : 'Black to move';
-    },
+    computation: () => (this.exerciseTurn() === 'w' ? 'White to move' : 'Black to move'),
   });
 
   feedback = signal('');
 
-  playerColor = computed(() => {
-    const exercise = this.currentExercise();
-    if (!exercise) return 'white';
-    const chess = new Chess(exercise.fen);
-    return chess.turn() === 'w' ? 'white' : 'black';
-  });
+  playerColor = computed(() => (this.exerciseTurn() === 'w' ? 'white' : 'black'));
 
   private chess = new Chess();
   private isGathered = false;
@@ -134,8 +125,9 @@ export class StudentView implements AfterViewInit {
     // Reset chess state when exercise changes
     effect(() => {
       const exercise = this.currentExercise();
-       if (exercise && exercise.id !== this.lastResetExerciseId) {
+      if (exercise && exercise.id !== this.lastResetExerciseId) {
         this.lastResetExerciseId = exercise.id;
+        this.chess = initChessJs(exercise.fen,exercise.skipFenValidation);
         this.chess = new Chess(exercise.fen);
         this.moveHistory.set([]);
         this.feedback.set('');
@@ -279,7 +271,6 @@ export class StudentView implements AfterViewInit {
     }
   }
 
-  // --- Gather / Disperse ---
   private onGather() {
     this.isGathered = true;
     this.frozenFen = this.chess.fen();
@@ -295,9 +286,8 @@ export class StudentView implements AfterViewInit {
     this.moveHistory.set(this.frozenMoveHistory ?? []);
     this.frozenFen = null;
     this.frozenMoveHistory = null;
-    setTimeout(()=>{
-
-      this.chessBoard?.api?.set({ 
+    setTimeout(() => {
+      this.chessBoard?.api?.set({
         fen: this.chess.fen(),
         lastMove: [],
         drawable: { shapes: [] },
@@ -308,7 +298,7 @@ export class StudentView implements AfterViewInit {
         },
         turnColor: this.chess.turn() === 'w' ? 'white' : 'black',
       });
-    },0);
+    }, 0);
   }
 
   private updateBoard(lastMove?: [Key, Key]) {
@@ -319,4 +309,13 @@ export class StudentView implements AfterViewInit {
       lastMove,
     });
   }
+
+  private exerciseTurn = computed(() => {
+    const exercise = this.currentExercise();
+    if (!exercise) return 'w';
+    const chess = initChessJs(exercise.fen,exercise.skipFenValidation);
+    return chess.turn();
+  });
+
+  
 }

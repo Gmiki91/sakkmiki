@@ -26,6 +26,7 @@ export class BoardCreator implements AfterViewInit {
   blackCastlingKingSide = model(true);
   blackCastlingQueenSide = model(true);
   turnOrder = model<'w' | 'b'>('w');
+  skipFenValidation = model(false);
   private chess = new Chess();
   private router = inject(Router);
   private activatedRoute = inject(ActivatedRoute);
@@ -68,11 +69,14 @@ export class BoardCreator implements AfterViewInit {
   async save() {
     const fen = this.chessBoard.api.getFen() + this.fenAppendix();
     try {
+       if (!this.skipFenValidation()) {
       this.chess.load(fen);
+    }
       const exercise: ExerciseInput = {
         title: this.title(),
         fen: fen,
         solutions: [],
+        skipFenValidation: this.skipFenValidation(),
       };
       const listId = this.activatedRoute.snapshot.paramMap.get('listId');
       if (!listId) return;

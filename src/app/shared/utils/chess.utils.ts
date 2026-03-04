@@ -17,21 +17,28 @@ export const getValidMoves = (chess: Chess): Map<Key, Key[]> => {
   return dests;
 };
 /**
- * 
+ *
  * @param chess - has the current game state
  * @param highlightLastMove - when board gets a reset, highlighting the last move is unneccessary. Defaults to true.
- * @returns 
+ * @returns
  */
-export const boardConfig=(chess:Chess,highlightLastMove:boolean=true):Config=>{
-    return {fen: chess.fen(),
-      turnColor: chess.turn() === 'w' ? 'white' : 'black',
-      movable: {
-        color: chess.turn() === 'w' ? 'white' : 'black',
-        dests: getValidMoves(chess),
-      },
-      highlight: {
-        lastMove: highlightLastMove,
-        check:true
-      },
-    }
-}
+export const boardConfig = (chess: Chess, highlightLastMove: boolean = true): Config => {
+  return {
+    fen: chess.fen(),
+    turnColor: chess.turn() === 'w' ? 'white' : 'black',
+    movable: {
+      color: chess.turn() === 'w' ? 'white' : 'black',
+      dests: getValidMoves(chess),
+    },
+    highlight: {
+      lastMove: highlightLastMove,
+      check: true,
+    },
+  };
+};
+
+export const initChessJs = (fen: string, skipFenValidation: boolean | undefined): Chess => {
+  const chess = new Chess();
+  chess.load(fen, { skipValidation: skipFenValidation ?? false });
+  return chess;
+};

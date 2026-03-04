@@ -9,75 +9,64 @@ export class SupabaseService {
   readonly client: SupabaseClient;
 
   constructor() {
-    this.client = createClient(
-      environment.supabaseUrl,
-      environment.supabaseKey
-    );
+    this.client = createClient(environment.supabaseUrl, environment.supabaseKey);
   }
 
-  async saveExerciseList(title:string){
-    const { data, error } = await this.client
-    .from('exercise_lists')
-    .insert({title})
-    .select();
+  async saveExerciseList(title: string) {
+    const { data, error } = await this.client.from('exercise_lists').insert({ title }).select();
 
-    if(error)throw error;
+    if (error) throw error;
     return data[0];
   }
 
-  async saveExercise(exercise: ExerciseInput):Promise<Exercise> {
-  const { data, error } = await this.client
-    .from('exercises')
-    .insert({
-      title: exercise.title,
-      fen: exercise.fen,
-      solutions: exercise.solutions,
-      common_mistakes: exercise.commonMistakes,
-      default_hint: exercise.defaultHint
-    })
-    .select();
-  
-  if (error) throw error;
-  return data[0];
-}
-
-async updateExercise(exercise:Exercise){
-   const { data, error } = await this.client
-    .from('exercises')
-    .update({
-      solutions: exercise.solutions,
-      common_mistakes: exercise.commonMistakes,
-      default_hint: exercise.defaultHint
-    })
-    .eq('id', exercise.id)
-    .select();
-  
-  if (error) throw error;
-  return data[0];
-}
-
-async addExerciseToList(exerciseId: string, listId: string, position: number) {
-  const { error } = await this.client
-    .from('exercise_list_items')
-    .insert({ exercise_id: exerciseId, list_id: listId, position });
-  
-  if (error) throw error;
-}
-
-  
-  async getExercises() {
+  async saveExercise(exercise: ExerciseInput): Promise<Exercise> {
     const { data, error } = await this.client
       .from('exercises')
-      .select('*');
-    
+      .insert({
+        title: exercise.title,
+        fen: exercise.fen,
+        solutions: exercise.solutions,
+        common_mistakes: exercise.commonMistakes,
+        default_hint: exercise.defaultHint,
+        skip_fen_validation: exercise.skipFenValidation
+      })
+      .select();
+
+    if (error) throw error;
+    return data[0];
+  }
+
+  async updateExercise(exercise: Exercise) {
+    const { data, error } = await this.client
+      .from('exercises')
+      .update({
+        solutions: exercise.solutions,
+        common_mistakes: exercise.commonMistakes,
+        default_hint: exercise.defaultHint,
+        skip_fen_validation: exercise.skipFenValidation
+      })
+      .eq('id', exercise.id)
+      .select();
+
+    if (error) throw error;
+    return data[0];
+  }
+
+  async addExerciseToList(exerciseId: string, listId: string, position: number) {
+    const { error } = await this.client
+      .from('exercise_list_items')
+      .insert({ exercise_id: exerciseId, list_id: listId, position });
+    if (error) throw error;
+  }
+
+  async getExercises() {
+    const { data, error } = await this.client.from('exercises').select('*');
     if (error) throw error;
     return data;
   }
 
   async getExerciseLists() {
-  const { data, error } = await this.client
-    .from('exercise_lists')
-    .select(`
+    const { data, error } = await this.client.from('exercise_lists').select(`
       *,
       exercise_list_items (
         position,
@@ -85,14 +74,25 @@ async addExerciseToList(exerciseId: string, listId: string, position: number) {
       )
     `);
 
-  if (error) throw error;
+    if (error) throw error;
 
-  return data.map(list => ({
-    id: list.id,
-    title: list.title,
-    exercises: list.exercise_list_items
-      .sort((a:{position: number}, b: {position: number}) => a.position - b.position)
-      .map((item: {exercises: Exercise}) => item.exercises)
-  }));
-}
+    return data.map((list) => ({
+      id: list.id,
+      title: list.title,
+      exercises: list.exercise_list_items
+        .sort((a: { position: number }, b: { position: number }) => a.position - b.position)
+        .map((item: { exercises: any }) => {
+          const ex = item.exercises;
+          return {
+            id: ex.id,
+            title: ex.title,
+            fen: ex.fen,
+            solutions: ex.solutions,
+            defaultHint: ex.default_hint,
+            commonMistakes: ex.common_mistakes,
+            skipFenValidation: ex.skip_fen_validation,
+          };
+        }),
+    }));
+  }
 }

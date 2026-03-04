@@ -16,7 +16,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FormsModule } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
-import { boardConfig, getValidMoves } from '../../../shared/utils/chess.utils';
+import { boardConfig, getValidMoves, initChessJs } from '../../../shared/utils/chess.utils';
 import { Exercise } from '../../../shared/models/exercise.model';
 import { ActivatedRoute } from '@angular/router';
 import { ExerciseService } from '../../../core/services/exercise.service';
@@ -51,7 +51,7 @@ export class ExerciseCreator implements OnInit {
 
       if (!found) return;
       this.exercise = signal(found);
-      this.chess = new Chess(found.fen);
+      this.chess = initChessJs(found.fen,found.skipFenValidation )
 
       this.boardConfig = signal({
         fen: found.fen,
