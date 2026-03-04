@@ -1,4 +1,4 @@
-import { Component, ViewChild, AfterViewInit, inject, signal, output } from '@angular/core';
+import { Component, ViewChild, AfterViewInit, inject,input, signal, output,effect } from '@angular/core';
 import { Config } from '@lichess-org/chessground/config';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -6,6 +6,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ChessBoard } from '../../../shared/components/chess-board/chess-board';
 import { RealtimeService } from '../../../core/services/realtime.service';
 import { EMPTY_BOARD_FEN, STARTING_FEN } from '../../../shared/utils/chess.utils';
+import { Exercise } from '../../../shared/models/exercise.model';
 
 @Component({
   selector: 'app-teacher-table',
@@ -18,7 +19,7 @@ export class TeacherTable implements AfterViewInit {
   onGather = output<void>();
   onDisperse = output<void>();
   realtimeService = inject(RealtimeService);
-
+  selectedExercise = input<Exercise | null>(null);
   boardConfig = signal<Config>({
     orientation: 'white',
     coordinates: false,
@@ -39,6 +40,18 @@ export class TeacherTable implements AfterViewInit {
       lastMove: true,
     },
   });
+
+  constructor() {
+  effect(() => {
+    const ex = this.selectedExercise();
+    if (ex && this.chessBoard?.api) {
+      this.chessBoard.api.set({ fen: ex.fen, lastMove: [] });
+      if (this.realtimeService.mode() === 'gathered') {
+        this.realtimeService.sendTeacherFen(ex.fen);
+      }
+    }
+  });
+}
 
   ngAfterViewInit(): void {
     const el = this.chessBoard.boardElement.nativeElement as HTMLElement;
