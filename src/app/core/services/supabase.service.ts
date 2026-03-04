@@ -28,7 +28,7 @@ export class SupabaseService {
         solutions: exercise.solutions,
         common_mistakes: exercise.commonMistakes,
         default_hint: exercise.defaultHint,
-        skip_fen_validation: exercise.skipFenValidation
+        same_color_moves: exercise.sameColorMoves
       })
       .select();
 
@@ -43,7 +43,7 @@ export class SupabaseService {
         solutions: exercise.solutions,
         common_mistakes: exercise.commonMistakes,
         default_hint: exercise.defaultHint,
-        skip_fen_validation: exercise.skipFenValidation
+        same_color_moves: exercise.sameColorMoves
       })
       .eq('id', exercise.id)
       .select();
@@ -90,7 +90,7 @@ export class SupabaseService {
     solutions: raw.solutions,
     commonMistakes: raw.common_mistakes,
     defaultHint: raw.default_hint,
-    skipFenValidation: raw.skip_fen_validation,
+    sameColorMoves: raw.same_color_moves,
   };
 }
 }

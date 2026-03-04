@@ -10,9 +10,14 @@ import {
   AfterViewInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Chess, Move } from 'chess.js';
+import { Chess, Color, Move } from 'chess.js';
 import { Key } from '@lichess-org/chessground/types';
-import { boardConfig, getValidMoves, initChessJs, STARTING_FEN } from '../../../shared/utils/chess.utils';
+import {
+  boardConfig,
+  getValidMoves,
+  initChessJs,
+  STARTING_FEN,
+} from '../../../shared/utils/chess.utils';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -127,8 +132,7 @@ export class StudentView implements AfterViewInit {
       const exercise = this.currentExercise();
       if (exercise && exercise.id !== this.lastResetExerciseId) {
         this.lastResetExerciseId = exercise.id;
-        this.chess = initChessJs(exercise.fen,exercise.skipFenValidation);
-        this.chess = new Chess(exercise.fen);
+        this.chess = initChessJs(exercise.fen, exercise.sameColorMoves);
         this.moveHistory.set([]);
         this.feedback.set('');
         this.chessBoard?.api?.set({ lastMove: [] });
@@ -194,7 +198,9 @@ export class StudentView implements AfterViewInit {
       const move = this.chess.move({ from: orig, to: dest });
       if (move) {
         this.analyze(move);
-        this.updateStatus();
+        if(!this.currentExercise().sameColorMoves){
+          this.updateStatus();
+        }
         this.realtimeService.updatePresence({
           fen: this.chess.fen(),
           status: this.status(),
@@ -215,7 +221,6 @@ export class StudentView implements AfterViewInit {
     const newHistory = [...this.moveHistory(), move.san];
     const mistakes = ex.commonMistakes ?? [];
     const solution = ex.solutions.find((line) => newHistory.every((m, i) => line[i] === m));
-
     if (solution) {
       this.moveHistory.set(newHistory);
       const isSolved = ex.solutions.some((line) => line.length === newHistory.length);
@@ -223,25 +228,35 @@ export class StudentView implements AfterViewInit {
         this.feedback.set('Solved! ✓');
         setTimeout(() => this.nextExercise(), 2000);
       } else {
-        const nextIndex = newHistory.length;
-        const computerMove = this.chess.move(solution[nextIndex]);
-        const updatedHistory = [...newHistory, solution[nextIndex]];
-        this.updateBoard([computerMove.from as Key, computerMove.to as Key]);
-        this.moveHistory.set([...newHistory, solution[nextIndex]]);
-        const isSolvedAfterComputer = ex.solutions.some(
-          (line) => line.length === updatedHistory.length,
-        );
-        if (isSolvedAfterComputer) {
-          this.feedback.set('Solved! ✓');
-          setTimeout(() => this.nextExercise(), 2000);
-        } else {
+        //gombaszedés, same color always
+        if (ex.sameColorMoves) {
+          this.chess.setTurn(this.exerciseTurn() as Color);
+          this.updateBoard();
           this.feedback.set('Good move!');
+        } else {
+          const nextIndex = newHistory.length;
+          const computerMove = this.chess.move(solution[nextIndex]);
+          const updatedHistory = [...newHistory, solution[nextIndex]];
+          this.updateBoard([computerMove.from as Key, computerMove.to as Key]);
+          this.moveHistory.set([...newHistory, solution[nextIndex]]);
+          const isSolvedAfterComputer = ex.solutions.some(
+            (line) => line.length === updatedHistory.length,
+          );
+          if (isSolvedAfterComputer) {
+            this.feedback.set('Solved! ✓');
+            setTimeout(() => this.nextExercise(), 2000);
+          } else {
+            this.feedback.set('Good move!');
+          }
         }
       }
     } else {
       this.chess.undo();
+      if (ex.sameColorMoves) {
+        this.chess.setTurn(this.exerciseTurn() as Color);
+      }
       this.updateBoard();
-      const mistake = mistakes.find((m) => m.move === move.lan);
+      const mistake = mistakes.find((m) => m.move === move.san);
       if (mistake) {
         this.feedback.set(mistake.hint);
       } else {
@@ -313,9 +328,7 @@ export class StudentView implements AfterViewInit {
   private exerciseTurn = computed(() => {
     const exercise = this.currentExercise();
     if (!exercise) return 'w';
-    const chess = initChessJs(exercise.fen,exercise.skipFenValidation);
+    const chess = initChessJs(exercise.fen, exercise.sameColorMoves);
     return chess.turn();
   });
-
-  
 }

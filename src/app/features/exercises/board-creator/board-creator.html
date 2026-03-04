@@ -43,7 +43,7 @@
       <mat-label>Cím</mat-label>
       <input type="text" [(ngModel)]="title" matInput>
     </mat-form-field>
-    <mat-checkbox [(ngModel)]="skipFenValidation">Skip FEN validation</mat-checkbox>
+    <mat-checkbox [(ngModel)]="sameColorMoves">Same color moves</mat-checkbox>
     <button mat-button (click)="resetBoard()">reset</button>
     <button mat-button (click)="clearBoard()">clear</button>
     <button mat-button (click)="save()">save</button>

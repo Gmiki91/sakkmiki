@@ -10,7 +10,7 @@ import {
 import { ChessBoard } from '../../../shared/components/chess-board/chess-board';
 import { Key } from '@lichess-org/chessground/types';
 import { Config } from '@lichess-org/chessground/config';
-import { Chess } from 'chess.js';
+import { Chess, Color } from 'chess.js';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -37,6 +37,7 @@ export class ExerciseCreator implements OnInit {
   defaultHint = '';
   exercise!: WritableSignal<Exercise>;
   boardConfig = signal<Config | undefined>(undefined);
+  playerColor:Color = 'w';
   private chess!: Chess;
   private route = inject(ActivatedRoute);
   private snackbar = inject(MatSnackBar);
@@ -51,8 +52,8 @@ export class ExerciseCreator implements OnInit {
 
       if (!found) return;
       this.exercise = signal(found);
-      this.chess = initChessJs(found.fen,found.skipFenValidation )
-
+      this.chess = initChessJs(found.fen,found.sameColorMoves )
+      this.playerColor = this.chess.turn()
       this.boardConfig = signal({
         fen: found.fen,
         orientation: 'white',
@@ -80,6 +81,9 @@ export class ExerciseCreator implements OnInit {
       const move = this.chess.move({ from: orig, to: dest });
       if (move) {
         // Update board
+        if (this.exercise().sameColorMoves) {
+          this.chess.setTurn(this.playerColor)
+        }
         this.chessBoard.api?.set(boardConfig(this.chess));
 
         // Record if recording
@@ -133,8 +137,7 @@ export class ExerciseCreator implements OnInit {
 
   private resetBoard() {
     this.recording.set([]);
-    const fen = this.exercise().fen;
-    this.chess.load(fen);
+    this.chess= initChessJs(this.exercise().fen,this.exercise().sameColorMoves)
     this.chessBoard.api?.set(boardConfig(this.chess, false));
   }
 

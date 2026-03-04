@@ -9,7 +9,7 @@ export type ExerciseInput = {
   solutions: string[][];
   commonMistakes?: CommonMistake[];
   defaultHint?: string;
-  skipFenValidation?:boolean;
+  sameColorMoves?:boolean;
 }
 
 export type Exercise = ExerciseInput & {
