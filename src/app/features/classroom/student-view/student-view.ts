@@ -24,7 +24,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { Config } from '@lichess-org/chessground/config';
 import { ChessBoard } from '../../../shared/components/chess-board/chess-board';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ClassroomService } from '../classroom.service';
 import { RealtimeService } from '../../../core/services/realtime.service';
 import { Exercise } from '../../../shared/models/exercise.model';
 
@@ -43,26 +42,32 @@ import { Exercise } from '../../../shared/models/exercise.model';
 })
 export class StudentView implements AfterViewInit {
   @ViewChild('chessBoard') chessBoard!: ChessBoard;
-
-  classroomService = inject(ClassroomService);
   realtimeService = inject(RealtimeService);
-
+  loadedList: WritableSignal<Exercise[]> = linkedSignal({
+    source: () => this.realtimeService.loadedExercises() as Exercise[],
+    computation: (incoming, previous) => (incoming.length > 0 ? incoming : (previous?.value ?? [])),
+  });
   // --- Exercise state ---
   exIndex = linkedSignal({
-    source: () => this.classroomService.loadedList(),
+    source: () => this.loadedList(),
     computation: () => 0,
   });
 
-  currentExercise = computed(() => this.classroomService.loadedList()[this.exIndex()] ?? null);
-
-  moveHistory = signal<string[]>([]);
+  currentExercise = computed(() => this.loadedList()[this.exIndex()] ?? null);
+  moveHistory: WritableSignal<string[]> = linkedSignal({
+    source: () => this.currentExercise(),
+    computation: () => [],
+  });
 
   status: WritableSignal<string> = linkedSignal({
     source: () => this.currentExercise(),
     computation: () => (this.exerciseTurn() === 'w' ? 'White to move' : 'Black to move'),
   });
 
-  feedback = signal('');
+  feedback: WritableSignal<string> = linkedSignal({
+    source: () => this.currentExercise(),
+    computation: () => '',
+  });
 
   playerColor = computed(() => (this.exerciseTurn() === 'w' ? 'white' : 'black'));
 
@@ -70,7 +75,6 @@ export class StudentView implements AfterViewInit {
   private isGathered = false;
 
   // --- Gather/disperse: snapshot of exercise state ---
-  private lastResetExerciseId: string | null = null;
   private frozenFen: string | null = null;
   private frozenMoveHistory: string[] | null = null;
 
@@ -130,13 +134,9 @@ export class StudentView implements AfterViewInit {
     // Reset chess state when exercise changes
     effect(() => {
       const exercise = this.currentExercise();
-      if (exercise && exercise.id !== this.lastResetExerciseId) {
-        this.lastResetExerciseId = exercise.id;
-        this.chess = initChessJs(exercise.fen, exercise.sameColorMoves);
-        this.moveHistory.set([]);
-        this.feedback.set('');
-        this.chessBoard?.api?.set({ lastMove: [] });
-      }
+      if (!exercise) return;
+      this.chess = initChessJs(exercise.fen, exercise.sameColorMoves);
+      this.chessBoard?.api?.set({ lastMove: [] });
     });
 
     // Push presence on any state change
@@ -171,14 +171,6 @@ export class StudentView implements AfterViewInit {
         this.chessBoard?.api?.set({ drawable: { shapes } });
       }
     });
-
-    // Incoming exercise list from teacher
-    effect(() => {
-      const exercises = this.realtimeService.loadedExercises();
-      if (exercises.length > 0) {
-        this.classroomService.loadedList.set(exercises as Exercise[]);
-      }
-    });
   }
 
   ngAfterViewInit(): void {
@@ -198,7 +190,7 @@ export class StudentView implements AfterViewInit {
       const move = this.chess.move({ from: orig, to: dest });
       if (move) {
         this.analyze(move);
-        if(!this.currentExercise().sameColorMoves){
+        if (!this.currentExercise().sameColorMoves) {
           this.updateStatus();
         }
         this.realtimeService.updatePresence({
@@ -278,7 +270,7 @@ export class StudentView implements AfterViewInit {
   }
 
   nextExercise() {
-    const size = this.classroomService.loadedList().length - 1;
+    const size = this.loadedList().length - 1;
     if (this.exIndex() < size) {
       this.exIndex.update((n) => n + 1);
     } else {

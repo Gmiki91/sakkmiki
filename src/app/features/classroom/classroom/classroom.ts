@@ -14,7 +14,6 @@ import { Exercise } from '../../../shared/models/exercise.model';
 import { ExerciseList as List } from '../../../shared/models/exercise-list.model';
 import { ExerciseList } from '../../../shared/components/exercise-list/exercise-list';
 import { ExerciseService } from '../../../core/services/exercise.service';
-import { ClassroomService } from '../classroom.service';
 import { RealtimeService, StudentPresence } from '../../../core/services/realtime.service';
 import { ChessBoard } from '../../../shared/components/chess-board/chess-board';
 import { MatCardModule } from '@angular/material/card';
@@ -30,9 +29,9 @@ import { Config } from '@lichess-org/chessground/config';
 export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   @ViewChildren('studentBoard') studentBoards!: QueryList<ChessBoard>;
   exerciseService = inject(ExerciseService);
-  classroomService = inject(ClassroomService);
   realtimeService = inject(RealtimeService);
-
+  loadedExercise = signal<Exercise | null>(null);
+  loadedList = signal<Exercise[]>([]);
   // Timer properties
   studentTimers = signal<Record<string, number>>({});
   private timerIntervals: Record<string, ReturnType<typeof setInterval>> = {};
@@ -74,11 +73,11 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   }
 
   loadExerciseToDemo(ex: Exercise) {
-    this.classroomService.loadedExercise.set(ex);
+    this.loadedExercise.set(ex);
   }
 
   loadListToAll(list: List) {
-    this.classroomService.loadedList.set(list.exercises);
+    this.loadedList.set(list.exercises);
     this.realtimeService.sendListToAll(list.exercises);
     // reset all student timers
     this.realtimeService.students().forEach((s) => this.resetTimer(s.name));
@@ -131,7 +130,7 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   }
 
   getExerciseName(exIndex: number): string {
-    return this.classroomService.loadedList()[exIndex]?.title ?? 'No exercise loaded';
+    return this.loadedList()[exIndex]?.title ?? 'No exercise loaded';
   }
 
   private attachStudentBoardListeners(): void {
