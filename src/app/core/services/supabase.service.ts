@@ -33,7 +33,7 @@ export class SupabaseService {
       .select();
 
     if (error) throw error;
-    return data[0];
+    return this.mapExercise(data[0]);
   }
 
   async updateExercise(exercise: Exercise) {
@@ -49,7 +49,7 @@ export class SupabaseService {
       .select();
 
     if (error) throw error;
-    return data[0];
+    return this.mapExercise(data[0]);
   }
 
   async addExerciseToList(exerciseId: string, listId: string, position: number) {
@@ -57,12 +57,6 @@ export class SupabaseService {
       .from('exercise_list_items')
       .insert({ exercise_id: exerciseId, list_id: listId, position });
     if (error) throw error;
-  }
-
-  async getExercises() {
-    const { data, error } = await this.client.from('exercises').select('*');
-    if (error) throw error;
-    return data;
   }
 
   async getExerciseLists() {
@@ -83,16 +77,20 @@ export class SupabaseService {
         .sort((a: { position: number }, b: { position: number }) => a.position - b.position)
         .map((item: { exercises: any }) => {
           const ex = item.exercises;
-          return {
-            id: ex.id,
-            title: ex.title,
-            fen: ex.fen,
-            solutions: ex.solutions,
-            defaultHint: ex.default_hint,
-            commonMistakes: ex.common_mistakes,
-            skipFenValidation: ex.skip_fen_validation,
-          };
+          return this.mapExercise(ex);
         }),
     }));
   }
+
+  private mapExercise(raw: any): Exercise {
+  return {
+    id: raw.id,
+    title: raw.title,
+    fen: raw.fen,
+    solutions: raw.solutions,
+    commonMistakes: raw.common_mistakes,
+    defaultHint: raw.default_hint,
+    skipFenValidation: raw.skip_fen_validation,
+  };
+}
 }
