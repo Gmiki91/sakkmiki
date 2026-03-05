@@ -22,34 +22,22 @@ export class SupabaseService {
   async saveExercise(exercise: ExerciseInput): Promise<Exercise> {
     const { data, error } = await this.client
       .from('exercises')
-      .insert({
-        title: exercise.title,
-        fen: exercise.fen,
-        solutions: exercise.solutions,
-        common_mistakes: exercise.commonMistakes,
-        default_hint: exercise.defaultHint,
-        same_color_moves: exercise.sameColorMoves
-      })
+      .insert(this.toDbExercise(exercise))
       .select();
 
     if (error) throw error;
-    return this.mapExercise(data[0]);
+    return this.fromDbExercise(data[0]);
   }
 
   async updateExercise(exercise: Exercise) {
     const { data, error } = await this.client
       .from('exercises')
-      .update({
-        solutions: exercise.solutions,
-        common_mistakes: exercise.commonMistakes,
-        default_hint: exercise.defaultHint,
-        same_color_moves: exercise.sameColorMoves
-      })
+      .update(this.toDbExercise(exercise))
       .eq('id', exercise.id)
       .select();
 
     if (error) throw error;
-    return this.mapExercise(data[0]);
+    return this.fromDbExercise(data[0]);
   }
 
   async addExerciseToList(exerciseId: string, listId: string, position: number) {
@@ -77,12 +65,12 @@ export class SupabaseService {
         .sort((a: { position: number }, b: { position: number }) => a.position - b.position)
         .map((item: { exercises: any }) => {
           const ex = item.exercises;
-          return this.mapExercise(ex);
+          return this.fromDbExercise(ex);
         }),
     }));
   }
 
-  private mapExercise(raw: any): Exercise {
+  private fromDbExercise(raw: any): Exercise {
   return {
     id: raw.id,
     title: raw.title,
@@ -91,6 +79,16 @@ export class SupabaseService {
     commonMistakes: raw.common_mistakes,
     defaultHint: raw.default_hint,
     sameColorMoves: raw.same_color_moves,
+  };
+}
+private toDbExercise(exercise: ExerciseInput) {
+  return {
+    title: exercise.title,
+    fen: exercise.fen,
+    solutions: exercise.solutions,
+    common_mistakes: exercise.commonMistakes,
+    default_hint: exercise.defaultHint,
+    same_color_moves: exercise.sameColorMoves,
   };
 }
 }
