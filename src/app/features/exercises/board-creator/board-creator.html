@@ -10,7 +10,7 @@
       <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'pawn', 'black')">♟</div>
     </div>
 
-    <app-chess-board [config]="boardConfig()" #chessBoard></app-chess-board>
+    <app-chess-board [mushroomMode]="sameColorMoves()" [config]="boardConfig()" #chessBoard></app-chess-board>
 
     <!-- whites -->
     <div class="row">

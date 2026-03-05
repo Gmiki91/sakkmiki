@@ -7,10 +7,11 @@ import { Config } from '@lichess-org/chessground/config';
   selector: 'app-chess-board',
   imports: [],
   templateUrl: './chess-board.html',
-  styleUrl: './chess-board.scss',
+  styleUrl: './chess-board.scss'
 })
 export class ChessBoard implements AfterViewInit {
   @ViewChild('board') boardElement!: ElementRef;
+  mushroomMode = input<boolean|undefined>(false);
   config = input<Config>();
   api!: Api;
 

@@ -1,15 +1,16 @@
 <div class="classroom-container">
-
   <!-- Left panel: teacher board + exercise list -->
   <div class="teacher-panel">
-    <app-teacher-table  [selectedExercise]="loadedExercise()" (onGather)="freezeTimers()" (onDisperse)="resumeTimers()"></app-teacher-table>
+    <app-teacher-table
+      [selectedExercise]="loadedExercise()"
+      (onGather)="freezeTimers()"
+      (onDisperse)="resumeTimers()"
+    ></app-teacher-table>
 
     <div class="exercise-lists">
       @for (list of exerciseService.exerciseLists(); track $index) {
         <h3>{{ list.title }}</h3>
-        <button mat-raised-button color="primary" (click)="loadListToAll(list)">
-          Load to all
-        </button>
+        <button mat-raised-button color="primary" (click)="loadListToAll(list)">Load to all</button>
         <app-exercise-list
           [list]="list"
           (selectExercise)="loadExerciseToDemo($event)"
@@ -24,14 +25,26 @@
       <mat-card class="student-card">
         <mat-card-header>
           <mat-card-title>{{ student.name }}</mat-card-title>
-          <mat-card-subtitle>{{getExerciseName(student.exIndex)}} - {{ studentTimers()[student.name]}}</mat-card-subtitle>
+          <mat-card-subtitle
+            >{{ getExerciseName(student.exIndex) }} -
+            {{ studentTimers()[student.name] }}</mat-card-subtitle
+          >
         </mat-card-header>
         <mat-card-content>
-          @if (student.fen) {
-            <div class="mini-board">
-              <app-chess-board [config]="boardConfigFor(student.fen)" #studentBoard></app-chess-board>
-            </div>
-          }
+          <div class="mini-board">
+            @if (isLoadingList()) {
+              <div class="board-loading">
+                <mat-spinner diameter="32"></mat-spinner>
+              </div>
+            } @else {
+              <app-chess-board
+                [config]="boardConfigFor(student.fen)"
+                [mushroomMode]="loadedList()[student.exIndex]?.sameColorMoves ?? false"
+                #studentBoard
+              >
+              </app-chess-board>
+            }
+          </div>
           <div class="student-status">
             <span class="status">{{ student.status }}</span>
             <span class="feedback">{{ student.feedback }}</span>
@@ -42,5 +55,4 @@
       <p class="no-students">No students connected yet.</p>
     }
   </div>
-
 </div>

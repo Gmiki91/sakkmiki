@@ -1,33 +1,62 @@
 .chess-container {
-  padding: 20px;
+  padding: 12px;
   margin: 0 auto;
+}
+
+mat-card {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+mat-card-header {
+  padding-bottom: 4px;
 }
 
 .board-wrapper {
   display: flex;
   justify-content: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+
+  // Explicit square so chessground initialises at the correct size
+  app-chess-board {
+    display: block;
+    width: 400px;
+    height: 400px;
+  }
 }
 
 .feedback {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   min-height: 24px;
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+  padding: 4px 0;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  margin-top: 4px;
 }
 
 .gathered-label {
   color: var(--mat-sys-primary);
   font-style: italic;
+  font-weight: 500;
 }
 
 .button-group {
   display: flex;
   gap: 8px;
   justify-content: center;
+  padding-top: 8px;
 }
 
 @media (max-width: 600px) {
   .chess-container {
-    padding: 8px;
+    padding: 4px;
+  }
+
+  .board-wrapper app-chess-board {
+    width: 300px;
+    height: 300px;
   }
 }

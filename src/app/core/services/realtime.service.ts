@@ -93,7 +93,7 @@ export class RealtimeService {
   // Student
   // ----------------------------------------------------------------
 
-  joinAsStudent(name: string, onJoined: () => void): void {
+  joinAsStudent(name: string, onJoined: () => void,onError: () => void): void {
     this.studentName.set(name);
     this.channel = this.supabase.client
       .channel('classroom')
@@ -111,13 +111,15 @@ export class RealtimeService {
             exIndex: 0,
           });
           onJoined();
-        }
+        } else if (status === 'TIMED_OUT' || status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+        onError();
+      }
       });
   }
 
   async updatePresence(state: Omit<StudentPresence, 'name'>): Promise<void> {
     await this.channel.track({
-      name: this.studentName,
+      name: this.studentName(),
       ...state,
     });
   }

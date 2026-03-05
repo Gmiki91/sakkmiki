@@ -19,10 +19,10 @@ import { ChessBoard } from '../../../shared/components/chess-board/chess-board';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { Config } from '@lichess-org/chessground/config';
-
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 @Component({
   selector: 'app-classroom',
-  imports: [TeacherTable, ExerciseList, ChessBoard, MatCardModule, MatButtonModule],
+  imports: [TeacherTable, ExerciseList, ChessBoard, MatCardModule, MatButtonModule,MatProgressSpinnerModule],
   templateUrl: './classroom.html',
   styleUrl: './classroom.scss',
 })
@@ -32,6 +32,7 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   realtimeService = inject(RealtimeService);
   loadedExercise = signal<Exercise | null>(null);
   loadedList = signal<Exercise[]>([]);
+  isLoadingList = signal(false);
   // Timer properties
   studentTimers = signal<Record<string, number>>({});
   private timerIntervals: Record<string, ReturnType<typeof setInterval>> = {};
@@ -77,6 +78,7 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   }
 
   loadListToAll(list: List) {
+    this.isLoadingList.set(true);
     this.loadedList.set(list.exercises);
     this.realtimeService.sendListToAll(list.exercises);
     // reset all student timers
@@ -100,6 +102,7 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onPresenceSync(students: StudentPresence[]): void {
+    this.isLoadingList.set(false);
     students.forEach((student) => {
       const prev = this.lastExIndex[student.name];
       if (prev !== student.exIndex) {

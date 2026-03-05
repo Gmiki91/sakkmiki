@@ -15,14 +15,16 @@
           autofocus
         />
       </mat-form-field>
-      @if (error()) {
-        <p class="error">{{ error() }}</p>
-      }
+    
     </mat-card-content>
     <mat-card-actions>
+       @if (isLoading()) {
+    <mat-spinner diameter="32"></mat-spinner>
+  } @else {
       <button mat-raised-button color="primary" class="full-width" (click)="join()">
         Join
       </button>
+    }
     </mat-card-actions>
   </mat-card>
 </div>

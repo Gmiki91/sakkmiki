@@ -143,7 +143,7 @@ export class ExerciseCreator implements OnInit {
 
   private saveRecording() {
     if (this.recording().length > 0) {
-      const error = this.validateRecording(this.recording());
+      const error = this.exercise().sameColorMoves ? null: this.validateRecording(this.recording());
       if (error) {
         this.snackbar.open(error, '', { duration: 3000 });
         return;
