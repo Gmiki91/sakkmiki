@@ -42,7 +42,7 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   private listenedElements = new Set<HTMLElement>();
 
   constructor() {
-    // Applly shapes to the correct mini board when studentShapes updates:
+    // Apply shapes to the correct miniboard when studentShapes updates:
     effect(() => {
       const update = this.realtimeService.studentShapes();
       if (!update) return;
@@ -148,7 +148,7 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
           setTimeout(() => {
             const shapes = board.api?.state.drawable.shapes ?? [];
             if (studentName) {
-              this.realtimeService.sendShapes(shapes, studentName);
+              this.realtimeService.sendTeacherShapes(shapes, studentName);
             }
           }, 0);
         });

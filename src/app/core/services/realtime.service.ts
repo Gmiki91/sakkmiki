@@ -17,7 +17,7 @@ type BroadcastEvent =
   | { type: 'gather' }
   | { type: 'disperse' }
   | { type: 'teacher_fen'; fen: string }
-  | { type: 'shapes'; shapes: DrawShape[]; target: 'all' | string }
+  | { type: 'teacher_shapes'; shapes: DrawShape[]; target: 'all' | string }
   | { type: 'student_shapes'; shapes: DrawShape[]; studentName: string }
   | { type: 'list_loaded'; exercises: unknown[] };
 
@@ -34,9 +34,9 @@ export class RealtimeService {
   mode = signal<ClassroomMode>('normal');
   teacherFen = signal<string>('');
   teacherShapes = signal<DrawShape[]>([]);
+  studentShapes = signal<{ name: string; shapes: DrawShape[] } | null>(null);
   loadedExercises = signal<unknown[]>([]);
   isJoined = signal<boolean>(false);
-  studentShapes = signal<{ name: string; shapes: DrawShape[] } | null>(null);
 
   // ----------------------------------------------------------------
   // Teacher
@@ -46,11 +46,7 @@ export class RealtimeService {
     this.channel = this.supabase.client
       .channel('classroom')
       .on('broadcast', { event: 'classroom' }, ({ payload }: { payload: BroadcastEvent }) => {
-        if (payload.type === 'gather') this.mode.set('gathered');
-        if (payload.type === 'disperse') this.mode.set('normal');
-        if (payload.type === 'student_shapes') {
-          this.studentShapes.set({ name: payload.studentName, shapes: payload.shapes });
-        }
+        this.handleTeacherBroadcast(payload);
       })
       .on('presence', { event: 'sync' }, () => {
         const state = this.channel.presenceState<StudentPresence>();
@@ -81,8 +77,8 @@ export class RealtimeService {
     this.broadcast({ type: 'teacher_fen', fen });
   }
 
-  sendShapes(shapes: DrawShape[], target: 'all' | string = 'all'): void {
-    this.broadcast({ type: 'shapes', shapes, target });
+  sendTeacherShapes(shapes: DrawShape[], target: 'all' | string = 'all'): void {
+    this.broadcast({ type: 'teacher_shapes', shapes, target });
   }
 
   sendListToAll(exercises: unknown[]): void {
@@ -93,12 +89,12 @@ export class RealtimeService {
   // Student
   // ----------------------------------------------------------------
 
-  joinAsStudent(name: string, onJoined: () => void,onError: () => void): void {
+  joinAsStudent(name: string, onJoined: () => void, onError: () => void): void {
     this.studentName.set(name);
     this.channel = this.supabase.client
       .channel('classroom')
       .on('broadcast', { event: 'classroom' }, ({ payload }: { payload: BroadcastEvent }) => {
-        this.handleBroadcast(payload);
+        this.handleStudentBroadcast(payload);
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
@@ -112,8 +108,8 @@ export class RealtimeService {
           });
           onJoined();
         } else if (status === 'TIMED_OUT' || status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-        onError();
-      }
+          onError();
+        }
       });
   }
 
@@ -155,27 +151,42 @@ export class RealtimeService {
     await this.channel.track(state);
   }
 
-  private handleBroadcast(event: BroadcastEvent): void {
+  private handleStudentBroadcast(event: BroadcastEvent): void {
     switch (event.type) {
       case 'gather':
         this.teacherShapes.set([]);
-        this.studentShapes.set({name:this.studentName(),shapes:[]})
+        this.studentShapes.set(null);
         this.mode.set('gathered');
         break;
       case 'disperse':
-          this.teacherShapes.set([]);
+        this.teacherShapes.set([]);
+        this.studentShapes.set(null);
         this.mode.set('normal');
         break;
       case 'teacher_fen':
         this.teacherFen.set(event.fen);
         break;
-      case 'shapes':
+      case 'teacher_shapes':
         if (event.target === 'all' || event.target === this.studentName()) {
           this.teacherShapes.set(event.shapes);
         }
         break;
+      case 'student_shapes':
+        this.studentShapes.set({ name: event.studentName, shapes: event.shapes });
+        break;
       case 'list_loaded':
         this.loadedExercises.set(event.exercises);
+        break;
+    }
+  }
+
+  private handleTeacherBroadcast(event: BroadcastEvent): void {
+    switch (event.type) {
+      case 'teacher_shapes':
+        this.teacherShapes.set(event.shapes);
+        break;
+      case 'student_shapes':
+        this.studentShapes.set({ name: event.studentName, shapes: event.shapes });
         break;
     }
   }

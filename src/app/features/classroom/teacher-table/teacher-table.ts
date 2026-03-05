@@ -1,4 +1,13 @@
-import { Component, ViewChild, AfterViewInit, inject,input, signal, output,effect } from '@angular/core';
+import {
+  Component,
+  ViewChild,
+  AfterViewInit,
+  inject,
+  input,
+  signal,
+  output,
+  effect,
+} from '@angular/core';
 import { Config } from '@lichess-org/chessground/config';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -42,26 +51,35 @@ export class TeacherTable implements AfterViewInit {
   });
 
   constructor() {
-  effect(() => {
-    const ex = this.selectedExercise();
-    if (ex && this.chessBoard?.api) {
-      this.chessBoard.api.set({ fen: ex.fen, lastMove: [] });
-      if (this.realtimeService.mode() === 'gathered') {
-        this.realtimeService.sendTeacherFen(ex.fen);
+    effect(() => {
+      const ex = this.selectedExercise();
+      if (ex && this.chessBoard?.api) {
+        this.chessBoard.api.set({ fen: ex.fen, lastMove: [] });
+        if (this.realtimeService.mode() === 'gathered') {
+          this.realtimeService.sendTeacherFen(ex.fen);
+        }
       }
-    }
-  });
-}
+    });
+
+    // apply arrows
+    effect(() => {
+      const shapes = this.realtimeService.teacherShapes();
+      if (this.realtimeService.mode() === 'gathered') {
+        console.log('shapes!', shapes);
+        this.chessBoard?.api?.set({ drawable: { shapes } });
+      }
+    });
+  }
 
   ngAfterViewInit(): void {
     const el = this.chessBoard.boardElement.nativeElement as HTMLElement;
     el.addEventListener('mouseup', (e: MouseEvent) => {
-     if (e.button !== 0 && e.button !== 2) return; // only left or right mouse button (dunno what middle mouse do)
+      if (e.button !== 0 && e.button !== 2) return; // only left or right mouse button (dunno what middle mouse do)
       if (this.realtimeService.mode() === 'gathered') {
         setTimeout(() => {
           const shapes = this.chessBoard.api?.state.drawable.shapes ?? [];
-          this.realtimeService.sendShapes(shapes);
-        },0);
+          this.realtimeService.sendTeacherShapes(shapes);
+        }, 0);
       }
     });
   }
@@ -80,18 +98,18 @@ export class TeacherTable implements AfterViewInit {
   disperse(): void {
     this.realtimeService.disperse();
     this.realtimeService.mode.set('normal');
-     this.onDisperse.emit();
+    this.onDisperse.emit();
   }
 
   resetBoard(): void {
-    const fen = STARTING_FEN
-    this.chessBoard.api?.set({ fen,lastMove:[] });
+    const fen = STARTING_FEN;
+    this.chessBoard.api?.set({ fen, lastMove: [] });
     this.realtimeService.sendTeacherFen(fen);
   }
 
   clearBoard(): void {
     const fen = EMPTY_BOARD_FEN;
-    this.chessBoard.api?.set({ fen,lastMove:[] });
+    this.chessBoard.api?.set({ fen, lastMove: [] });
     this.realtimeService.sendTeacherFen(fen);
   }
 }

@@ -93,7 +93,7 @@ export class StudentView implements AfterViewInit {
         draggable: { enabled: false },
         highlight: { lastMove: true, check: false },
         drawable: {
-          enabled: false,
+          enabled: true,
           visible: true,
           shapes: this.realtimeService.teacherShapes(),
         },
@@ -175,12 +175,23 @@ export class StudentView implements AfterViewInit {
 
   ngAfterViewInit(): void {
     const el = this.chessBoard.boardElement.nativeElement as HTMLElement;
-    el.addEventListener('contextmenu', (e) => e.preventDefault());
+    // left mouse click would remove all arrows, not allowed for students
+    el.addEventListener('pointerdown', (e: MouseEvent) => {
+      if (e.button === 0 && this.realtimeService.mode() === 'gathered') {
+        e.preventDefault()
+      }
+    },true);
+    
+    // arrows
     el.addEventListener('mouseup', (e: MouseEvent) => {
-      if (e.button !== 0 && e.button !== 2) return;
+      if (e.button !== 0 && e.button !== 2) return; // middle mouse do what?
       setTimeout(() => {
         const shapes = this.chessBoard.api?.state.drawable.shapes ?? [];
-        this.realtimeService.sendStudentShapes(shapes);
+        if (this.realtimeService.mode() === 'gathered') {
+          if (e.button !== 0) this.realtimeService.sendTeacherShapes(shapes);
+        } else {
+          this.realtimeService.sendStudentShapes(shapes);
+        }
       }, 0);
     });
   }
@@ -297,7 +308,7 @@ export class StudentView implements AfterViewInit {
       this.chessBoard?.api?.set({
         fen: this.chess.fen(),
         lastMove: [],
-        drawable: { shapes: [] },
+        drawable: { enabled: true, shapes: [] },
         movable: {
           free: false,
           color: this.playerColor(),
