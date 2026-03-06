@@ -98,6 +98,7 @@ export class StudentView implements AfterViewInit {
   );
 
   private challengeChess = new Chess();
+  private challengeStartFen = signal<string>(STARTING_FEN);
 
   // --- Board config ---
   boardConfig = computed<Config | null>(() => {
@@ -124,7 +125,7 @@ export class StudentView implements AfterViewInit {
     // Challenge mode
     if (this.myPair()) {
       return {
-        fen: this.challengeChess.fen(),
+        fen: this.challengeStartFen(),
         orientation: this.myColor(),
         coordinates: false,
         turnColor: this.challengeChess.turn() === 'w' ? 'white' : 'black',
@@ -177,6 +178,8 @@ export class StudentView implements AfterViewInit {
     effect(() => {
       const exercise = this.currentExercise();
       if (!exercise) return;
+      this.challengeChess = initChessJs(exercise.fen,false);
+      this.challengeStartFen.set(exercise.fen);
       this.chess = initChessJs(exercise.fen, exercise.sameColorMoves);
       this.chessBoard?.api?.set({ lastMove: [] });
     });
@@ -335,7 +338,7 @@ export class StudentView implements AfterViewInit {
         this.feedback.set('Solved! ✓');
         setTimeout(() =>{
           if (this.realtimeService.droppedExercise()) this.realtimeService.clearDroppedeExercise();
-          else this.nextExercise()
+          else this.nextExercise();
         } , 1500);
       } else {
         //gombaszedés, same color always

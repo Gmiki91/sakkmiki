@@ -25,7 +25,9 @@
       @if (getPair(student.name); as pair) {
         @if (pair.white === student.name) {
           <!-- Challenge card (only needed one board for 2 players, so we render the board of white's and skip black's)-->
-          <mat-card class="student-card challenge-card">
+          <mat-card class="student-card challenge-card"
+          (dragover)="$event.preventDefault()"
+          (drop)="onDrop(student.name,$event)">>
             <mat-card-header>
               <mat-card-title>{{ pair.white }} vs {{ pair.black }}</mat-card-title>
             </mat-card-header>

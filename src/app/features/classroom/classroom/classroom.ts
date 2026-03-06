@@ -160,6 +160,13 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   handleExerciseDrop(targetName: string, event: DragEvent) {
     const exercise = JSON.parse(event.dataTransfer?.getData('exercise') ?? '{}') as Exercise;
     this.realtimeService.sendDroppedExercise(targetName, exercise);
+
+    const pair = this.getPair(targetName);
+    // if its a challenge board
+    if (pair) {
+      this.realtimeService.sendDroppedExercise(pair.white, exercise);
+      this.realtimeService.sendDroppedExercise(pair.black, exercise);
+    }
   }
 
   // Challenge methods
@@ -175,7 +182,7 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
     this.realtimeService.syncChallengePair(pair);
     this.pendingPair.set(null);
   }
-  
+
   onDragStart(studentName: string): void {
     this.pendingPair.set(studentName);
   }
