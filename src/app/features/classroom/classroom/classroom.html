@@ -22,35 +22,62 @@
   <!-- Right panel: live student grid -->
   <div class="student-grid">
     @for (student of realtimeService.students(); track student.name) {
-      <mat-card class="student-card">
-        <mat-card-header>
-          <mat-card-title>{{ student.name }}</mat-card-title>
-          <mat-card-subtitle
-            >{{ getExerciseName(student.exIndex) }} -
-            {{ studentTimers()[student.name] }}</mat-card-subtitle
-          >
-        </mat-card-header>
-        <mat-card-content>
-          <div class="mini-board">
-            @if (isLoadingList()) {
-              <div class="board-loading">
-                <mat-spinner diameter="32"></mat-spinner>
+      @if (getPair(student.name); as pair) {
+        @if (pair.white === student.name) {
+          <!-- Challenge card (only needed one board for 2 players, so we render the board of white's and skip black's)-->
+          <mat-card class="student-card challenge-card">
+            <mat-card-header>
+              <mat-card-title>{{ pair.white }} vs {{ pair.black }}</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="mini-board">
+                <app-chess-board [config]="boardConfigFor(student.fen)" #studentBoard>
+                </app-chess-board>
               </div>
-            } @else {
-              <app-chess-board
-                [config]="boardConfigFor(student.fen)"
-                [mushroomMode]="loadedList()[student.exIndex]?.sameColorMoves ?? false"
-                #studentBoard
-              >
-              </app-chess-board>
-            }
-          </div>
-          <div class="student-status">
-            <span class="status">{{ student.status }}</span>
-            <span class="feedback">{{ student.feedback }}</span>
-          </div>
-        </mat-card-content>
-      </mat-card>
+            </mat-card-content>
+            <mat-card-actions>
+              <button mat-icon-button (click)="removePair(pair)"><mat-icon>close</mat-icon></button>
+            </mat-card-actions>
+          </mat-card>
+        }
+        <!-- skipping black -->
+      } @else {
+        <!-- Exercise card -->
+        <mat-card class="student-card"
+        draggable="true"
+          (dragstart)="onDragStart(student.name)"
+          (dragover)="$event.preventDefault()"
+          (drop)="onDrop(student.name)">
+        
+          <mat-card-header>
+            <mat-card-title>{{ student.name }}</mat-card-title>
+            <mat-card-subtitle
+              >{{ listTitle() }}/{{ getExerciseName(student.exIndex) }} -
+              {{ studentTimers()[student.name] }}</mat-card-subtitle
+            >
+          </mat-card-header>
+          <mat-card-content>
+            <div class="mini-board">
+              @if (isLoadingList()) {
+                <div class="board-loading">
+                  <mat-spinner diameter="32"></mat-spinner>
+                </div>
+              } @else {
+                <app-chess-board
+                  [config]="boardConfigFor(student.fen)"
+                  [mushroomMode]="loadedList()[student.exIndex]?.sameColorMoves ?? false"
+                  #studentBoard
+                >
+                </app-chess-board>
+              }
+            </div>
+            <div class="student-status">
+              <span class="status">{{ student.status }}</span>
+              <span class="feedback">{{ student.feedback }}</span>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
     } @empty {
       <p class="no-students">No students connected yet.</p>
     }

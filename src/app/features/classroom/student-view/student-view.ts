@@ -78,6 +78,24 @@ export class StudentView implements AfterViewInit {
   private frozenFen: string | null = null;
   private frozenMoveHistory: string[] | null = null;
 
+  // --- Challenge props---
+  myPair = computed(
+    () =>
+      this.realtimeService
+        .challengePairs()
+        .find(
+          (p) =>
+            p.white === this.realtimeService.studentName() ||
+            p.black === this.realtimeService.studentName(),
+        ) ?? null,
+  );
+
+  myColor = computed(() =>
+    this.myPair()?.white === this.realtimeService.studentName() ? 'white' : 'black',
+  );
+
+  private challengeChess = new Chess();
+
   // --- Board config ---
   boardConfig = computed<Config | null>(() => {
     const mode = this.realtimeService.mode();
@@ -100,7 +118,28 @@ export class StudentView implements AfterViewInit {
       };
     }
 
-    // Normal mode — own exercise
+    // Challenge mode
+    if (this.myPair()) {
+      return {
+        fen: this.challengeChess.fen(),
+        orientation: this.myColor(),
+        coordinates: false,
+        turnColor: this.challengeChess.turn() === 'w' ? 'white' : 'black',
+        movable: {
+          free: false,
+          color: this.myColor(),
+          dests: getValidMoves(this.challengeChess),
+          events: {
+            after: (orig, dest) => this.handleChallengeMove(orig, dest),
+          },
+        },
+        draggable: { enabled: true, showGhost: true },
+        highlight: { lastMove: true, check: true },
+        drawable: { enabled: true, visible: true },
+      };
+    }
+
+    // Exercise mode
     const exercise = this.currentExercise();
     if (!exercise)
       return {
@@ -171,17 +210,52 @@ export class StudentView implements AfterViewInit {
         this.chessBoard?.api?.set({ drawable: { shapes } });
       }
     });
+
+    // --- Challenge effects ---
+    // React to incoming challenge moves
+    effect(() => {
+      const move = this.realtimeService.challengeMove();
+      if (!move) return;
+      const pair = this.myPair();
+      if (!pair) return;
+      if (move.white === pair.white && move.black === pair.black) {
+        this.challengeChess.load(move.fen);
+        this.chessBoard?.api?.set({
+          fen: move.fen,
+          lastMove:[move.from as Key, move.to as Key],
+          turnColor: this.challengeChess.turn() === 'w' ? 'white' : 'black',
+          movable: {
+            free: false,
+            color: this.challengeChess.turn() === 'w' ? 'white' : 'black',
+            dests: getValidMoves(this.challengeChess),
+          },
+        });
+      }
+    });
+
+    // reset board when pair is assigned
+    effect(() => {
+      const pair = this.myPair();
+      if (pair) {
+        this.challengeChess = new Chess(); // reset to starting position
+        this.chessBoard?.api?.set({ lastMove: [] });
+      }
+    });
   }
 
   ngAfterViewInit(): void {
     const el = this.chessBoard.boardElement.nativeElement as HTMLElement;
     // left mouse click would remove all arrows, not allowed for students
-    el.addEventListener('pointerdown', (e: MouseEvent) => {
-      if (e.button === 0 && this.realtimeService.mode() === 'gathered') {
-        e.preventDefault()
-      }
-    },true);
-    
+    el.addEventListener(
+      'pointerdown',
+      (e: MouseEvent) => {
+        if (e.button === 0 && this.realtimeService.mode() === 'gathered') {
+          e.preventDefault();
+        }
+      },
+      true,
+    );
+
     // arrows
     el.addEventListener('mouseup', (e: MouseEvent) => {
       if (e.button !== 0 && e.button !== 2) return; // middle mouse do what?
@@ -196,6 +270,27 @@ export class StudentView implements AfterViewInit {
     });
   }
   // --- Move handling ---
+
+  handleChallengeMove(orig: Key, dest: Key) {
+    const pair = this.myPair();
+    if (!pair) return;
+    try {
+      const move = this.challengeChess.move({ from: orig, to: dest });
+      if (move) {
+        this.realtimeService.sendChallengeMove(pair.white, pair.black, this.challengeChess.fen(),orig,dest);
+        this.realtimeService.updatePresence({
+          fen: this.challengeChess.fen(),
+          status: this.challengeChess.turn() === 'w' ? 'White to move' : 'Black to move',
+          feedback: '',
+          exIndex: this.exIndex(),
+        });
+      }
+    } catch (e) {
+      console.error('Invalid move:', e);
+      this.chessBoard.api?.set({ fen: this.challengeChess.fen() });
+    }
+  }
+
   handleMove(orig: Key, dest: Key) {
     try {
       const move = this.chess.move({ from: orig, to: dest });

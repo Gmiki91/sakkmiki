@@ -3,26 +3,32 @@
     <mat-card-header>
       <mat-card-title>
         @if (realtimeService.mode() === 'gathered') {
-          <span class="gathered-label">📡 Following teacher</span>
+          <span class="gathered-label"> !ACHTUNG!</span>
+        } @else if (myPair()) {
+          <span> {{ myPair()!.white }} vs {{ myPair()!.black }}</span>
         } @else {
-          <span>
-             Szia {{ realtimeService.studentName() }}!
-          </span>
+          <span> Szia {{ realtimeService.studentName() }}! </span>
         }
       </mat-card-title>
     </mat-card-header>
 
     <mat-card-content>
-        <div class="board-wrapper">
-          <app-chess-board #chessBoard [config]="boardConfig()!" [mushroomMode]="currentExercise()?.sameColorMoves"></app-chess-board>
-        </div>
-
-      <div class="feedback">
-        <span>{{ status() }}</span>
-        @if (realtimeService.mode() === 'normal') {
-          <span>{{ feedback() }}</span>
-        }
+      <div class="board-wrapper">
+        <app-chess-board
+          #chessBoard
+          [config]="boardConfig()!"
+          [mushroomMode]="myPair() ? false : currentExercise()?.sameColorMoves"
+        ></app-chess-board>
       </div>
+
+      @if (!myPair()) {
+        <div class="feedback">
+          <span>{{ status() }}</span>
+          @if (realtimeService.mode() === 'normal') {
+            <span>{{ feedback() }}</span>
+          }
+        </div>
+      }
     </mat-card-content>
   </mat-card>
 </div>

@@ -20,9 +20,19 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { Config } from '@lichess-org/chessground/config';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { ChallengePair } from '../../../shared/models/challenge-pair.model';
+import { MatIcon } from '@angular/material/icon';
 @Component({
   selector: 'app-classroom',
-  imports: [TeacherTable, ExerciseList, ChessBoard, MatCardModule, MatButtonModule,MatProgressSpinnerModule],
+  imports: [
+    TeacherTable,
+    ExerciseList,
+    ChessBoard,
+    MatCardModule,
+    MatButtonModule,
+    MatIcon,
+    MatProgressSpinnerModule,
+  ],
   templateUrl: './classroom.html',
   styleUrl: './classroom.scss',
 })
@@ -32,6 +42,7 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   realtimeService = inject(RealtimeService);
   loadedExercise = signal<Exercise | null>(null);
   loadedList = signal<Exercise[]>([]);
+  listTitle = signal<string>('');
   isLoadingList = signal(false);
   // Timer properties
   studentTimers = signal<Record<string, number>>({});
@@ -40,6 +51,9 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
 
   // Track which board elements already have listeners to avoid duplicates
   private listenedElements = new Set<HTMLElement>();
+
+  // For challenge
+  pendingPair = signal<string | null>(null);
 
   constructor() {
     // Apply shapes to the correct miniboard when studentShapes updates:
@@ -80,6 +94,7 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   loadListToAll(list: List) {
     this.isLoadingList.set(true);
     this.loadedList.set(list.exercises);
+    this.listTitle.set(list.title);
     this.realtimeService.sendListToAll(list.exercises);
     // reset all student timers
     this.realtimeService.students().forEach((s) => this.resetTimer(s.name));
@@ -119,7 +134,6 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
       clearInterval(this.timerIntervals[name]);
       delete this.timerIntervals[name];
     });
-    this.realtimeService.gather();
   }
 
   resumeTimers() {
@@ -129,11 +143,43 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
         this.studentTimers.update((t) => ({ ...t, [student.name]: (t[student.name] ?? 0) + 1 }));
       }, 1000);
     });
-    this.realtimeService.disperse();
   }
 
   getExerciseName(exIndex: number): string {
     return this.loadedList()[exIndex]?.title ?? 'No exercise loaded';
+  }
+
+  // Challenge methods
+  onDragStart(studentName: string): void {
+    this.pendingPair.set(studentName);
+  }
+
+  onDrop(targetName: string): void {
+    const source = this.pendingPair();
+    if (!source || source === targetName) {
+      this.pendingPair.set(null);
+      return;
+    }
+    const pair: ChallengePair = { white: source, black: targetName };
+    const currentPairs = this.realtimeService.challengePairs();
+    this.realtimeService.challengePairs.set([...currentPairs, pair]);
+    this.realtimeService.syncChallengePair(pair);
+    this.pendingPair.set(null);
+  }
+
+  getPair(studentName: string): ChallengePair | null {
+    return (
+      this.realtimeService
+        .challengePairs()
+        .find((p) => p.white === studentName || p.black === studentName) ?? null
+    );
+  }
+
+  removePair(pair: ChallengePair): void {
+    this.realtimeService.challengePairs.update((pairs) =>
+      pairs.filter((p) => p.white !== pair.white || p.black !== pair.black),
+    );
+    this.realtimeService.sendChallengeRemove(pair);
   }
 
   private attachStudentBoardListeners(): void {

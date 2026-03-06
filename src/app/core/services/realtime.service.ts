@@ -2,6 +2,7 @@ import { Injectable, signal, inject } from '@angular/core';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { DrawShape } from '@lichess-org/chessground/draw';
 import { SupabaseService } from './supabase.service';
+import { ChallengePair } from '../../shared/models/challenge-pair.model';
 
 export type StudentPresence = {
   name: string;
@@ -19,7 +20,10 @@ type BroadcastEvent =
   | { type: 'teacher_fen'; fen: string }
   | { type: 'teacher_shapes'; shapes: DrawShape[]; target: 'all' | string }
   | { type: 'student_shapes'; shapes: DrawShape[]; studentName: string }
-  | { type: 'list_loaded'; exercises: unknown[] };
+  | { type: 'list_loaded'; exercises: unknown[] }
+  | { type: 'sync_challenge_pair'; pair: ChallengePair }
+  | { type: 'challenge_remove'; pair: ChallengePair }
+  | { type: 'challenge_move'; white: string; black: string; fen: string, from:string,to:string };
 
 @Injectable({ providedIn: 'root' })
 export class RealtimeService {
@@ -37,6 +41,8 @@ export class RealtimeService {
   studentShapes = signal<{ name: string; shapes: DrawShape[] } | null>(null);
   loadedExercises = signal<unknown[]>([]);
   isJoined = signal<boolean>(false);
+  challengePairs = signal<ChallengePair[]>([]);
+  challengeMove = signal<{ white: string; black: string; fen: string ,from:string,to:string} | null>(null);
 
   // ----------------------------------------------------------------
   // Teacher
@@ -46,7 +52,7 @@ export class RealtimeService {
     this.channel = this.supabase.client
       .channel('classroom')
       .on('broadcast', { event: 'classroom' }, ({ payload }: { payload: BroadcastEvent }) => {
-        this.handleTeacherBroadcast(payload);
+        this.handleBroadcast(payload);
       })
       .on('presence', { event: 'sync' }, () => {
         const state = this.channel.presenceState<StudentPresence>();
@@ -125,6 +131,20 @@ export class RealtimeService {
   }
 
   // ----------------------------------------------------------------
+  // Challenge
+  // ----------------------------------------------------------------
+  syncChallengePair(pair: ChallengePair): void {
+    this.broadcast({ type: 'sync_challenge_pair', pair });
+  }
+
+  sendChallengeMove(white: string, black: string, fen: string,from:string,to:string): void {
+    this.broadcast({ type: 'challenge_move', white, black, fen,from,to });
+  }
+  sendChallengeRemove(pair: ChallengePair): void {
+    this.broadcast({ type: 'challenge_remove', pair });
+  }
+
+  // ----------------------------------------------------------------
   // Cleanup
   // ----------------------------------------------------------------
 
@@ -171,22 +191,36 @@ export class RealtimeService {
           this.teacherShapes.set(event.shapes);
         }
         break;
-      case 'student_shapes':
-        this.studentShapes.set({ name: event.studentName, shapes: event.shapes });
-        break;
       case 'list_loaded':
         this.loadedExercises.set(event.exercises);
         break;
+
+      default:
+        this.handleBroadcast(event);
     }
   }
 
-  private handleTeacherBroadcast(event: BroadcastEvent): void {
+  private handleBroadcast(event: BroadcastEvent) {
     switch (event.type) {
       case 'teacher_shapes':
         this.teacherShapes.set(event.shapes);
         break;
       case 'student_shapes':
         this.studentShapes.set({ name: event.studentName, shapes: event.shapes });
+        break;
+      case 'sync_challenge_pair':
+        const { pair } = event;
+        if (pair.white === this.studentName() || pair.black === this.studentName()) {
+          this.challengePairs.update((pairs) => [...pairs, pair]);
+        }
+        break;
+      case 'challenge_remove':
+        this.challengePairs.update((pairs) =>
+          pairs.filter((p) => p.white !== event.pair.white || p.black !== event.pair.black),
+        );
+        break;
+      case 'challenge_move':
+        this.challengeMove.set({ white: event.white, black: event.black, fen: event.fen,from:event.from,to:event.to });
         break;
     }
   }
