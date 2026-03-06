@@ -53,7 +53,10 @@ export class StudentView implements AfterViewInit {
     computation: () => 0,
   });
 
-  currentExercise = computed(() => this.loadedList()[this.exIndex()] ?? null);
+  // droppedExercise takes precedence
+  currentExercise = computed(
+    () => this.realtimeService.droppedExercise() ?? this.loadedList()[this.exIndex()] ?? null,
+  );
   moveHistory: WritableSignal<string[]> = linkedSignal({
     source: () => this.currentExercise(),
     computation: () => [],
@@ -222,7 +225,7 @@ export class StudentView implements AfterViewInit {
         this.challengeChess.load(move.fen);
         this.chessBoard?.api?.set({
           fen: move.fen,
-          lastMove:[move.from as Key, move.to as Key],
+          lastMove: [move.from as Key, move.to as Key],
           turnColor: this.challengeChess.turn() === 'w' ? 'white' : 'black',
           movable: {
             free: false,
@@ -277,7 +280,13 @@ export class StudentView implements AfterViewInit {
     try {
       const move = this.challengeChess.move({ from: orig, to: dest });
       if (move) {
-        this.realtimeService.sendChallengeMove(pair.white, pair.black, this.challengeChess.fen(),orig,dest);
+        this.realtimeService.sendChallengeMove(
+          pair.white,
+          pair.black,
+          this.challengeChess.fen(),
+          orig,
+          dest,
+        );
         this.realtimeService.updatePresence({
           fen: this.challengeChess.fen(),
           status: this.challengeChess.turn() === 'w' ? 'White to move' : 'Black to move',
@@ -324,7 +333,10 @@ export class StudentView implements AfterViewInit {
       const isSolved = ex.solutions.some((line) => line.length === newHistory.length);
       if (isSolved) {
         this.feedback.set('Solved! ✓');
-        setTimeout(() => this.nextExercise(), 2000);
+        setTimeout(() =>{
+          if (this.realtimeService.droppedExercise()) this.realtimeService.clearDroppedeExercise();
+          else this.nextExercise()
+        } , 1500);
       } else {
         //gombaszedés, same color always
         if (ex.sameColorMoves) {

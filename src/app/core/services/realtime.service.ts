@@ -3,6 +3,7 @@ import { RealtimeChannel } from '@supabase/supabase-js';
 import { DrawShape } from '@lichess-org/chessground/draw';
 import { SupabaseService } from './supabase.service';
 import { ChallengePair } from '../../shared/models/challenge-pair.model';
+import { Exercise } from '../../shared/models/exercise.model';
 
 export type StudentPresence = {
   name: string;
@@ -20,10 +21,11 @@ type BroadcastEvent =
   | { type: 'teacher_fen'; fen: string }
   | { type: 'teacher_shapes'; shapes: DrawShape[]; target: 'all' | string }
   | { type: 'student_shapes'; shapes: DrawShape[]; studentName: string }
-  | { type: 'list_loaded'; exercises: unknown[] }
+  | { type: 'list_loaded'; exercises: Exercise[] }
+  | { type: 'dropped_exercise'; studentName: string; exercise: Exercise }
   | { type: 'sync_challenge_pair'; pair: ChallengePair }
   | { type: 'challenge_remove'; pair: ChallengePair }
-  | { type: 'challenge_move'; white: string; black: string; fen: string, from:string,to:string };
+  | { type: 'challenge_move'; white: string; black: string; fen: string; from: string; to: string };
 
 @Injectable({ providedIn: 'root' })
 export class RealtimeService {
@@ -39,10 +41,17 @@ export class RealtimeService {
   teacherFen = signal<string>('');
   teacherShapes = signal<DrawShape[]>([]);
   studentShapes = signal<{ name: string; shapes: DrawShape[] } | null>(null);
-  loadedExercises = signal<unknown[]>([]);
+  loadedExercises = signal<Exercise[]>([]);
+  droppedExercise = signal<Exercise | null>(null);
   isJoined = signal<boolean>(false);
   challengePairs = signal<ChallengePair[]>([]);
-  challengeMove = signal<{ white: string; black: string; fen: string ,from:string,to:string} | null>(null);
+  challengeMove = signal<{
+    white: string;
+    black: string;
+    fen: string;
+    from: string;
+    to: string;
+  } | null>(null);
 
   // ----------------------------------------------------------------
   // Teacher
@@ -87,9 +96,15 @@ export class RealtimeService {
     this.broadcast({ type: 'teacher_shapes', shapes, target });
   }
 
-  sendListToAll(exercises: unknown[]): void {
+  sendListToAll(exercises: Exercise[]): void {
     this.broadcast({ type: 'list_loaded', exercises });
   }
+  sendDroppedExercise(studentName: string, exercise: Exercise): void {
+    this.broadcast({ type: 'dropped_exercise', studentName, exercise });
+  }
+  clearDroppedeExercise(): void {
+  this.droppedExercise.set(null);
+}
 
   // ----------------------------------------------------------------
   // Student
@@ -137,8 +152,8 @@ export class RealtimeService {
     this.broadcast({ type: 'sync_challenge_pair', pair });
   }
 
-  sendChallengeMove(white: string, black: string, fen: string,from:string,to:string): void {
-    this.broadcast({ type: 'challenge_move', white, black, fen,from,to });
+  sendChallengeMove(white: string, black: string, fen: string, from: string, to: string): void {
+    this.broadcast({ type: 'challenge_move', white, black, fen, from, to });
   }
   sendChallengeRemove(pair: ChallengePair): void {
     this.broadcast({ type: 'challenge_remove', pair });
@@ -193,8 +208,13 @@ export class RealtimeService {
         break;
       case 'list_loaded':
         this.loadedExercises.set(event.exercises);
+        this.droppedExercise.set(null);
         break;
-
+      case 'dropped_exercise':
+        if (event.studentName === this.studentName()) {
+          this.droppedExercise.set(event.exercise);
+        }
+        break;
       default:
         this.handleBroadcast(event);
     }
@@ -220,7 +240,13 @@ export class RealtimeService {
         );
         break;
       case 'challenge_move':
-        this.challengeMove.set({ white: event.white, black: event.black, fen: event.fen,from:event.from,to:event.to });
+        this.challengeMove.set({
+          white: event.white,
+          black: event.black,
+          fen: event.fen,
+          from: event.from,
+          to: event.to,
+        });
         break;
     }
   }

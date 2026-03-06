@@ -1,6 +1,15 @@
 .container{
-    .header{
-        display:flex;
-        align-items:baseline;
-    }
+    .exercise-item {
+  padding: 8px 16px;
+  cursor: grab;
+  border-radius: 4px;
+  
+  &:hover {
+    background: var(--mat-sys-surface-container-high);
+  }
+  
+  &:active {
+    cursor: grabbing;
+  }
+}
 }

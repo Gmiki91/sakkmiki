@@ -149,12 +149,21 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
     return this.loadedList()[exIndex]?.title ?? 'No exercise loaded';
   }
 
-  // Challenge methods
-  onDragStart(studentName: string): void {
-    this.pendingPair.set(studentName);
+  onDrop(targetName: string, event: DragEvent): void {
+    const type = event.dataTransfer?.getData('type');
+    if (type === 'exercise') {
+      this.handleExerciseDrop(targetName, event);
+    } else {
+      this.handleChallengeDrop(targetName);
+    }
+  }
+  handleExerciseDrop(targetName: string, event: DragEvent) {
+    const exercise = JSON.parse(event.dataTransfer?.getData('exercise') ?? '{}') as Exercise;
+    this.realtimeService.sendDroppedExercise(targetName, exercise);
   }
 
-  onDrop(targetName: string): void {
+  // Challenge methods
+  handleChallengeDrop(targetName: string) {
     const source = this.pendingPair();
     if (!source || source === targetName) {
       this.pendingPair.set(null);
@@ -165,6 +174,10 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
     this.realtimeService.challengePairs.set([...currentPairs, pair]);
     this.realtimeService.syncChallengePair(pair);
     this.pendingPair.set(null);
+  }
+  
+  onDragStart(studentName: string): void {
+    this.pendingPair.set(studentName);
   }
 
   getPair(studentName: string): ChallengePair | null {

@@ -47,7 +47,7 @@
         draggable="true"
           (dragstart)="onDragStart(student.name)"
           (dragover)="$event.preventDefault()"
-          (drop)="onDrop(student.name)">
+          (drop)="onDrop(student.name,$event)">
         
           <mat-card-header>
             <mat-card-title>{{ student.name }}</mat-card-title>
