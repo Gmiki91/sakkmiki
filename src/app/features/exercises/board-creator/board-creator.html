@@ -10,7 +10,7 @@
       <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'pawn', 'black')">♟</div>
     </div>
 
-    <app-chess-board [mushroomMode]="sameColorMoves()" [config]="boardConfig()" #chessBoard></app-chess-board>
+    <app-chess-board [mushroomMode]="exerciseType() === 'mushroom'" [config]="boardConfig()" #chessBoard></app-chess-board>
 
     <!-- whites -->
     <div class="row">
@@ -21,29 +21,35 @@
       <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'knight', 'white')">♘</div>
       <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'pawn', 'white')">♙</div>
     </div>
-
   </div>
-  
+
+ 
   <div class="column">
-    <mat-radio-group class="radio-group" [(ngModel)]="turnOrder">
-      <mat-radio-button value="w">White to move</mat-radio-button>
-      <mat-radio-button value="b">Black to move</mat-radio-button>
+    <mat-radio-group class="radio-group" [(ngModel)]="exerciseType">
+      <mat-radio-button value="regular">Regular</mat-radio-button>
+      <mat-radio-button value="mushroom">Mushroom</mat-radio-button>
+      <mat-radio-button value="challenge">Challenge</mat-radio-button>
     </mat-radio-group>
-    <div class="column">
-      <span>White castling rights</span>
-      <mat-checkbox  [(ngModel)]="whiteCastlingKingSide">O-O</mat-checkbox>
-      <mat-checkbox [(ngModel)]="whiteCastlingQueenSide">O-O-O</mat-checkbox>
-    </div>
-    <div class="column">
-      <span>Black castling rights</span>
-      <mat-checkbox  [(ngModel)]="blackCastlingKingSide">O-O</mat-checkbox>
-      <mat-checkbox [(ngModel)]="blackCastlingQueenSide">O-O-O</mat-checkbox>
-    </div>
-        <mat-form-field class="example-full-width">
+    @if (exerciseType() !== 'mushroom') {
+      <mat-radio-group class="radio-group" [(ngModel)]="turnOrder">
+        <mat-radio-button value="w">White to move</mat-radio-button>
+        <mat-radio-button value="b">Black to move</mat-radio-button>
+      </mat-radio-group>
+      <div class="column">
+        <span>White castling rights</span>
+        <mat-checkbox  [(ngModel)]="whiteCastlingKingSide">O-O</mat-checkbox>
+        <mat-checkbox [(ngModel)]="whiteCastlingQueenSide">O-O-O</mat-checkbox>
+      </div>
+      <div class="column">
+        <span>Black castling rights</span>
+        <mat-checkbox  [(ngModel)]="blackCastlingKingSide">O-O</mat-checkbox>
+        <mat-checkbox [(ngModel)]="blackCastlingQueenSide">O-O-O</mat-checkbox>
+      </div>
+  }
+    <mat-form-field class="example-full-width">
       <mat-label>Cím</mat-label>
       <input type="text" [(ngModel)]="title" matInput>
     </mat-form-field>
-    <mat-checkbox [(ngModel)]="sameColorMoves">Same color moves</mat-checkbox>
     <button mat-button (click)="resetBoard()">reset</button>
     <button mat-button (click)="clearBoard()">clear</button>
     <button mat-button (click)="save()">save</button>

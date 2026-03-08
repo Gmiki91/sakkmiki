@@ -43,6 +43,12 @@ export const routes: Routes = [
           ),
         canActivate: [validExerciseGuard],
       },
+      {
+        path: 'challenge/:exerciseId',
+        loadComponent:()=>
+          import('./features/exercises/challenge-creator/challenge-creator').then(m=>m.ChallengeCreator),
+        canActivate: [validExerciseGuard],
+      },
     ],
   },
 ];

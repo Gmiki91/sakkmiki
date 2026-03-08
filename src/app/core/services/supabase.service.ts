@@ -79,7 +79,9 @@ export class SupabaseService {
     solutions: raw.solutions,
     commonMistakes: raw.common_mistakes,
     defaultHint: raw.default_hint,
-    sameColorMoves: raw.same_color_moves,
+    skipFenValidation:raw.skip_fen_validation,
+    whiteWinConditions:raw.white_win_conditions,
+    blackWinConditions:raw.black_win_conditions
   };
 }
 private toDbExercise(exercise: ExerciseInput) {
@@ -90,7 +92,9 @@ private toDbExercise(exercise: ExerciseInput) {
     solutions: exercise.solutions,
     common_mistakes: exercise.commonMistakes,
     default_hint: exercise.defaultHint,
-    same_color_moves: exercise.sameColorMoves,
+    skip_fen_validation:exercise.skipFenValidation,
+    white_win_conditions:exercise.whiteWinConditions,
+    black_win_conditions:exercise.blackWinConditions
   };
 }
 }

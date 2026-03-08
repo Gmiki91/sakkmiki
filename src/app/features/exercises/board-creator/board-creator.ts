@@ -8,9 +8,10 @@ import { FormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatInputModule } from '@angular/material/input';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ExerciseInput } from '../../../shared/models/exercise.model';
+import { ExerciseInput, ExerciseType } from '../../../shared/models/exercise.model';
 import { ExerciseService } from '../../../core/services/exercise.service';
 import { EMPTY_BOARD_FEN } from '../../../shared/utils/chess.utils';
+import { MatSnackBar } from '@angular/material/snack-bar';
 @Component({
   selector: 'app-board-creator',
   imports: [ChessBoard, FormsModule, MatRadioModule, MatCheckboxModule, MatInputModule],
@@ -26,9 +27,10 @@ export class BoardCreator implements AfterViewInit {
   blackCastlingKingSide = model(true);
   blackCastlingQueenSide = model(true);
   turnOrder = model<'w' | 'b'>('w');
-  sameColorMoves = model(false);
+  exerciseType = model<ExerciseType>('regular');
   private chess = new Chess();
   private router = inject(Router);
+  private snackbar = inject(MatSnackBar);
   private activatedRoute = inject(ActivatedRoute);
 
   boardConfig = signal<Config>({
@@ -44,7 +46,7 @@ export class BoardCreator implements AfterViewInit {
     },
     highlight: {
       lastMove: false,
-    }
+    },
   });
 
   ngAfterViewInit(): void {
@@ -68,23 +70,30 @@ export class BoardCreator implements AfterViewInit {
 
   async save() {
     const fen = this.chessBoard.api.getFen() + this.fenAppendix();
+    const type = this.exerciseType();
+    const skipValidation = type === 'mushroom' || type === 'challenge';
     try {
-      if (!this.sameColorMoves()) {
+      if (!skipValidation) {
         this.chess.load(fen);
       }
       const exercise: ExerciseInput = {
         title: this.title(),
         fen: fen,
-        solutions: [],
-        sameColorMoves: this.sameColorMoves(),
+        exerciseType: type,
+        skipFenValidation: skipValidation,
       };
       const listId = this.activatedRoute.snapshot.paramMap.get('listId');
       if (!listId) return;
-      const ex =  await this.exerciseService.addExercise(listId, exercise);
-      if(!ex) return;
-      this.router.navigate([`/exercises/edit/${ex.id}`]);
+      const ex = await this.exerciseService.addExercise(listId, exercise);
+      if (!ex) return;
+      console.log(ex);
+      if (ex.exerciseType === 'challenge') {
+        this.router.navigate([`/exercises/challenge/${ex.id}`]);
+      } else {
+        this.router.navigate([`/exercises/edit/${ex.id}`]);
+      }
     } catch (e) {
-      alert((e as Error).message);
+      this.snackbar.open((e as Error).message, '', { duration: 2000 });
     }
   }
 
