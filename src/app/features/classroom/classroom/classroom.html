@@ -67,7 +67,6 @@
               } @else {
                 <app-chess-board
                   [config]="boardConfigFor(student.fen)"
-                  [mushroomMode]="loadedList()[student.exIndex]?.sameColorMoves ?? false"
                   #studentBoard
                 >
                 </app-chess-board>

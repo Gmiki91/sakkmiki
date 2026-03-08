@@ -43,14 +43,12 @@ import { Exercise } from '../../../shared/models/exercise.model';
 export class StudentView implements AfterViewInit {
   @ViewChild('chessBoard') chessBoard!: ChessBoard;
   realtimeService = inject(RealtimeService);
-  loadedList: WritableSignal<Exercise[]> = linkedSignal({
-    source: () => this.realtimeService.loadedExercises() as Exercise[],
-    computation: (incoming, previous) => (incoming.length > 0 ? incoming : (previous?.value ?? [])),
-  });
-  // --- Exercise state ---
+
+
+  loadedList = this.realtimeService.loadedExercises;
   exIndex = linkedSignal({
     source: () => this.loadedList(),
-    computation: () => 0,
+    computation: () => 0, // reset to 0 when a new list is loaded.
   });
 
   // droppedExercise takes precedence
@@ -74,10 +72,9 @@ export class StudentView implements AfterViewInit {
 
   playerColor = computed(() => (this.exerciseTurn() === 'w' ? 'white' : 'black'));
 
-  private chess = new Chess();
-  private isGathered = false;
-
+  private exerciseChess = new Chess();
   // --- Gather/disperse: snapshot of exercise state ---
+  private isGathered = false;
   private frozenFen: string | null = null;
   private frozenMoveHistory: string[] | null = null;
 
@@ -110,14 +107,13 @@ export class StudentView implements AfterViewInit {
       return {
         fen,
         orientation: 'white',
-        coordinates: false,
         movable: { free: false, color: undefined }, // read-only
         draggable: { enabled: false },
         highlight: { lastMove: true, check: false },
         drawable: {
           enabled: true,
           visible: true,
-          shapes: this.realtimeService.teacherShapes(),
+          shapes: this.realtimeService.sharedArrows(),
         },
       };
     }
@@ -127,7 +123,6 @@ export class StudentView implements AfterViewInit {
       return {
         fen: this.challengeStartFen(),
         orientation: this.myColor(),
-        coordinates: false,
         turnColor: this.challengeChess.turn() === 'w' ? 'white' : 'black',
         movable: {
           free: false,
@@ -139,38 +134,31 @@ export class StudentView implements AfterViewInit {
         },
         draggable: { enabled: true, showGhost: true },
         highlight: { lastMove: true, check: true },
-        drawable: { enabled: true, visible: true },
+        drawable: { enabled: true, visible: true ,  shapes: this.realtimeService.sharedArrows()},
       };
     }
 
     // Exercise mode
     const exercise = this.currentExercise();
-    if (!exercise)
-      return {
-        fen: STARTING_FEN,
-        orientation: 'white',
-        coordinates: false,
-        movable: { free: true, color: 'white' },
-        draggable: { enabled: true },
-      };
-
+    if (exercise)
     return {
       fen: exercise.fen,
       orientation: 'white',
       coordinates: false,
-      turnColor: this.chess.turn() === 'w' ? 'white' : 'black',
+      turnColor: this.exerciseChess.turn() === 'w' ? 'white' : 'black',
       movable: {
         free: false,
-        color: this.chess.turn() === 'w' ? 'white' : 'black',
-        dests: getValidMoves(this.chess),
+        color: this.exerciseChess.turn() === 'w' ? 'white' : 'black',
+        dests: getValidMoves(this.exerciseChess),
         events: {
           after: (orig, dest) => this.handleMove(orig, dest),
         },
       },
       draggable: { enabled: true, showGhost: true },
       highlight: { lastMove: true, check: true },
-      drawable: { enabled: true, visible: true },
+      drawable: { enabled: true, visible: true, shapes: this.realtimeService.sharedArrows() },
     };
+    return null;
   });
 
   constructor() {
@@ -178,16 +166,27 @@ export class StudentView implements AfterViewInit {
     effect(() => {
       const exercise = this.currentExercise();
       if (!exercise) return;
-      this.challengeChess = initChessJs(exercise.fen,false);
-      this.challengeStartFen.set(exercise.fen);
-      this.chess = initChessJs(exercise.fen, exercise.sameColorMoves);
+      const skipFen = exercise.exerciseType==='mushroom' || exercise.skipFenValidation
+      if(exercise.exerciseType==='challenge'){
+        this.challengeChess = initChessJs(exercise.fen,skipFen);
+        this.challengeStartFen.set(exercise.fen);
+      }else{
+        this.exerciseChess = initChessJs(exercise.fen, skipFen);
+      }
       this.chessBoard?.api?.set({ lastMove: [] });
     });
 
     // Push presence on any state change
     effect(() => {
       const exercise = this.currentExercise();
-      const fen = exercise ? this.chess.fen() : STARTING_FEN;
+      const type = exercise.exerciseType;
+      let fen;
+      if(type==='challenge'){
+        fen = exercise ? this.challengeChess.fen() : STARTING_FEN;
+
+      }else{
+        fen = exercise ? this.exerciseChess.fen() : STARTING_FEN;
+      }
       this.realtimeService.updatePresence({
         fen,
         status: this.status(),
@@ -206,14 +205,11 @@ export class StudentView implements AfterViewInit {
       }
     });
 
-    // React to teacher fen and shapes together (both only relevant when gathered)
+    // React to teacher fen change while gathered 
     effect(() => {
       const fen = this.realtimeService.teacherFen();
-      const shapes = this.realtimeService.teacherShapes();
       if (this.realtimeService.mode() === 'gathered' && fen) {
-        this.chessBoard?.api?.set({ fen, drawable: { shapes } });
-      } else {
-        this.chessBoard?.api?.set({ drawable: { shapes } });
+        this.chessBoard?.api?.set({ fen});
       }
     });
 
@@ -225,14 +221,15 @@ export class StudentView implements AfterViewInit {
       const pair = this.myPair();
       if (!pair) return;
       if (move.white === pair.white && move.black === pair.black) {
-        this.challengeChess.load(move.fen);
+        this.challengeChess.load(move.fen,{skipValidation:this.currentExercise().skipFenValidation});
         this.chessBoard?.api?.set({
           fen: move.fen,
           lastMove: [move.from as Key, move.to as Key],
           turnColor: this.challengeChess.turn() === 'w' ? 'white' : 'black',
+          check:this.challengeChess.isCheck(),
           movable: {
             free: false,
-            color: this.challengeChess.turn() === 'w' ? 'white' : 'black',
+            color: this.myColor(),
             dests: getValidMoves(this.challengeChess),
           },
         });
@@ -268,15 +265,14 @@ export class StudentView implements AfterViewInit {
       setTimeout(() => {
         const shapes = this.chessBoard.api?.state.drawable.shapes ?? [];
         if (this.realtimeService.mode() === 'gathered') {
-          if (e.button !== 0) this.realtimeService.sendTeacherShapes(shapes);
+          if (e.button !== 0) this.realtimeService.sendSharedArrows(shapes);
         } else {
-          this.realtimeService.sendStudentShapes(shapes);
+          this.realtimeService.sendMiniboardArrows(shapes);
         }
       }, 0);
     });
   }
   // --- Move handling ---
-
   handleChallengeMove(orig: Key, dest: Key) {
     const pair = this.myPair();
     if (!pair) return;
@@ -305,14 +301,14 @@ export class StudentView implements AfterViewInit {
 
   handleMove(orig: Key, dest: Key) {
     try {
-      const move = this.chess.move({ from: orig, to: dest });
+      const move = this.exerciseChess.move({ from: orig, to: dest });
       if (move) {
         this.analyze(move);
-        if (!this.currentExercise().sameColorMoves) {
+        if (this.currentExercise().exerciseType !== 'mushroom') {
           this.updateStatus();
         }
         this.realtimeService.updatePresence({
-          fen: this.chess.fen(),
+          fen: this.exerciseChess.fen(),
           status: this.status(),
           feedback: this.feedback(),
           exIndex: this.exIndex(),
@@ -320,7 +316,7 @@ export class StudentView implements AfterViewInit {
       }
     } catch (e) {
       console.error('Invalid move:', e);
-      this.chessBoard.api?.set({ fen: this.chess.fen() });
+      this.chessBoard.api?.set({ fen: this.exerciseChess.fen() });
     }
   }
 
@@ -330,29 +326,29 @@ export class StudentView implements AfterViewInit {
 
     const newHistory = [...this.moveHistory(), move.san];
     const mistakes = ex.commonMistakes ?? [];
-    const solution = ex.solutions.find((line) => newHistory.every((m, i) => line[i] === m));
+    const solution = ex.solutions?.find((line) => newHistory.every((m, i) => line[i] === m));
     if (solution) {
       this.moveHistory.set(newHistory);
-      const isSolved = ex.solutions.some((line) => line.length === newHistory.length);
+      const isSolved = ex.solutions?.some((line) => line.length === newHistory.length);
       if (isSolved) {
         this.feedback.set('Solved! ✓');
         setTimeout(() =>{
-          if (this.realtimeService.droppedExercise()) this.realtimeService.clearDroppedeExercise();
+          if (this.realtimeService.droppedExercise()) this.realtimeService.clearDroppedExercise();
           else this.nextExercise();
         } , 1500);
       } else {
         //gombaszedés, same color always
-        if (ex.sameColorMoves) {
-          this.chess.setTurn(this.exerciseTurn() as Color);
+        if (ex.exerciseType==='mushroom') {
+          this.exerciseChess.setTurn(this.exerciseTurn() as Color);
           this.updateBoard();
           this.feedback.set('Good move!');
         } else {
           const nextIndex = newHistory.length;
-          const computerMove = this.chess.move(solution[nextIndex]);
+          const computerMove = this.exerciseChess.move(solution[nextIndex]);
           const updatedHistory = [...newHistory, solution[nextIndex]];
           this.updateBoard([computerMove.from as Key, computerMove.to as Key]);
           this.moveHistory.set([...newHistory, solution[nextIndex]]);
-          const isSolvedAfterComputer = ex.solutions.some(
+          const isSolvedAfterComputer = ex.solutions?.some(
             (line) => line.length === updatedHistory.length,
           );
           if (isSolvedAfterComputer) {
@@ -364,9 +360,9 @@ export class StudentView implements AfterViewInit {
         }
       }
     } else {
-      this.chess.undo();
-      if (ex.sameColorMoves) {
-        this.chess.setTurn(this.exerciseTurn() as Color);
+      this.exerciseChess.undo();
+      if (ex.exerciseType==='mushroom') {
+        this.exerciseChess.setTurn(this.exerciseTurn() as Color);
       }
       this.updateBoard();
       const mistake = mistakes.find((m) => m.move === move.san);
@@ -379,14 +375,14 @@ export class StudentView implements AfterViewInit {
   }
 
   updateStatus() {
-    if (this.chess.isCheckmate()) {
-      this.status.set('Checkmate! ' + (this.chess.turn() === 'w' ? 'Black' : 'White') + ' wins!');
-    } else if (this.chess.isDraw()) {
+    if (this.exerciseChess.isCheckmate()) {
+      this.status.set('Checkmate! ' + (this.exerciseChess.turn() === 'w' ? 'Black' : 'White') + ' wins!');
+    } else if (this.exerciseChess.isDraw()) {
       this.status.set('Draw!');
-    } else if (this.chess.isCheck()) {
-      this.status.set('Check! ' + (this.chess.turn() === 'w' ? 'White' : 'Black') + ' to move');
+    } else if (this.exerciseChess.isCheck()) {
+      this.status.set('Check! ' + (this.exerciseChess.turn() === 'w' ? 'White' : 'Black') + ' to move');
     } else {
-      this.status.set((this.chess.turn() === 'w' ? 'White' : 'Black') + ' to move');
+      this.status.set((this.exerciseChess.turn() === 'w' ? 'White' : 'Black') + ' to move');
     }
   }
 
@@ -395,13 +391,13 @@ export class StudentView implements AfterViewInit {
     if (this.exIndex() < size) {
       this.exIndex.update((n) => n + 1);
     } else {
-      this.status.set('All done! 🎉');
+      this.status.set('All done!');
     }
   }
 
   private onGather() {
     this.isGathered = true;
-    this.frozenFen = this.chess.fen();
+    this.frozenFen = this.exerciseChess.fen();
     this.frozenMoveHistory = [...this.moveHistory()];
     this.chessBoard?.api?.set({ lastMove: [], drawable: { shapes: [] } });
   }
@@ -410,27 +406,27 @@ export class StudentView implements AfterViewInit {
     // Restore frozen state if we were gathered
     if (!this.isGathered) return;
     this.isGathered = false;
-    this.chess.load(this.frozenFen!);
+    this.exerciseChess.load(this.frozenFen!,{skipValidation:true});
     this.moveHistory.set(this.frozenMoveHistory ?? []);
     this.frozenFen = null;
     this.frozenMoveHistory = null;
     setTimeout(() => {
       this.chessBoard?.api?.set({
-        fen: this.chess.fen(),
+        fen: this.exerciseChess.fen(),
         lastMove: [],
         drawable: { enabled: true, shapes: [] },
         movable: {
           free: false,
           color: this.playerColor(),
-          dests: getValidMoves(this.chess),
+          dests: getValidMoves(this.exerciseChess),
         },
-        turnColor: this.chess.turn() === 'w' ? 'white' : 'black',
+        turnColor: this.exerciseChess.turn() === 'w' ? 'white' : 'black',
       });
     }, 0);
   }
 
   private updateBoard(lastMove?: [Key, Key]) {
-    const config = boardConfig(this.chess);
+    const config = boardConfig(this.exerciseChess);
     this.chessBoard.api?.set({
       ...config,
       movable: { ...config.movable, color: this.playerColor() },
@@ -441,7 +437,7 @@ export class StudentView implements AfterViewInit {
   private exerciseTurn = computed(() => {
     const exercise = this.currentExercise();
     if (!exercise) return 'w';
-    const chess = initChessJs(exercise.fen, exercise.sameColorMoves);
+    const chess = initChessJs(exercise.fen, exercise.exerciseType==='mushroom');
     return chess.turn();
   });
 }

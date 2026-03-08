@@ -75,6 +75,7 @@ export class SupabaseService {
     id: raw.id,
     title: raw.title,
     fen: raw.fen,
+    exerciseType:raw.exercise_type,
     solutions: raw.solutions,
     commonMistakes: raw.common_mistakes,
     defaultHint: raw.default_hint,
@@ -85,6 +86,7 @@ private toDbExercise(exercise: ExerciseInput) {
   return {
     title: exercise.title,
     fen: exercise.fen,
+    exercise_type:exercise.exerciseType,
     solutions: exercise.solutions,
     common_mistakes: exercise.commonMistakes,
     default_hint: exercise.defaultHint,

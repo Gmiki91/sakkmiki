@@ -3,13 +3,18 @@ export type CommonMistake = {
   hint: string;
 }
 
+export type ExerciseType = 'regular' | 'mushroom' | 'challenge';
+
 export type ExerciseInput = {
   title: string;
   fen: string;
-  solutions: string[][];
+  exerciseType: ExerciseType;
+  solutions?: string[][];
   commonMistakes?: CommonMistake[];
   defaultHint?: string;
-  sameColorMoves?:boolean;
+  skipFenValidation?: boolean;
+  whiteWinConditions?: string[];
+  blackWinConditions?: string[];
 }
 
 export type Exercise = ExerciseInput & {

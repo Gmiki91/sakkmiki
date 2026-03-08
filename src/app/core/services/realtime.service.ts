@@ -19,8 +19,8 @@ type BroadcastEvent =
   | { type: 'gather' }
   | { type: 'disperse' }
   | { type: 'teacher_fen'; fen: string }
-  | { type: 'teacher_shapes'; shapes: DrawShape[]; target: 'all' | string }
-  | { type: 'student_shapes'; shapes: DrawShape[]; studentName: string }
+  | { type: 'shared_arrows'; shapes: DrawShape[]; target: 'all' | string }
+  | { type: 'miniboard_arrows'; shapes: DrawShape[]; studentName: string }
   | { type: 'list_loaded'; exercises: Exercise[] }
   | { type: 'dropped_exercise'; studentName: string; exercise: Exercise }
   | { type: 'sync_challenge_pair'; pair: ChallengePair }
@@ -39,8 +39,8 @@ export class RealtimeService {
   students = signal<StudentPresence[]>([]);
   mode = signal<ClassroomMode>('normal');
   teacherFen = signal<string>('');
-  teacherShapes = signal<DrawShape[]>([]);
-  studentShapes = signal<{ name: string; shapes: DrawShape[] } | null>(null);
+  sharedArrows = signal<DrawShape[]>([]);
+  miniboardArrows = signal<{ name: string; shapes: DrawShape[] } | null>(null);
   loadedExercises = signal<Exercise[]>([]);
   droppedExercise = signal<Exercise | null>(null);
   isJoined = signal<boolean>(false);
@@ -92,8 +92,8 @@ export class RealtimeService {
     this.broadcast({ type: 'teacher_fen', fen });
   }
 
-  sendTeacherShapes(shapes: DrawShape[], target: 'all' | string = 'all'): void {
-    this.broadcast({ type: 'teacher_shapes', shapes, target });
+  sendSharedArrows(shapes: DrawShape[], target: 'all' | string = 'all'): void {
+    this.broadcast({ type: 'shared_arrows', shapes, target });
   }
 
   sendListToAll(exercises: Exercise[]): void {
@@ -102,7 +102,7 @@ export class RealtimeService {
   sendDroppedExercise(studentName: string, exercise: Exercise): void {
     this.broadcast({ type: 'dropped_exercise', studentName, exercise });
   }
-  clearDroppedeExercise(): void {
+  clearDroppedExercise(): void {
   this.droppedExercise.set(null);
 }
 
@@ -141,8 +141,8 @@ export class RealtimeService {
     });
   }
 
-  sendStudentShapes(shapes: DrawShape[]): void {
-    this.broadcast({ type: 'student_shapes', shapes, studentName: this.studentName() });
+  sendMiniboardArrows(shapes: DrawShape[]): void {
+    this.broadcast({ type: 'miniboard_arrows', shapes, studentName: this.studentName() });
   }
 
   // ----------------------------------------------------------------
@@ -189,21 +189,21 @@ export class RealtimeService {
   private handleStudentBroadcast(event: BroadcastEvent): void {
     switch (event.type) {
       case 'gather':
-        this.teacherShapes.set([]);
-        this.studentShapes.set(null);
+        this.sharedArrows.set([]);
+        this.miniboardArrows.set(null);
         this.mode.set('gathered');
         break;
       case 'disperse':
-        this.teacherShapes.set([]);
-        this.studentShapes.set(null);
+        this.sharedArrows.set([]);
+        this.miniboardArrows.set(null);
         this.mode.set('normal');
         break;
       case 'teacher_fen':
         this.teacherFen.set(event.fen);
         break;
-      case 'teacher_shapes':
+      case 'shared_arrows':
         if (event.target === 'all' || event.target === this.studentName()) {
-          this.teacherShapes.set(event.shapes);
+          this.sharedArrows.set(event.shapes);
         }
         break;
       case 'list_loaded':
@@ -222,11 +222,11 @@ export class RealtimeService {
 
   private handleBroadcast(event: BroadcastEvent) {
     switch (event.type) {
-      case 'teacher_shapes':
-        this.teacherShapes.set(event.shapes);
+      case 'shared_arrows':
+        this.sharedArrows.set(event.shapes);
         break;
-      case 'student_shapes':
-        this.studentShapes.set({ name: event.studentName, shapes: event.shapes });
+      case 'miniboard_arrows':
+        this.miniboardArrows.set({ name: event.studentName, shapes: event.shapes });
         break;
       case 'sync_challenge_pair':
         const { pair } = event;

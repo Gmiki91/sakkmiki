@@ -56,9 +56,9 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   pendingPair = signal<string | null>(null);
 
   constructor() {
-    // Apply shapes to the correct miniboard when studentShapes updates:
+    // Apply arrows to the correct miniboard when miniboardArrows updates:
     effect(() => {
-      const update = this.realtimeService.studentShapes();
+      const update = this.realtimeService.miniboardArrows();
       if (!update) return;
       const index = this.realtimeService.students().findIndex((s) => s.name === update.name);
       if (index === -1) return;
@@ -214,7 +214,7 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
           setTimeout(() => {
             const shapes = board.api?.state.drawable.shapes ?? [];
             if (studentName) {
-              this.realtimeService.sendTeacherShapes(shapes, studentName);
+              this.realtimeService.sendSharedArrows(shapes, studentName);
             }
           }, 0);
         });

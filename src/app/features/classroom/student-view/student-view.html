@@ -17,7 +17,7 @@
         <app-chess-board
           #chessBoard
           [config]="boardConfig()!"
-          [mushroomMode]="myPair() ? false : currentExercise()?.sameColorMoves"
+          [mushroomMode]="myPair() ? false : currentExercise()?.exerciseType==='mushroom'"
         ></app-chess-board>
       </div>
 

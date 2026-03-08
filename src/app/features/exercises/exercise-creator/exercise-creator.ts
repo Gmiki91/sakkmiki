@@ -52,7 +52,7 @@ export class ExerciseCreator implements OnInit {
 
       if (!found) return;
       this.exercise = signal(found);
-      this.chess = initChessJs(found.fen,found.sameColorMoves )
+      this.chess = initChessJs(found.fen,found.skipFenValidation )
       this.playerColor = this.chess.turn()
       this.boardConfig = signal({
         fen: found.fen,
@@ -81,7 +81,7 @@ export class ExerciseCreator implements OnInit {
       const move = this.chess.move({ from: orig, to: dest });
       if (move) {
         // Update board
-        if (this.exercise().sameColorMoves) {
+        if (this.exercise().exerciseType==='mushroom') {
           this.chess.setTurn(this.playerColor)
         }
         this.chessBoard.api?.set(boardConfig(this.chess));
@@ -93,7 +93,7 @@ export class ExerciseCreator implements OnInit {
       }
     } catch (e) {
       // Invalid move - revert
-      alert('Invalid move!');
+      this.snackbar.open('Invalid move!','',{duration:2000})
       this.chessBoard.api.set({ fen: this.chess.fen() });
     }
   }
@@ -112,7 +112,7 @@ export class ExerciseCreator implements OnInit {
   deleteSolution(i: number) {
     this.exercise.update((ex) => ({
       ...ex,
-      solutions: ex.solutions.filter((_, index) => index !== i),
+      solutions: ex.solutions?.filter((_, index) => index !== i),
     }));
   }
 
@@ -121,7 +121,7 @@ export class ExerciseCreator implements OnInit {
       this.isRecording.set(false);
     }
     this.chess.load(this.exercise().fen);
-    const steps = this.exercise().solutions[solutionIndex];
+    const steps = this.exercise().solutions![solutionIndex];
     for (let index = 0; index <= stepIndex; index++) {
       this.chess.move(steps[index]);
     }
@@ -137,26 +137,26 @@ export class ExerciseCreator implements OnInit {
 
   private resetBoard() {
     this.recording.set([]);
-    this.chess= initChessJs(this.exercise().fen,this.exercise().sameColorMoves)
+    this.chess= initChessJs(this.exercise().fen,this.exercise().skipFenValidation)
     this.chessBoard.api?.set(boardConfig(this.chess, false));
   }
 
   private saveRecording() {
     if (this.recording().length > 0) {
-      const error = this.exercise().sameColorMoves ? null: this.validateRecording(this.recording());
+      const error = this.exercise().exerciseType==='mushroom' ? null: this.validateRecording(this.recording());
       if (error) {
         this.snackbar.open(error, '', { duration: 3000 });
         return;
       }
       this.exercise.update((ex) => ({
         ...ex,
-        solutions: [...ex.solutions, this.recording()],
+        solutions: [...ex.solutions??[], this.recording()],
       }));
     }
   }
 
   private validateRecording(newSolution: string[]): string | null {
-    for (const existing of this.exercise().solutions) {
+    for (const existing of this.exercise().solutions??[]) {
       // find how far the two lines are identical
       const commonLength = Math.min(existing.length, newSolution.length);
       let divergesAt = -1;

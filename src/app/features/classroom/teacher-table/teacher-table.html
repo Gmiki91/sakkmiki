@@ -1,6 +1,6 @@
 <div class="teacher-table">
   <div class="board-wrapper">
-    <app-chess-board #chessBoard [config]="boardConfig()" [mushroomMode]="selectedExercise()?.sameColorMoves"></app-chess-board>
+    <app-chess-board #chessBoard [config]="boardConfig()" [mushroomMode]="selectedExercise()?.exerciseType==='mushroom'"></app-chess-board>
   </div>
   <div class="controls">
     <button mat-raised-button color="primary" (click)="gather()" matTooltip="Students follow your board">

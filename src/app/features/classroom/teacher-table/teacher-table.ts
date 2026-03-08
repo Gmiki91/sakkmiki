@@ -63,7 +63,7 @@ export class TeacherTable implements AfterViewInit {
 
     // apply arrows
     effect(() => {
-      const shapes = this.realtimeService.teacherShapes();
+      const shapes = this.realtimeService.sharedArrows();
       if (this.realtimeService.mode() === 'gathered') {
         console.log('shapes!', shapes);
         this.chessBoard?.api?.set({ drawable: { shapes } });
@@ -78,7 +78,7 @@ export class TeacherTable implements AfterViewInit {
       if (this.realtimeService.mode() === 'gathered') {
         setTimeout(() => {
           const shapes = this.chessBoard.api?.state.drawable.shapes ?? [];
-          this.realtimeService.sendTeacherShapes(shapes);
+          this.realtimeService.sendSharedArrows(shapes);
         }, 0);
       }
     });
