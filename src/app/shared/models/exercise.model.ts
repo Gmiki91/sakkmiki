@@ -12,7 +12,6 @@ export type ExerciseInput = {
   solutions?: string[][];
   commonMistakes?: CommonMistake[];
   defaultHint?: string;
-  skipFenValidation?: boolean;
   whiteWinConditions?: string[];
   blackWinConditions?: string[];
 }

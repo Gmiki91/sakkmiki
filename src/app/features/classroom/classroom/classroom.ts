@@ -8,6 +8,7 @@ import {
   effect,
   signal,
   AfterViewInit,
+  computed,
 } from '@angular/core';
 import { TeacherTable } from '../teacher-table/teacher-table';
 import { Exercise } from '../../../shared/models/exercise.model';
@@ -54,6 +55,8 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
 
   // For challenge
   pendingPair = signal<string | null>(null);
+
+  exerciseTitle = signal('No exercises loaded');
 
   constructor() {
     // Apply arrows to the correct miniboard when miniboardArrows updates:
@@ -124,6 +127,7 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
         // new exercise — reset timer
         this.lastExIndex[student.name] = student.exIndex;
         this.resetTimer(student.name);
+        this.exerciseTitle.set(this.loadedList()[student.exIndex]?.title ? `${this.listTitle()}/${this.loadedList()[student.exIndex]?.title}` :'No exercise loaded');
       }
     });
   }
@@ -145,10 +149,6 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
-  getExerciseName(exIndex: number): string {
-    return this.loadedList()[exIndex]?.title ?? 'No exercise loaded';
-  }
-
   onDrop(targetName: string, event: DragEvent): void {
     const type = event.dataTransfer?.getData('type');
     if (type === 'exercise') {
@@ -159,13 +159,15 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   }
   handleExerciseDrop(targetName: string, event: DragEvent) {
     const exercise = JSON.parse(event.dataTransfer?.getData('exercise') ?? '{}') as Exercise;
-    this.realtimeService.sendDroppedExercise(targetName, exercise);
-
     const pair = this.getPair(targetName);
     // if its a challenge board
     if (pair) {
       this.realtimeService.sendDroppedExercise(pair.white, exercise);
       this.realtimeService.sendDroppedExercise(pair.black, exercise);
+    } else {
+      this.realtimeService.sendDroppedExercise(targetName, exercise);
+      this.resetTimer(targetName);
+      this.exerciseTitle.set(exercise.title)
     }
   }
 

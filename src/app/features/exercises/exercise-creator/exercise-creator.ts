@@ -16,7 +16,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FormsModule } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
-import { boardConfig, getValidMoves, initChessJs } from '../../../shared/utils/chess.utils';
+import { boardConfig, getValidMoves, loadChess } from '../../../shared/utils/chess.utils';
 import { Exercise } from '../../../shared/models/exercise.model';
 import { ActivatedRoute } from '@angular/router';
 import { ExerciseService } from '../../../core/services/exercise.service';
@@ -38,7 +38,7 @@ export class ExerciseCreator implements OnInit {
   exercise!: WritableSignal<Exercise>;
   boardConfig = signal<Config | undefined>(undefined);
   playerColor:Color = 'w';
-  private chess!: Chess;
+  private chess: Chess=new Chess();
   private route = inject(ActivatedRoute);
   private snackbar = inject(MatSnackBar);
 
@@ -52,7 +52,7 @@ export class ExerciseCreator implements OnInit {
 
       if (!found) return;
       this.exercise = signal(found);
-      this.chess = initChessJs(found.fen,found.skipFenValidation )
+      loadChess(this.chess,found.fen)
       this.playerColor = this.chess.turn()
       this.boardConfig = signal({
         fen: found.fen,
@@ -120,7 +120,7 @@ export class ExerciseCreator implements OnInit {
     if (this.isRecording()) {
       this.isRecording.set(false);
     }
-    this.chess.load(this.exercise().fen);
+    loadChess(this.chess,this.exercise().fen)
     const steps = this.exercise().solutions![solutionIndex];
     for (let index = 0; index <= stepIndex; index++) {
       this.chess.move(steps[index]);
@@ -137,7 +137,7 @@ export class ExerciseCreator implements OnInit {
 
   private resetBoard() {
     this.recording.set([]);
-    this.chess= initChessJs(this.exercise().fen,this.exercise().skipFenValidation)
+    loadChess(this.chess,this.exercise().fen )
     this.chessBoard.api?.set(boardConfig(this.chess, false));
   }
 

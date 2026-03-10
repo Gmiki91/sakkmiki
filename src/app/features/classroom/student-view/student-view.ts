@@ -10,12 +10,12 @@ import {
   AfterViewInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Chess, Color, Move } from 'chess.js';
+import { Chess, Move } from 'chess.js';
 import { Key } from '@lichess-org/chessground/types';
 import {
   boardConfig,
   getValidMoves,
-  initChessJs,
+  loadChess,
   STARTING_FEN,
 } from '../../../shared/utils/chess.utils';
 import { MatCardModule } from '@angular/material/card';
@@ -25,7 +25,6 @@ import { Config } from '@lichess-org/chessground/config';
 import { ChessBoard } from '../../../shared/components/chess-board/chess-board';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RealtimeService } from '../../../core/services/realtime.service';
-import { Exercise } from '../../../shared/models/exercise.model';
 
 @Component({
   selector: 'app-student-view',
@@ -62,7 +61,7 @@ export class StudentView implements AfterViewInit {
 
   status: WritableSignal<string> = linkedSignal({
     source: () => this.currentExercise(),
-    computation: () => (this.exerciseTurn() === 'w' ? 'White to move' : 'Black to move'),
+    computation: () => (this.exerciseChess.turn() === 'w' ? 'White to move' : 'Black to move'),
   });
 
   feedback: WritableSignal<string> = linkedSignal({
@@ -70,7 +69,7 @@ export class StudentView implements AfterViewInit {
     computation: () => '',
   });
 
-  playerColor = computed(() => (this.exerciseTurn() === 'w' ? 'white' : 'black'));
+  playerColor = computed(() => (this.exerciseChess.turn() === 'w' ? 'white' : 'black'));
 
   private exerciseChess = new Chess();
   // --- Gather/disperse: snapshot of exercise state ---
@@ -95,12 +94,11 @@ export class StudentView implements AfterViewInit {
   );
 
   private challengeChess = new Chess();
-  private challengeStartFen = signal<string>(STARTING_FEN);
 
   // --- Board config ---
   boardConfig = computed<Config | null>(() => {
     const mode = this.realtimeService.mode();
-
+    const exercise = this.currentExercise();
     if (mode === 'gathered') {
       const fen = this.realtimeService.teacherFen();
       if (!fen) return null;
@@ -121,9 +119,10 @@ export class StudentView implements AfterViewInit {
     // Challenge mode
     if (this.myPair()) {
       return {
-        fen: this.challengeStartFen(),
+        fen: this.challengeChess.fen(),
         orientation: this.myColor(),
         turnColor: this.challengeChess.turn() === 'w' ? 'white' : 'black',
+        coordinates:true,
         movable: {
           free: false,
           color: this.myColor(),
@@ -139,12 +138,11 @@ export class StudentView implements AfterViewInit {
     }
 
     // Exercise mode
-    const exercise = this.currentExercise();
-    if (exercise)
+    if (exercise){
     return {
       fen: exercise.fen,
       orientation: 'white',
-      coordinates: false,
+      coordinates: true,
       turnColor: this.exerciseChess.turn() === 'w' ? 'white' : 'black',
       movable: {
         free: false,
@@ -158,6 +156,7 @@ export class StudentView implements AfterViewInit {
       highlight: { lastMove: true, check: true },
       drawable: { enabled: true, visible: true, shapes: this.realtimeService.sharedArrows() },
     };
+  }
     return null;
   });
 
@@ -166,12 +165,10 @@ export class StudentView implements AfterViewInit {
     effect(() => {
       const exercise = this.currentExercise();
       if (!exercise) return;
-      const skipFen = exercise.exerciseType==='mushroom' || exercise.skipFenValidation
       if(exercise.exerciseType==='challenge'){
-        this.challengeChess = initChessJs(exercise.fen,skipFen);
-        this.challengeStartFen.set(exercise.fen);
+        loadChess(this.challengeChess,exercise.fen);
       }else{
-        this.exerciseChess = initChessJs(exercise.fen, skipFen);
+        loadChess(this.exerciseChess,exercise.fen);
       }
       this.chessBoard?.api?.set({ lastMove: [] });
     });
@@ -179,6 +176,7 @@ export class StudentView implements AfterViewInit {
     // Push presence on any state change
     effect(() => {
       const exercise = this.currentExercise();
+      if(!exercise)return;
       const type = exercise.exerciseType;
       let fen;
       if(type==='challenge'){
@@ -221,7 +219,7 @@ export class StudentView implements AfterViewInit {
       const pair = this.myPair();
       if (!pair) return;
       if (move.white === pair.white && move.black === pair.black) {
-        this.challengeChess.load(move.fen,{skipValidation:this.currentExercise().skipFenValidation});
+        loadChess(this.challengeChess,move.fen);
         this.chessBoard?.api?.set({
           fen: move.fen,
           lastMove: [move.from as Key, move.to as Key],
@@ -333,13 +331,13 @@ export class StudentView implements AfterViewInit {
       if (isSolved) {
         this.feedback.set('Solved! ✓');
         setTimeout(() =>{
-          if (this.realtimeService.droppedExercise()) this.realtimeService.clearDroppedExercise();
-          else this.nextExercise();
+          //leave droppedExercise set so currentExercise doesn't recompute and defaults to the loadedListExercise
+          if (!this.realtimeService.droppedExercise())this.nextExercise();
         } , 1500);
       } else {
         //gombaszedés, same color always
         if (ex.exerciseType==='mushroom') {
-          this.exerciseChess.setTurn(this.exerciseTurn() as Color);
+          this.exerciseChess.setTurn('w');
           this.updateBoard();
           this.feedback.set('Good move!');
         } else {
@@ -362,7 +360,7 @@ export class StudentView implements AfterViewInit {
     } else {
       this.exerciseChess.undo();
       if (ex.exerciseType==='mushroom') {
-        this.exerciseChess.setTurn(this.exerciseTurn() as Color);
+        this.exerciseChess.setTurn('w');
       }
       this.updateBoard();
       const mistake = mistakes.find((m) => m.move === move.san);
@@ -406,7 +404,7 @@ export class StudentView implements AfterViewInit {
     // Restore frozen state if we were gathered
     if (!this.isGathered) return;
     this.isGathered = false;
-    this.exerciseChess.load(this.frozenFen!,{skipValidation:true});
+    loadChess(this.exerciseChess,this.frozenFen!)
     this.moveHistory.set(this.frozenMoveHistory ?? []);
     this.frozenFen = null;
     this.frozenMoveHistory = null;
@@ -433,11 +431,4 @@ export class StudentView implements AfterViewInit {
       lastMove,
     });
   }
-
-  private exerciseTurn = computed(() => {
-    const exercise = this.currentExercise();
-    if (!exercise) return 'w';
-    const chess = initChessJs(exercise.fen, exercise.exerciseType==='mushroom');
-    return chess.turn();
-  });
 }

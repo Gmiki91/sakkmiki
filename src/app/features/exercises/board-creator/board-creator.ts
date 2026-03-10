@@ -71,16 +71,14 @@ export class BoardCreator implements AfterViewInit {
   async save() {
     const fen = this.chessBoard.api.getFen() + this.fenAppendix();
     const type = this.exerciseType();
-    const skipValidation = type === 'mushroom' || type === 'challenge';
     try {
-      if (!skipValidation) {
+      if (type === 'regular') {
         this.chess.load(fen);
       }
       const exercise: ExerciseInput = {
         title: this.title(),
         fen: fen,
         exerciseType: type,
-        skipFenValidation: skipValidation,
       };
       const listId = this.activatedRoute.snapshot.paramMap.get('listId');
       if (!listId) return;

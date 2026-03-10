@@ -37,8 +37,6 @@ export const boardConfig = (chess: Chess, highlightLastMove: boolean = true): Co
   };
 };
 
-export const initChessJs = (fen: string, skipFenValidation: boolean | undefined): Chess => {
-  const chess = new Chess();
-  chess.load(fen, { skipValidation: skipFenValidation ?? false });
-  return chess;
+export const loadChess = (chess:Chess,fen: string):void => {
+  chess.load(fen, { skipValidation: true});
 };
