@@ -45,6 +45,7 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   loadedList = signal<Exercise[]>([]);
   listTitle = signal<string>('');
   isLoadingList = signal(false);
+  mushroomCollectingStudents = signal<string[]>([]);
   // Timer properties
   studentTimers = signal<Record<string, number>>({});
   private timerIntervals: Record<string, ReturnType<typeof setInterval>> = {};
@@ -127,7 +128,11 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
         // new exercise — reset timer
         this.lastExIndex[student.name] = student.exIndex;
         this.resetTimer(student.name);
-        this.exerciseTitle.set(this.loadedList()[student.exIndex]?.title ? `${this.listTitle()}/${this.loadedList()[student.exIndex]?.title}` :'No exercise loaded');
+        const ex = this.loadedList()[student.exIndex];
+        this.exerciseTitle.set(
+          ex?.title ? `${this.listTitle()}/${ex?.title}` : 'No exercise loaded',
+        );
+        this.updateMushroomcollecting(ex?.exerciseType === 'mushroom',student.name)
       }
     });
   }
@@ -167,7 +172,8 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
     } else {
       this.realtimeService.sendDroppedExercise(targetName, exercise);
       this.resetTimer(targetName);
-      this.exerciseTitle.set(exercise.title)
+      this.exerciseTitle.set(exercise.title);
+      this.updateMushroomcollecting(exercise.exerciseType === 'mushroom',targetName);
     }
   }
 
@@ -230,5 +236,10 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
     this.timerIntervals[name] = setInterval(() => {
       this.studentTimers.update((t) => ({ ...t, [name]: (t[name] ?? 0) + 1 }));
     }, 1000);
+  }
+
+  private updateMushroomcollecting(bool: boolean, name: string) {
+    if (bool) this.mushroomCollectingStudents.update((arr) => [...arr, name]);
+    else this.mushroomCollectingStudents.update((arr) => arr.filter((value) => value === name));
   }
 }

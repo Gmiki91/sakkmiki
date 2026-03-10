@@ -67,6 +67,7 @@
               } @else {
                 <app-chess-board
                   [config]="boardConfigFor(student.fen)"
+                  [mushroomMode]="mushroomCollectingStudents().includes(student.name)"
                   #studentBoard
                 >
                 </app-chess-board>
