@@ -33,7 +33,7 @@
             </mat-card-header>
             <mat-card-content>
               <div class="mini-board">
-                <app-chess-board [config]="boardConfigFor(student.fen)" #studentBoard>
+                <app-chess-board [config]="boardConfigFor(getChallengeFen(pair))" #studentBoard>
                 </app-chess-board>
               </div>
             </mat-card-content>
@@ -55,7 +55,8 @@
             <mat-card-title>{{ student.name }}</mat-card-title>
             <mat-card-subtitle
               >{{exerciseTitle()}} -
-              {{ studentTimers()[student.name] }}</mat-card-subtitle
+              <app-student-timer  #studentTimer  [name]="student.name"></app-student-timer>
+              </mat-card-subtitle
             >
           </mat-card-header>
           <mat-card-content>
@@ -66,7 +67,7 @@
                 </div>
               } @else {
                 <app-chess-board
-                  [config]="boardConfigFor(student.fen)"
+                  [config]="boardConfigFor({fen:student.fen})"
                   [mushroomMode]="mushroomCollectingStudents().includes(student.name)"
                   #studentBoard
                 >

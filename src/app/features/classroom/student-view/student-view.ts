@@ -1,7 +1,6 @@
 import {
   Component,
   ViewChild,
-  signal,
   inject,
   computed,
   linkedSignal,
@@ -42,8 +41,6 @@ import { RealtimeService } from '../../../core/services/realtime.service';
 export class StudentView implements AfterViewInit {
   @ViewChild('chessBoard') chessBoard!: ChessBoard;
   realtimeService = inject(RealtimeService);
-
-
   loadedList = this.realtimeService.loadedExercises;
   exIndex = linkedSignal({
     source: () => this.loadedList(),
@@ -203,14 +200,6 @@ export class StudentView implements AfterViewInit {
       }
     });
 
-    // React to teacher fen change while gathered 
-    effect(() => {
-      const fen = this.realtimeService.teacherFen();
-      if (this.realtimeService.mode() === 'gathered' && fen) {
-        this.chessBoard?.api?.set({ fen});
-      }
-    });
-
     // --- Challenge effects ---
     // React to incoming challenge moves
     effect(() => {
@@ -218,7 +207,8 @@ export class StudentView implements AfterViewInit {
       if (!move) return;
       const pair = this.myPair();
       if (!pair) return;
-      if (move.white === pair.white && move.black === pair.black) {
+      const myGame = move.white === pair.white && move.black === pair.black // every gamemove gets broadcasted to everyone
+      if (myGame) {
         loadChess(this.challengeChess,move.fen);
         this.chessBoard?.api?.set({
           fen: move.fen,
@@ -243,7 +233,7 @@ export class StudentView implements AfterViewInit {
       }
     });
   }
-
+  
   ngAfterViewInit(): void {
     const el = this.chessBoard.boardElement.nativeElement as HTMLElement;
     // left mouse click would remove all arrows, not allowed for students

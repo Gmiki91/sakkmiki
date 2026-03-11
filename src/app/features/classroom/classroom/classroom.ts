@@ -9,6 +9,7 @@ import {
   signal,
   AfterViewInit,
   computed,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { TeacherTable } from '../teacher-table/teacher-table';
 import { Exercise } from '../../../shared/models/exercise.model';
@@ -23,6 +24,15 @@ import { Config } from '@lichess-org/chessground/config';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ChallengePair } from '../../../shared/models/challenge-pair.model';
 import { MatIcon } from '@angular/material/icon';
+import { Key } from '@lichess-org/chessground/types';
+import { StudentTimer } from "../timer";
+
+type ConfigParam = {
+  fen: string,
+  from?: string, 
+  to?: string
+}
+
 @Component({
   selector: 'app-classroom',
   imports: [
@@ -33,12 +43,15 @@ import { MatIcon } from '@angular/material/icon';
     MatButtonModule,
     MatIcon,
     MatProgressSpinnerModule,
-  ],
+    StudentTimer
+],
   templateUrl: './classroom.html',
   styleUrl: './classroom.scss',
+   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   @ViewChildren('studentBoard') studentBoards!: QueryList<ChessBoard>;
+  @ViewChildren(StudentTimer) timers!: QueryList<StudentTimer>;
   exerciseService = inject(ExerciseService);
   realtimeService = inject(RealtimeService);
   loadedExercise = signal<Exercise | null>(null);
@@ -46,10 +59,7 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   listTitle = signal<string>('');
   isLoadingList = signal(false);
   mushroomCollectingStudents = signal<string[]>([]);
-  // Timer properties
-  studentTimers = signal<Record<string, number>>({});
-  private timerIntervals: Record<string, ReturnType<typeof setInterval>> = {};
-  private lastExIndex: Record<string, number> = {};
+  private lastExIndex: Record<string, number> = {}; // for timer
 
   // Track which board elements already have listeners to avoid duplicates
   private listenedElements = new Set<HTMLElement>();
@@ -102,17 +112,18 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
     this.realtimeService.sendListToAll(list.exercises);
     // reset all student timers
     this.realtimeService.students().forEach((s) => this.resetTimer(s.name));
-    this.lastExIndex = {};
   }
 
-  boardConfigFor(fen: string): Config {
+  boardConfigFor(cParam:ConfigParam): Config {
+    const {fen,to,from} =cParam;
     return {
       fen,
       orientation: 'white',
       coordinates: false,
       movable: { free: false, color: undefined },
       draggable: { enabled: false },
-      highlight: { lastMove: false, check: false },
+      lastMove: from && to ? [from, to] as Key[] : [],
+      highlight: { lastMove: true, check: true },
       drawable: {
         enabled: true,
         visible: true,
@@ -139,19 +150,13 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
 
   freezeTimers() {
     // freeze all student timers
-    Object.keys(this.timerIntervals).forEach((name) => {
-      clearInterval(this.timerIntervals[name]);
-      delete this.timerIntervals[name];
-    });
+    this.timers.forEach(timer=>timer.stop())
   }
 
   resumeTimers() {
     // resume all student timers
-    this.realtimeService.students().forEach((student) => {
-      this.timerIntervals[student.name] = setInterval(() => {
-        this.studentTimers.update((t) => ({ ...t, [student.name]: (t[student.name] ?? 0) + 1 }));
-      }, 1000);
-    });
+    this.timers.forEach(timer=>timer.start());
+    
   }
 
   onDrop(targetName: string, event: DragEvent): void {
@@ -210,6 +215,17 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
     this.realtimeService.sendChallengeRemove(pair);
   }
 
+  // alternate between fens on the challengeCard
+  getChallengeFen(pair: ChallengePair): { fen: string, from?: string, to?: string } {
+    const move = this.realtimeService.challengeMove();
+    if (move && move.white === pair.white && move.black === pair.black) {
+       return { fen: move.fen, from: move.from, to: move.to };
+    }
+    // fallback for initial state before any move
+    const fen = this.loadedExercise()?.fen
+    return {fen:fen ?? ''}
+}
+
   private attachStudentBoardListeners(): void {
     this.studentBoards.forEach((board, index) => {
       const el = board.boardElement?.nativeElement as HTMLElement;
@@ -231,11 +247,7 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private resetTimer(name: string): void {
-    clearInterval(this.timerIntervals[name]);
-    this.studentTimers.update((t) => ({ ...t, [name]: 0 }));
-    this.timerIntervals[name] = setInterval(() => {
-      this.studentTimers.update((t) => ({ ...t, [name]: (t[name] ?? 0) + 1 }));
-    }, 1000);
+   this.timers.find(t => {console.log(t.name());return t.name() === name})?.reset();
   }
 
   private updateMushroomcollecting(bool: boolean, name: string) {
