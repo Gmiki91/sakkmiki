@@ -56,7 +56,7 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   realtimeService = inject(RealtimeService);
   demoExercise = signal<Exercise | null>(null);
   loadedList = signal<Exercise[]>([]);
-  listTitle = signal<string>('');
+  listTitleForAll = signal<string>('');
   isLoadingList = signal(false);
   mushroomCollectingStudents = signal<string[]>([]);
   private lastExIndex: Record<string, number> = {};
@@ -67,7 +67,7 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   // For challenge
   pendingPair = signal<string | null>(null);
 
-  exerciseTitle = signal('No exercises loaded');
+  exerciseTitles = signal<Record<string, string>>({});
 
   constructor() {
     // Apply arrows to the correct miniboard when miniboardArrows updates:
@@ -108,7 +108,8 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   loadListToAll(list: List) {
     this.isLoadingList.set(true);
     this.loadedList.set(list.exercises);
-    this.listTitle.set(list.title);
+    this.listTitleForAll.set(list.title);
+    this.updateExerciseTitle(list.exercises[0], '', list.title, true);
     this.realtimeService.sendListToAll(list.exercises);
     // reset all student timers
     this.realtimeService.students().forEach((s) => this.resetTimer(s.name));
@@ -140,9 +141,7 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
         this.lastExIndex[student.name] = student.exIndex;
         this.resetTimer(student.name);
         const ex = this.loadedList()[student.exIndex];
-        this.exerciseTitle.set(
-          ex?.title ? `${this.listTitle()}/${ex?.title}` : 'No exercise loaded',
-        );
+        this.updateExerciseTitle(ex, student.name, this.listTitleForAll());
         this.updateMushroomcollecting(ex?.exerciseType === 'mushroom', student.name);
       }
     });
@@ -168,6 +167,7 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   }
   handleExerciseDrop(targetName: string, event: DragEvent) {
     const exercise = JSON.parse(event.dataTransfer?.getData('exercise') ?? '{}') as Exercise;
+    const listTitle = JSON.parse(event.dataTransfer?.getData('exercise-title') ?? '{}') as string;
     const pair = this.getPair(targetName);
     // if its a challenge board
     if (pair) {
@@ -176,7 +176,7 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
     } else {
       this.realtimeService.sendDroppedExercise(targetName, exercise);
       this.resetTimer(targetName);
-      this.exerciseTitle.set(exercise.title);
+      this.updateExerciseTitle(exercise, targetName, listTitle);
       this.updateMushroomcollecting(exercise.exerciseType === 'mushroom', targetName);
     }
   }
@@ -220,7 +220,9 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
     if (move && move.white === pair.white && move.black === pair.black) {
       return { fen: move.fen, from: move.from, to: move.to };
     }
-    // fallback for initial state before any move
+    // Fall back to white's presence FEN (both players reset to same starting FEN)
+    const whiteFen = this.realtimeService.students().find((s) => s.name === pair.white)?.fen;
+    if (whiteFen) return { fen: whiteFen };
     return { fen: STARTING_FEN };
   }
 
@@ -251,11 +253,20 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private resetTimer(name: string): void {
-    this.timers.find((t) =>t.name() === name)?.reset();
+    this.timers.find(t => t.name() === name)?.reset();
   }
 
   private updateMushroomcollecting(bool: boolean, name: string) {
     if (bool) this.mushroomCollectingStudents.update((arr) => [...arr, name]);
     else this.mushroomCollectingStudents.update((arr) => arr.filter((value) => value !== name));
+  }
+
+  private updateExerciseTitle(ex: Exercise,studentName: string,listTitle: string,allSame?: boolean,) {
+    const title = ex?.title ? `${listTitle}/${ex?.title}` : 'No exercise loaded';
+    if (allSame) {
+      this.exerciseTitles.update(t =>Object.fromEntries(Object.keys(t).map((key) => [key, title])),);
+    } else {
+      this.exerciseTitles.update(t => ({ ...t, [studentName]: title }));
+    }
   }
 }

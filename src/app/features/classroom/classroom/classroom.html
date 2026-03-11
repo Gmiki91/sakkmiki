@@ -27,7 +27,7 @@
           <!-- Challenge card (only needed one board for 2 players, so we render the board of white's and skip black's)-->
           <mat-card class="student-card challenge-card"
           (dragover)="$event.preventDefault()"
-          (drop)="onDrop(student.name,$event)">>
+          (drop)="onDrop(student.name,$event)">
             <mat-card-header>
               <mat-card-title>{{ pair.white }} vs {{ pair.black }}</mat-card-title>
             </mat-card-header>
@@ -53,8 +53,8 @@
         
           <mat-card-header>
             <mat-card-title>{{ student.name }}</mat-card-title>
-            <mat-card-subtitle
-              >{{exerciseTitle()}} -
+            <mat-card-subtitle> 
+              {{ exerciseTitles()[student.name] ?? 'No exercise loaded' }} -
               <app-student-timer  #studentTimer  [name]="student.name"></app-student-timer>
               </mat-card-subtitle
             >

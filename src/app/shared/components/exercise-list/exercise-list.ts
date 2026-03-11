@@ -15,5 +15,6 @@ export class ExerciseList {
   onDragStart(exercise: Exercise, event: DragEvent) {
     event.dataTransfer?.setData('type', 'exercise');
     event.dataTransfer?.setData('exercise', JSON.stringify(exercise));
+    event.dataTransfer?.setData('exercise-title', JSON.stringify(this.list().title));
   }
 }
