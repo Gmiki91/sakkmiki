@@ -8,7 +8,6 @@ import {
   effect,
   signal,
   AfterViewInit,
-  computed,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { TeacherTable } from '../teacher-table/teacher-table';
@@ -25,13 +24,14 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ChallengePair } from '../../../shared/models/challenge-pair.model';
 import { MatIcon } from '@angular/material/icon';
 import { Key } from '@lichess-org/chessground/types';
-import { StudentTimer } from "../timer";
+import { StudentTimer } from '../timer';
+import { STARTING_FEN } from '../../../shared/utils/chess.utils';
 
 type ConfigParam = {
-  fen: string,
-  from?: string, 
-  to?: string
-}
+  fen: string;
+  from?: string;
+  to?: string;
+};
 
 @Component({
   selector: 'app-classroom',
@@ -43,23 +43,23 @@ type ConfigParam = {
     MatButtonModule,
     MatIcon,
     MatProgressSpinnerModule,
-    StudentTimer
-],
+    StudentTimer,
+  ],
   templateUrl: './classroom.html',
   styleUrl: './classroom.scss',
-   changeDetection: ChangeDetectionStrategy.OnPush,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   @ViewChildren('studentBoard') studentBoards!: QueryList<ChessBoard>;
   @ViewChildren(StudentTimer) timers!: QueryList<StudentTimer>;
   exerciseService = inject(ExerciseService);
   realtimeService = inject(RealtimeService);
-  loadedExercise = signal<Exercise | null>(null);
+  demoExercise = signal<Exercise | null>(null);
   loadedList = signal<Exercise[]>([]);
   listTitle = signal<string>('');
   isLoadingList = signal(false);
   mushroomCollectingStudents = signal<string[]>([]);
-  private lastExIndex: Record<string, number> = {}; // for timer
+  private lastExIndex: Record<string, number> = {};
 
   // Track which board elements already have listeners to avoid duplicates
   private listenedElements = new Set<HTMLElement>();
@@ -102,7 +102,7 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   }
 
   loadExerciseToDemo(ex: Exercise) {
-    this.loadedExercise.set(ex);
+    this.demoExercise.set(ex);
   }
 
   loadListToAll(list: List) {
@@ -114,15 +114,15 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
     this.realtimeService.students().forEach((s) => this.resetTimer(s.name));
   }
 
-  boardConfigFor(cParam:ConfigParam): Config {
-    const {fen,to,from} =cParam;
+  boardConfigFor(cParam: ConfigParam): Config {
+    const { fen, to, from } = cParam;
     return {
       fen,
       orientation: 'white',
       coordinates: false,
       movable: { free: false, color: undefined },
       draggable: { enabled: false },
-      lastMove: from && to ? [from, to] as Key[] : [],
+      lastMove: from && to ? ([from, to] as Key[]) : [],
       highlight: { lastMove: true, check: true },
       drawable: {
         enabled: true,
@@ -143,20 +143,19 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
         this.exerciseTitle.set(
           ex?.title ? `${this.listTitle()}/${ex?.title}` : 'No exercise loaded',
         );
-        this.updateMushroomcollecting(ex?.exerciseType === 'mushroom',student.name)
+        this.updateMushroomcollecting(ex?.exerciseType === 'mushroom', student.name);
       }
     });
   }
 
   freezeTimers() {
     // freeze all student timers
-    this.timers.forEach(timer=>timer.stop())
+    this.timers.forEach((timer) => timer.stop());
   }
 
   resumeTimers() {
     // resume all student timers
-    this.timers.forEach(timer=>timer.start());
-    
+    this.timers.forEach((timer) => timer.start());
   }
 
   onDrop(targetName: string, event: DragEvent): void {
@@ -178,7 +177,7 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
       this.realtimeService.sendDroppedExercise(targetName, exercise);
       this.resetTimer(targetName);
       this.exerciseTitle.set(exercise.title);
-      this.updateMushroomcollecting(exercise.exerciseType === 'mushroom',targetName);
+      this.updateMushroomcollecting(exercise.exerciseType === 'mushroom', targetName);
     }
   }
 
@@ -216,15 +215,14 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   }
 
   // alternate between fens on the challengeCard
-  getChallengeFen(pair: ChallengePair): { fen: string, from?: string, to?: string } {
+  getChallengeFen(pair: ChallengePair): { fen: string; from?: string; to?: string } {
     const move = this.realtimeService.challengeMove();
     if (move && move.white === pair.white && move.black === pair.black) {
-       return { fen: move.fen, from: move.from, to: move.to };
+      return { fen: move.fen, from: move.from, to: move.to };
     }
     // fallback for initial state before any move
-    const fen = this.loadedExercise()?.fen
-    return {fen:fen ?? ''}
-}
+    return { fen: STARTING_FEN };
+  }
 
   private attachStudentBoardListeners(): void {
     this.studentBoards.forEach((board, index) => {
@@ -239,6 +237,12 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
             const shapes = board.api?.state.drawable.shapes ?? [];
             if (studentName) {
               this.realtimeService.sendSharedArrows(shapes, studentName);
+              // If this student is in a challenge pair, send arrows to the partner too
+              const pair = this.getPair(studentName);
+              if (pair) {
+                const partner = pair.white === studentName ? pair.black : pair.white;
+                this.realtimeService.sendSharedArrows(shapes, partner);
+              }
             }
           }, 0);
         });
@@ -247,11 +251,11 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private resetTimer(name: string): void {
-   this.timers.find(t => {console.log(t.name());return t.name() === name})?.reset();
+    this.timers.find((t) =>t.name() === name)?.reset();
   }
 
   private updateMushroomcollecting(bool: boolean, name: string) {
     if (bool) this.mushroomCollectingStudents.update((arr) => [...arr, name]);
-    else this.mushroomCollectingStudents.update((arr) => arr.filter((value) => value === name));
+    else this.mushroomCollectingStudents.update((arr) => arr.filter((value) => value !== name));
   }
 }

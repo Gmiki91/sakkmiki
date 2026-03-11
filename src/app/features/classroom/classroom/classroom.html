@@ -2,7 +2,7 @@
   <!-- Left panel: teacher board + exercise list -->
   <div class="teacher-panel">
     <app-teacher-table
-      [selectedExercise]="loadedExercise()"
+      [selectedExercise]="demoExercise()"
       (onGather)="freezeTimers()"
       (onDisperse)="resumeTimers()"
     ></app-teacher-table>
