@@ -25,7 +25,7 @@ type BroadcastEvent =
   | { type: 'dropped_exercise'; studentName: string; exercise: Exercise }
   | { type: 'sync_challenge_pair'; pair: ChallengePair }
   | { type: 'challenge_remove'; pair: ChallengePair }
-  | { type: 'challenge_move'; white: string; black: string; fen: string; from: string; to: string };
+  | { type: 'challenge_move'; white: string; black: string; fen: string; from: string; to: string,over?:boolean };
 
 @Injectable({ providedIn: 'root' })
 export class RealtimeService {
@@ -51,6 +51,7 @@ export class RealtimeService {
     fen: string;
     from: string;
     to: string;
+    over?:boolean;
   } | null>(null);
 
   // ----------------------------------------------------------------
@@ -102,9 +103,9 @@ export class RealtimeService {
   sendDroppedExercise(studentName: string, exercise: Exercise): void {
     this.broadcast({ type: 'dropped_exercise', studentName, exercise });
   }
-  clearDroppedExercise(): void {
-  this.droppedExercise.set(null);
-}
+  // clearDroppedExercise(): void {
+  //   this.droppedExercise.set(null);
+  // }
 
   // ----------------------------------------------------------------
   // Student
@@ -152,8 +153,8 @@ export class RealtimeService {
     this.broadcast({ type: 'sync_challenge_pair', pair });
   }
 
-  sendChallengeMove(white: string, black: string, fen: string, from: string, to: string): void {
-    this.broadcast({ type: 'challenge_move', white, black, fen, from, to });
+  sendChallengeMove(white: string, black: string, fen: string, from: string, to: string,over?:boolean): void {
+    this.broadcast({ type: 'challenge_move', white, black, fen, from, to ,over});
   }
   sendChallengeRemove(pair: ChallengePair): void {
     this.broadcast({ type: 'challenge_remove', pair });
@@ -246,6 +247,7 @@ export class RealtimeService {
           fen: event.fen,
           from: event.from,
           to: event.to,
+          over:event.over
         });
         break;
     }

@@ -7,6 +7,7 @@ import {
   WritableSignal,
   effect,
   AfterViewInit,
+  signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Chess, Move } from 'chess.js';
@@ -24,6 +25,7 @@ import { Config } from '@lichess-org/chessground/config';
 import { ChessBoard } from '../../../shared/components/chess-board/chess-board';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RealtimeService } from '../../../core/services/realtime.service';
+import { ChallengePair } from '../../../shared/models/challenge-pair.model';
 
 @Component({
   selector: 'app-student-view',
@@ -89,6 +91,7 @@ export class StudentView implements AfterViewInit {
   myColor = computed(() =>
     this.myPair()?.white === this.realtimeService.studentName() ? 'white' : 'black',
   );
+  pendingPromotion = signal<{ orig: Key; dest: Key; pair: ChallengePair } | null>(null);
 
   private challengeChess = new Chess();
 
@@ -119,7 +122,7 @@ export class StudentView implements AfterViewInit {
         fen: this.challengeChess.fen(),
         orientation: this.myColor(),
         turnColor: this.challengeChess.turn() === 'w' ? 'white' : 'black',
-        coordinates:true,
+        coordinates: true,
         movable: {
           free: false,
           color: this.myColor(),
@@ -130,30 +133,30 @@ export class StudentView implements AfterViewInit {
         },
         draggable: { enabled: true, showGhost: true },
         highlight: { lastMove: true, check: true },
-        drawable: { enabled: true, visible: true ,  shapes: this.realtimeService.sharedArrows()},
+        drawable: { enabled: true, visible: true, shapes: this.realtimeService.sharedArrows() },
       };
     }
 
     // Exercise mode
-    if (exercise){
-    return {
-      fen: exercise.fen,
-      orientation: 'white',
-      coordinates: true,
-      turnColor: this.exerciseChess.turn() === 'w' ? 'white' : 'black',
-      movable: {
-        free: false,
-        color: this.exerciseChess.turn() === 'w' ? 'white' : 'black',
-        dests: getValidMoves(this.exerciseChess),
-        events: {
-          after: (orig, dest) => this.handleMove(orig, dest),
+    if (exercise) {
+      return {
+        fen: exercise.fen,
+        orientation: 'white',
+        coordinates: true,
+        turnColor: this.exerciseChess.turn() === 'w' ? 'white' : 'black',
+        movable: {
+          free: false,
+          color: this.exerciseChess.turn() === 'w' ? 'white' : 'black',
+          dests: getValidMoves(this.exerciseChess),
+          events: {
+            after: (orig, dest) => this.handleMove(orig, dest),
+          },
         },
-      },
-      draggable: { enabled: true, showGhost: true },
-      highlight: { lastMove: true, check: true },
-      drawable: { enabled: true, visible: true, shapes: this.realtimeService.sharedArrows() },
-    };
-  }
+        draggable: { enabled: true, showGhost: true },
+        highlight: { lastMove: true, check: true },
+        drawable: { enabled: true, visible: true, shapes: this.realtimeService.sharedArrows() },
+      };
+    }
     return null;
   });
 
@@ -162,10 +165,10 @@ export class StudentView implements AfterViewInit {
     effect(() => {
       const exercise = this.currentExercise();
       if (!exercise) return;
-      if(exercise.exerciseType==='challenge'){
-        loadChess(this.challengeChess,exercise.fen);
-      }else{
-        loadChess(this.exerciseChess,exercise.fen);
+      if (exercise.exerciseType === 'challenge') {
+        loadChess(this.challengeChess, exercise.fen);
+      } else {
+        loadChess(this.exerciseChess, exercise.fen);
       }
       this.chessBoard?.api?.set({ lastMove: [] });
     });
@@ -173,13 +176,12 @@ export class StudentView implements AfterViewInit {
     // Push presence on any state change
     effect(() => {
       const exercise = this.currentExercise();
-      if(!exercise)return;
+      if (!exercise) return;
       const type = exercise.exerciseType;
       let fen;
-      if(type==='challenge'){
+      if (type === 'challenge') {
         fen = exercise ? this.challengeChess.fen() : STARTING_FEN;
-
-      }else{
+      } else {
         fen = exercise ? this.exerciseChess.fen() : STARTING_FEN;
       }
       this.realtimeService.updatePresence({
@@ -207,21 +209,24 @@ export class StudentView implements AfterViewInit {
       if (!move) return;
       const pair = this.myPair();
       if (!pair) return;
-      const myGame = move.white === pair.white && move.black === pair.black // every gamemove gets broadcasted to everyone
-      if (myGame) {
-        loadChess(this.challengeChess,move.fen);
-        this.chessBoard?.api?.set({
-          fen: move.fen,
-          lastMove: [move.from as Key, move.to as Key],
-          turnColor: this.challengeChess.turn() === 'w' ? 'white' : 'black',
-          check:this.challengeChess.isCheck(),
-          movable: {
-            free: false,
-            color: this.myColor(),
-            dests: getValidMoves(this.challengeChess),
-          },
-        });
+      const myGame = move.white === pair.white && move.black === pair.black; // every gamemove gets broadcasted to everyone
+      if (!myGame) return;
+      if (move.over) {
+        this.challengeChess.move({ ...move, promotion: 'q' });
+      } else {
+        loadChess(this.challengeChess, move.fen);
       }
+      this.chessBoard?.api?.set({
+        fen: this.challengeChess.fen(),
+        lastMove: [move.from as Key, move.to as Key],
+        turnColor: this.challengeChess.turn() === 'w' ? 'white' : 'black',
+        check: this.challengeChess.isCheck(),
+        movable: {
+          free: false,
+          color: this.myColor(),
+          dests: getValidMoves(this.challengeChess),
+        },
+      });
     });
 
     // reset board when pair is assigned
@@ -233,7 +238,7 @@ export class StudentView implements AfterViewInit {
       }
     });
   }
-  
+
   ngAfterViewInit(): void {
     const el = this.chessBoard.boardElement.nativeElement as HTMLElement;
     // left mouse click would remove all arrows, not allowed for students
@@ -264,29 +269,39 @@ export class StudentView implements AfterViewInit {
   handleChallengeMove(orig: Key, dest: Key) {
     const pair = this.myPair();
     if (!pair) return;
-    try {
-      const move = this.challengeChess.move({ from: orig, to: dest });
-      if (move) {
+    const promotion = this.isPawnPromotion(orig, dest);
+    if (promotion) {
+      if (this.backrankpawnWins(dest)) {
         this.realtimeService.sendChallengeMove(
           pair.white,
           pair.black,
           this.challengeChess.fen(),
           orig,
           dest,
+          true,
         );
-        this.realtimeService.updatePresence({
-          fen: this.challengeChess.fen(),
-          status: this.challengeChess.turn() === 'w' ? 'White to move' : 'Black to move',
-          feedback: '',
-          exIndex: this.exIndex(),
-        });
+        this.youWin();
+      } else {
+        this.pendingPromotion.set({ orig, dest, pair });
       }
-    } catch (e) {
-      console.error('Invalid move:', e);
-      this.chessBoard.api?.set({ fen: this.challengeChess.fen() });
+    } else {
+      this.executeMove(orig, dest, pair);
     }
   }
 
+  isPawnPromotion(orig: Key, dest: Key) {
+    const piece = this.challengeChess.get(orig as any);
+    return (
+      piece?.type === 'p' &&
+      ((piece.color === 'w' && dest[1] === '8') || (piece.color === 'b' && dest[1] === '1'))
+    );
+  }
+  completePromotion(role: 'q' | 'r' | 'n' | 'b') {
+    const p = this.pendingPromotion();
+    if (!p) return;
+    this.pendingPromotion.set(null);
+    this.executeMove(p.orig, p.dest, p.pair, role);
+  }
   handleMove(orig: Key, dest: Key) {
     try {
       const move = this.exerciseChess.move({ from: orig, to: dest });
@@ -308,6 +323,36 @@ export class StudentView implements AfterViewInit {
     }
   }
 
+  executeMove(orig: Key, dest: Key, pair: ChallengePair, promotion?: 'q' | 'r' | 'n' | 'b') {
+    try {
+      const move = this.challengeChess.move({ from: orig, to: dest, promotion });
+      if (move) {
+        const win = this.checkWinConditions(move);
+        this.realtimeService.sendChallengeMove(
+          pair.white,
+          pair.black,
+          this.challengeChess.fen(),
+          orig,
+          dest,
+          win,
+        );
+        if (win) {
+          this.youWin();
+        }
+        this.realtimeService.updatePresence({
+          fen: this.challengeChess.fen(),
+          status: this.challengeChess.turn() === 'w' ? 'White to move' : 'Black to move',
+          feedback: '',
+          exIndex: this.exIndex(),
+        });
+        if (promotion) this.chessBoard.api?.set({ fen: this.challengeChess.fen() });
+      }
+    } catch (e) {
+      console.error('Invalid move:', e);
+      this.chessBoard.api?.set({ fen: this.challengeChess.fen() });
+    }
+  }
+
   analyze(move: Move) {
     const ex = this.currentExercise();
     if (!ex) return;
@@ -320,13 +365,13 @@ export class StudentView implements AfterViewInit {
       const isSolved = ex.solutions?.some((line) => line.length === newHistory.length);
       if (isSolved) {
         this.feedback.set('Solved! ✓');
-        setTimeout(() =>{
+        setTimeout(() => {
           //leave droppedExercise set so currentExercise doesn't recompute and defaults to the loadedListExercise
-          if (!this.realtimeService.droppedExercise())this.nextExercise();
-        } , 1500);
+          if (!this.realtimeService.droppedExercise()) this.nextExercise();
+        }, 1500);
       } else {
         //gombaszedés, same color always
-        if (ex.exerciseType==='mushroom') {
+        if (ex.exerciseType === 'mushroom') {
           this.exerciseChess.setTurn('w');
           this.updateBoard();
           this.feedback.set('Good move!');
@@ -349,7 +394,7 @@ export class StudentView implements AfterViewInit {
       }
     } else {
       this.exerciseChess.undo();
-      if (ex.exerciseType==='mushroom') {
+      if (ex.exerciseType === 'mushroom') {
         this.exerciseChess.setTurn('w');
       }
       this.updateBoard();
@@ -364,11 +409,15 @@ export class StudentView implements AfterViewInit {
 
   updateStatus() {
     if (this.exerciseChess.isCheckmate()) {
-      this.status.set('Checkmate! ' + (this.exerciseChess.turn() === 'w' ? 'Black' : 'White') + ' wins!');
+      this.status.set(
+        'Checkmate! ' + (this.exerciseChess.turn() === 'w' ? 'Black' : 'White') + ' wins!',
+      );
     } else if (this.exerciseChess.isDraw()) {
       this.status.set('Draw!');
     } else if (this.exerciseChess.isCheck()) {
-      this.status.set('Check! ' + (this.exerciseChess.turn() === 'w' ? 'White' : 'Black') + ' to move');
+      this.status.set(
+        'Check! ' + (this.exerciseChess.turn() === 'w' ? 'White' : 'Black') + ' to move',
+      );
     } else {
       this.status.set((this.exerciseChess.turn() === 'w' ? 'White' : 'Black') + ' to move');
     }
@@ -394,7 +443,7 @@ export class StudentView implements AfterViewInit {
     // Restore frozen state if we were gathered
     if (!this.isGathered) return;
     this.isGathered = false;
-    loadChess(this.exerciseChess,this.frozenFen!)
+    loadChess(this.exerciseChess, this.frozenFen!);
     this.moveHistory.set(this.frozenMoveHistory ?? []);
     this.frozenFen = null;
     this.frozenMoveHistory = null;
@@ -420,5 +469,48 @@ export class StudentView implements AfterViewInit {
       movable: { ...config.movable, color: this.playerColor() },
       lastMove,
     });
+  }
+
+  private checkWinConditions(move: Move): boolean {
+    // pair: ChallengePair, orig: Key, dest: Key,
+    const ex = this.currentExercise();
+    const normalizedSan = move.san
+      .replace('x', '')
+      .replace('+', '')
+      .replace('#', '')
+      .replace(/=[QRBN]/, '');
+    const conditions = this.myColor() === 'white' ? ex?.whiteWinConditions : ex?.blackWinConditions;
+    const captureAllWin =
+      conditions?.includes('capture_all') &&
+      this.challengeChess
+        .board()
+        .flat()
+        .filter(Boolean)
+        .every((p) => p!.color === (this.myColor() === 'white' ? 'w' : 'b'));
+    const reachSquareWin = conditions?.includes(normalizedSan);
+    if (captureAllWin || reachSquareWin) {
+      // setTimeout(() => {
+      //   const pairSwap = { white: pair.black, black: pair.white };
+      //   this.realtimeService.challengePairs.update((pairs) =>
+      //     pairs.filter((p) => p.white !== pair.white || p.black !== pair.black),
+      //   );
+      //   this.realtimeService.challengePairs.update((pairs) => [...pairs, pairSwap]);
+      //   // this.realtimeService.sendChallengeRemove(pair);
+      //   // this.realtimeService.syncChallengePair(pairSwap);
+      //     this.challengeChess.load(this.currentExercise().fen,{skipValidation:this.currentExercise()?.skipFenValidation});
+      //   this.feedback.set('');
+      // }, 3000);
+      return true;
+    }
+    return false;
+  }
+  private backrankpawnWins(dest: Key) {
+    const ex = this.currentExercise();
+    const conditions = this.myColor() === 'white' ? ex?.whiteWinConditions : ex?.blackWinConditions;
+    return conditions?.includes(dest);
+  }
+
+  private youWin() {
+    console.log('you win!');
   }
 }

@@ -19,6 +19,21 @@
           [config]="boardConfig()!"
           [mushroomMode]="myPair() ? false : currentExercise()?.exerciseType==='mushroom'"
         ></app-chess-board>
+         @if (pendingPromotion()) {
+          <div class="promotion-overlay">
+            @if (myColor() === 'white') {
+              <div class="piece" (click)="completePromotion('q')">♕</div>
+              <div class="piece" (click)="completePromotion('r')">♖</div>
+              <div class="piece" (click)="completePromotion('n')">♘</div>
+              <div class="piece" (click)="completePromotion('b')">♗</div>
+            } @else {
+              <div class="piece" (click)="completePromotion('q')">♛</div>
+              <div class="piece" (click)="completePromotion('r')">♜</div>
+              <div class="piece" (click)="completePromotion('n')">♞</div>
+              <div class="piece" (click)="completePromotion('b')">♝</div>
+            }
+          </div>
+          }
       </div>
 
       @if (!myPair()) {
