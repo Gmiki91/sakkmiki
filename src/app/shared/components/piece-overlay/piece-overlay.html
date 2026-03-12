@@ -1,0 +1,158 @@
+@if (overlay(); as data) {
+  @let pos = getPosition(data.square);
+  @let size = squareSize;
+
+  <svg
+    [attr.width]="boardSize"
+    [attr.height]="boardSize"
+    style="position: absolute; top: 0; left: 0; pointer-events: none"
+  >
+    @if (data.expression === 'alarmed') {
+      <!-- Left eye white -->
+      <circle
+        [attr.cx]="pos.x + size * 0.32"
+        [attr.cy]="pos.y + size * 0.45"
+        [attr.r]="size * 0.13"
+        fill="white"
+        stroke="#333"
+        [attr.stroke-width]="size * 0.03"
+      />
+      <!-- Left pupil -->
+      <circle
+        [attr.cx]="pos.x + size * 0.32"
+        [attr.cy]="pos.y + size * 0.45"
+        [attr.r]="size * 0.07"
+        fill="#111"
+      >
+        <!-- <animate
+          attributeName="cx"
+          [attr.values]="
+            pos.x + size * 0.27 + ';' + (pos.x + size * 0.37) + ';' + (pos.x + size * 0.27)
+          "
+          dur="1.2s"
+          repeatCount="indefinite"
+        /> -->
+      </circle>
+      <!-- Right eye white -->
+      <circle
+        [attr.cx]="pos.x + size * 0.68"
+        [attr.cy]="pos.y + size * 0.45"
+        [attr.r]="size * 0.13"
+        fill="white"
+        stroke="#333"
+        [attr.stroke-width]="size * 0.03"
+      />
+      <!-- Right pupil -->
+      <circle
+        [attr.cx]="pos.x + size * 0.68"
+        [attr.cy]="pos.y + size * 0.45"
+        [attr.r]="size * 0.07"
+        fill="#111"
+      >
+        <!-- <animate
+          attributeName="cx"
+          [attr.values]="
+            pos.x + size * 0.63 + ';' + (pos.x + size * 0.73) + ';' + (pos.x + size * 0.63)
+          "
+          dur="1.2s"
+          repeatCount="indefinite"
+        /> -->
+      </circle>
+      <!-- Alarmed eyebrows: inner corners raised, outer corners lower -->
+      <line
+        [attr.x1]="pos.x + size * 0.22"
+        [attr.y1]="pos.y + size * 0.27"
+        [attr.x2]="pos.x + size * 0.42"
+        [attr.y2]="pos.y + size * 0.21"
+        stroke="#111"
+        [attr.stroke-width]="size * 0.05"
+        stroke-linecap="round"
+      />
+      <line
+        [attr.x1]="pos.x + size * 0.58"
+        [attr.y1]="pos.y + size * 0.21"
+        [attr.x2]="pos.x + size * 0.78"
+        [attr.y2]="pos.y + size * 0.27"
+        stroke="#111"
+        [attr.stroke-width]="size * 0.05"
+        stroke-linecap="round"
+      />
+
+      <!-- Alarmed mouth: small open oval "oh no" -->
+      <ellipse
+        [attr.cx]="pos.x + size * 0.5"
+        [attr.cy]="pos.y + size * 0.72"
+        [attr.rx]="size * 0.09"
+        [attr.ry]="size * 0.07"
+        stroke="#000"
+        [attr.stroke-width]="size * 0.03"
+        fill="#FFF"
+      />
+    }
+
+    @if (data.expression === 'checkmate') {
+      <!-- Left X eye -->
+      <line
+        [attr.x1]="pos.x + size * 0.32 - size * 0.06"
+        [attr.y1]="pos.y + size * 0.45 - size * 0.06"
+        [attr.x2]="pos.x + size * 0.32 + size * 0.06"
+        [attr.y2]="pos.y + size * 0.45 + size * 0.06"
+        stroke="#111"
+        [attr.stroke-width]="size * 0.06"
+        stroke-linecap="round"
+      />
+      <line
+        [attr.x1]="pos.x + size * 0.32 + size * 0.06"
+        [attr.y1]="pos.y + size * 0.45 - size * 0.06"
+        [attr.x2]="pos.x + size * 0.32 - size * 0.06"
+        [attr.y2]="pos.y + size * 0.45 + size * 0.06"
+        stroke="#111"
+        [attr.stroke-width]="size * 0.06"
+        stroke-linecap="round"
+      />
+
+      <!-- Right X eye - center: pos.x + size * 0.68, pos.y + size * 0.45 -->
+      <line
+        [attr.x1]="pos.x + size * 0.68 - size * 0.06"
+        [attr.y1]="pos.y + size * 0.45 - size * 0.06"
+        [attr.x2]="pos.x + size * 0.68 + size * 0.06"
+        [attr.y2]="pos.y + size * 0.45 + size * 0.06"
+        stroke="#111"
+        [attr.stroke-width]="size * 0.06"
+        stroke-linecap="round"
+      />
+      <line
+        [attr.x1]="pos.x + size * 0.68 + size * 0.06"
+        [attr.y1]="pos.y + size * 0.45 - size * 0.06"
+        [attr.x2]="pos.x + size * 0.68 - size * 0.06"
+        [attr.y2]="pos.y + size * 0.45 + size * 0.06"
+        stroke="#111"
+        [attr.stroke-width]="size * 0.06"
+        stroke-linecap="round"
+      />
+
+      <!-- Straight mouth line -->
+      <line
+        [attr.x1]="pos.x + size * 0.32"
+        [attr.y1]="pos.y + size * 0.68"
+        [attr.x2]="pos.x + size * 0.68"
+        [attr.y2]="pos.y + size * 0.68"
+        stroke="#111"
+        [attr.stroke-width]="size * 0.05"
+        stroke-linecap="round"
+      />
+
+      <!-- Tongue: rounded rectangle hanging below the line -->
+      <rect
+        [attr.x]="pos.x + size * 0.49"
+        [attr.y]="pos.y + size * 0.68"
+        [attr.width]="size * 0.16"
+        [attr.height]="size * 0.12"
+        [attr.rx]="size * 0.05"
+        fill="#e05555"
+        stroke="#111"
+        [attr.stroke-width]="size * 0.02"
+      />
+    }
+  </svg>
+}

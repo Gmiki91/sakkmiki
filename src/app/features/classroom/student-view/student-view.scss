@@ -18,11 +18,16 @@ mat-card-header {
   margin-bottom: 12px;
   position: relative;
 
-  // Explicit square so chessground initialises at the correct size
-  app-chess-board {
-    display: block;
+  .overlay-wrapper {
+    position: relative;
     width: 400px;
     height: 400px;
+
+    app-chess-board {
+      display: block;
+      width: 400px;
+      height: 400px;
+    }
   }
   .promotion-overlay {
     position: absolute;
@@ -35,7 +40,7 @@ mat-card-header {
     border: 2px solid #333;
     border-radius: 4px;
     z-index: 100;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 
     .piece {
       width: 50px;

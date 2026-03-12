@@ -40,3 +40,16 @@ export const boardConfig = (chess: Chess, highlightLastMove: boolean = true): Co
 export const loadChess = (chess:Chess,fen: string):void => {
   chess.load(fen, { skipValidation: true});
 };
+export const getKingSquare = (chess: Chess): string | null => {
+  const turn = chess.turn();
+  const board = chess.board();
+  for (let r = 0; r < 8; r++) {
+    for (let f = 0; f < 8; f++) {
+      const piece = board[r][f];
+      if (piece?.type === 'k' && piece.color === turn) {
+        return 'abcdefgh'[f] + (8 - r);
+      }
+    }
+  }
+  return null;
+};

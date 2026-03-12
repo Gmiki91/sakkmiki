@@ -13,13 +13,16 @@
     </mat-card-header>
 
     <mat-card-content>
-      <div class="board-wrapper">
-        <app-chess-board
-          #chessBoard
-          [config]="boardConfig()!"
-          [mushroomMode]="myPair() ? false : currentExercise()?.exerciseType==='mushroom'"
-        ></app-chess-board>
-         @if (pendingPromotion()) {
+      <div class="board-wrapper" #boardWrapper>
+        <div class="overlay-wrapper">
+          <app-chess-board
+            #chessBoard
+            [config]="boardConfig()!"
+            [mushroomMode]="myPair() ? false : currentExercise()?.exerciseType === 'mushroom'"
+          ></app-chess-board>
+          <app-piece-overlay #pieceOverlay [orientation]="'white'"> </app-piece-overlay>
+        </div>
+        @if (pendingPromotion()) {
           <div class="promotion-overlay">
             @if (myColor() === 'white') {
               <div class="piece" (click)="completePromotion('q')">♕</div>
@@ -33,7 +36,7 @@
               <div class="piece" (click)="completePromotion('b')">♝</div>
             }
           </div>
-          }
+        }
       </div>
 
       @if (!myPair()) {
@@ -44,6 +47,7 @@
           }
         </div>
       }
+      <app-brush-picker></app-brush-picker>
     </mat-card-content>
   </mat-card>
 </div>

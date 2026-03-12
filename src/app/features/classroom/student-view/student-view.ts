@@ -14,6 +14,7 @@ import { Chess, Move } from 'chess.js';
 import { Key } from '@lichess-org/chessground/types';
 import {
   boardConfig,
+  getKingSquare,
   getValidMoves,
   loadChess,
   STARTING_FEN,
@@ -26,6 +27,8 @@ import { ChessBoard } from '../../../shared/components/chess-board/chess-board';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RealtimeService } from '../../../core/services/realtime.service';
 import { ChallengePair } from '../../../shared/models/challenge-pair.model';
+import { BrushPicker } from '../../../shared/components/brush-picker/brush-picker';
+import { PieceOverlay } from '../../../shared/components/piece-overlay/piece-overlay';
 
 @Component({
   selector: 'app-student-view',
@@ -38,10 +41,13 @@ import { ChallengePair } from '../../../shared/models/challenge-pair.model';
     MatIconModule,
     MatTooltipModule,
     ChessBoard,
+    BrushPicker,
+    PieceOverlay,
   ],
 })
 export class StudentView implements AfterViewInit {
   @ViewChild('chessBoard') chessBoard!: ChessBoard;
+  @ViewChild('pieceOverlay') pieceOverlay!: PieceOverlay;
   realtimeService = inject(RealtimeService);
   loadedList = this.realtimeService.loadedExercises;
   exIndex = linkedSignal({
@@ -308,14 +314,7 @@ export class StudentView implements AfterViewInit {
       if (move) {
         this.analyze(move);
         if (this.currentExercise().exerciseType !== 'mushroom') {
-          this.updateStatus();
         }
-        this.realtimeService.updatePresence({
-          fen: this.exerciseChess.fen(),
-          status: this.status(),
-          feedback: this.feedback(),
-          exIndex: this.exIndex(),
-        });
       }
     } catch (e) {
       console.error('Invalid move:', e);
@@ -361,6 +360,13 @@ export class StudentView implements AfterViewInit {
     const mistakes = ex.commonMistakes ?? [];
     const solution = ex.solutions?.find((line) => newHistory.every((m, i) => line[i] === m));
     if (solution) {
+      this.updateStatus();
+      this.realtimeService.updatePresence({
+        fen: this.exerciseChess.fen(),
+        status: this.status(),
+        feedback: this.feedback(),
+        exIndex: this.exIndex(),
+      });
       this.moveHistory.set(newHistory);
       const isSolved = ex.solutions?.some((line) => line.length === newHistory.length);
       if (isSolved) {
@@ -370,26 +376,20 @@ export class StudentView implements AfterViewInit {
           if (!this.realtimeService.droppedExercise()) this.nextExercise();
         }, 1500);
       } else {
+        this.feedback.set('Good move!');
         //gombaszedés, same color always
         if (ex.exerciseType === 'mushroom') {
           this.exerciseChess.setTurn('w');
           this.updateBoard();
-          this.feedback.set('Good move!');
         } else {
           const nextIndex = newHistory.length;
-          const computerMove = this.exerciseChess.move(solution[nextIndex]);
-          const updatedHistory = [...newHistory, solution[nextIndex]];
-          this.updateBoard([computerMove.from as Key, computerMove.to as Key]);
-          this.moveHistory.set([...newHistory, solution[nextIndex]]);
-          const isSolvedAfterComputer = ex.solutions?.some(
-            (line) => line.length === updatedHistory.length,
-          );
-          if (isSolvedAfterComputer) {
-            this.feedback.set('Solved! ✓');
-            setTimeout(() => this.nextExercise(), 2000);
-          } else {
-            this.feedback.set('Good move!');
-          }
+          // computer thinking
+          setTimeout(()=>{
+            const computerMove = this.exerciseChess.move(solution[nextIndex]);
+            this.updateBoard([computerMove.from as Key, computerMove.to as Key]);
+            this.moveHistory.set([...newHistory, solution[nextIndex]]);
+            this.pieceOverlay.hide();
+          },2000)
         }
       }
     } else {
@@ -412,12 +412,14 @@ export class StudentView implements AfterViewInit {
       this.status.set(
         'Checkmate! ' + (this.exerciseChess.turn() === 'w' ? 'Black' : 'White') + ' wins!',
       );
+      this.pieceOverlay.show('checkmate', getKingSquare(this.exerciseChess)!);
     } else if (this.exerciseChess.isDraw()) {
       this.status.set('Draw!');
     } else if (this.exerciseChess.isCheck()) {
       this.status.set(
         'Check! ' + (this.exerciseChess.turn() === 'w' ? 'White' : 'Black') + ' to move',
       );
+      this.pieceOverlay.show('alarmed', getKingSquare(this.exerciseChess)!);
     } else {
       this.status.set((this.exerciseChess.turn() === 'w' ? 'White' : 'Black') + ' to move');
     }
