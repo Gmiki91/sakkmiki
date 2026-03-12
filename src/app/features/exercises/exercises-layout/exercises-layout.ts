@@ -22,17 +22,22 @@ import { ExerciseService } from '../../../core/services/exercise.service';
   templateUrl: './exercises-layout.html',
   styleUrl: './exercises-layout.scss',
 })
-export class ExercisesLayout  {
+export class ExercisesLayout implements OnInit  {
   exerciseService = inject(ExerciseService);
   isListCreationActive = signal<boolean>(false);
   title = model<string>('');
   router = inject(Router);
-  
+
+  ngOnInit(): void {
+    this.exerciseService.loadExerciseLists();
+  }
+
   addExercise(listId: string) {
     this.router.navigate([`/exercises/create/${listId}`]);
   }
   selectExercise(exercise: Exercise) {
-    this.router.navigate([`/exercises/edit/${exercise.id}`]);
+    const type = exercise.exerciseType==='challenge'? 'challenge' : 'edit'
+    this.router.navigate([`/exercises/${type}/${exercise.id}`]);
   }
   addList() {
     if (this.isListCreationActive()) {

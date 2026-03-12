@@ -4,14 +4,6 @@ import { ExerciseList, ExerciseListInput } from '../../shared/models/exercise-li
 import { Exercise, ExerciseInput } from '../../shared/models/exercise.model';
 import { SupabaseService } from './supabase.service';
 
-const DEFAULT_EXERCISE: Exercise = {
-  id: 'lolno',
-  fen: '3k4/8/8/8/8/8/4R3/4K3 w - - 0 1',
-  title: 'Exercise template',
-  solutions: [],
-  defaultHint: '',
-};
-
 @Injectable({ providedIn: 'root' })
 export class ExerciseService {
   supabase = inject(SupabaseService);
