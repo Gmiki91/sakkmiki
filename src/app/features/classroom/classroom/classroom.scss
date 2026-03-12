@@ -64,7 +64,15 @@
   mat-card-content {
     padding: 0 16px 12px;
   }
+  .resume-btn {
+  color: white;
+  background-color: var(--mat-sys-error);
 
+}
+ .stamp-btn {
+  color: white;
+  background-color: green;
+ }
   .mini-board {
     // Fixed square — chessground MUST have explicit pixel dimensions
     width: 200px;

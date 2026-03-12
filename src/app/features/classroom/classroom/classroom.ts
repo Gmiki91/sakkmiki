@@ -47,7 +47,6 @@ type ConfigParam = {
   ],
   templateUrl: './classroom.html',
   styleUrl: './classroom.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   @ViewChildren('studentBoard') studentBoards!: QueryList<ChessBoard>;
@@ -95,6 +94,10 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
 
   ngAfterViewInit(): void {
     this.studentBoards.changes.subscribe(() => {
+      // Remove stale element references that are no longer in the DOM
+      this.listenedElements.forEach((el) => {
+        if (!document.contains(el)) this.listenedElements.delete(el);
+      });
       this.attachStudentBoardListeners();
     });
     // also run once for any boards already present
@@ -136,6 +139,13 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
     this.isLoadingList.set(false);
     students.forEach((student) => {
       const prev = this.lastExIndex[student.name];
+      const isFirstSeen = prev === undefined;
+      if (isFirstSeen) {
+        // Just record the index, don't reset timer —
+        // the timer component initializes itself when rendered
+        this.lastExIndex[student.name] = student.exIndex;
+        return;
+      }
       if (prev !== student.exIndex) {
         // new exercise — reset timer
         this.lastExIndex[student.name] = student.exIndex;
@@ -145,6 +155,22 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
         this.updateMushroomcollecting(ex?.exerciseType === 'mushroom', student.name);
       }
     });
+  }
+  handleResume(studentName: string) {
+    this.realtimeService.sendResume(studentName);
+    // Update miniboard locally immediately
+    this.realtimeService.students.update((students) =>
+      students.map((s) => (s.name === studentName ? { ...s, locked: false } : s)),
+    );
+  }
+
+  handleStamp(studentName:string){
+    this.realtimeService.sendStamp(studentName);
+    // Update miniboard locally immediately
+    this.realtimeService.students.update((students) =>
+      students.map((s) => (s.name === studentName ? { ...s, locked: false,awaitingStamp:false } : s)),
+    );
+
   }
 
   freezeTimers() {

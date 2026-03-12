@@ -79,6 +79,20 @@
               <span class="feedback">{{ student.feedback }}</span>
             </div>
           </mat-card-content>
+          <mat-card-actions style="justify-content: center;">
+            @if (student.locked && !student.awaitingStamp) {
+              <button mat-raised-button class="resume-btn" 
+                (click)="handleResume(student.name)">
+                Redo
+              </button>
+            }
+             @if (student.awaitingStamp) {
+              <button mat-raised-button class="stamp-btn" 
+                (click)="handleStamp(student.name)">
+                Stamp
+              </button>
+            }
+          </mat-card-actions>
         </mat-card>
       }
     } @empty {

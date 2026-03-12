@@ -11,6 +11,8 @@ export type StudentPresence = {
   status: string;
   feedback: string;
   exIndex: number;
+  locked: boolean;
+  awaitingStamp:boolean;
 };
 
 export type ClassroomMode = 'normal' | 'gathered';
@@ -25,7 +27,10 @@ type BroadcastEvent =
   | { type: 'dropped_exercise'; studentName: string; exercise: Exercise }
   | { type: 'sync_challenge_pair'; pair: ChallengePair }
   | { type: 'challenge_remove'; pair: ChallengePair }
-  | { type: 'challenge_move'; white: string; black: string; fen: string; from: string; to: string,over?:boolean };
+  | { type: 'challenge_move'; white: string; black: string; fen: string; from: string; to: string,over?:boolean }
+  | { type: 'resume'; studentName: string }
+  | { type: 'stamp'; studentName: string };
+
 
 @Injectable({ providedIn: 'root' })
 export class RealtimeService {
@@ -38,6 +43,8 @@ export class RealtimeService {
   // --- Signals ---
   students = signal<StudentPresence[]>([]);
   mode = signal<ClassroomMode>('normal');
+  resume = signal<string | null>(null);
+  stamp = signal<string | null>(null);
   teacherFen = signal<string>('');
   sharedArrows = signal<DrawShape[]>([]);
   miniboardArrows = signal<{ name: string; shapes: DrawShape[] } | null>(null);
@@ -74,6 +81,8 @@ export class RealtimeService {
             status: p.status,
             feedback: p.feedback,
             exIndex: p.exIndex,
+            locked:p.locked,
+            awaitingStamp:p.awaitingStamp
           }));
         this.students.set(list);
         this.onStudentsUpdate?.(list);
@@ -103,6 +112,12 @@ export class RealtimeService {
   sendDroppedExercise(studentName: string, exercise: Exercise): void {
     this.broadcast({ type: 'dropped_exercise', studentName, exercise });
   }
+  sendResume(studentName:string){
+    this.broadcast({type:'resume',studentName});
+  }
+  sendStamp(studentName:string){
+    this.broadcast({type:'stamp',studentName});
+  }
   // clearDroppedExercise(): void {
   //   this.droppedExercise.set(null);
   // }
@@ -127,6 +142,8 @@ export class RealtimeService {
             status: '',
             feedback: '',
             exIndex: 0,
+            locked:false,
+            awaitingStamp:false
           });
           onJoined();
         } else if (status === 'TIMED_OUT' || status === 'CLOSED' || status === 'CHANNEL_ERROR') {
@@ -214,6 +231,16 @@ export class RealtimeService {
       case 'dropped_exercise':
         if (event.studentName === this.studentName()) {
           this.droppedExercise.set(event.exercise);
+        }
+        break;
+      case 'resume':
+        if (event.studentName === this.studentName()) {
+          this.resume.set(event.studentName);
+        }
+        break;
+          case 'stamp':
+        if (event.studentName === this.studentName()) {
+          this.stamp.set(event.studentName);
         }
         break;
       default:
