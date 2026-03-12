@@ -591,8 +591,8 @@ export class StudentView implements AfterViewInit {
   }
   private progress(){
     this.feedback.set('Solved! ✓');
-    this.soundService.play('stamp');
-    // this.soundService.playRandomCheering();
+    // this.soundService.play('stamp');
+    this.soundService.playRandomCheering();
     this.stampOverlay.stamp();
     const stamp = this.stampOverlay.currentStamp();
     this.isWaitingForStamp.set(false);
