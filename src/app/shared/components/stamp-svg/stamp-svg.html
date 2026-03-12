@@ -1,0 +1,176 @@
+<svg [attr.viewBox]="'0 0 200 200'" [attr.width]="size()" [attr.height]="size()">
+  @if (type() === 'star') {
+    <g transform="translate(100,100)">
+      <polygon
+        points="0,-80 18,-28 76,-28 30,10 47,62 0,32 -47,62 -30,10 -76,-28 -18,-28"
+        fill="#1efa05"
+        stroke="#0c7001"
+        stroke-width="3"
+      />
+      <polygon points="0,-65 10,-38 40,-38 18,-22 26,5 0,12" fill="rgba(255,255,255,0.25)" />
+    </g>
+  }
+  @if (type() === 'trophy') {
+    <g transform="translate(100,100)">
+      <path
+        d="M-35,-60 L-40,-30 Q-45,20 0,35 Q45,20 40,-30 L35,-60 Z"
+        fill="#d7eff5"
+        stroke="#575d5e"
+        stroke-width="3"
+      />
+      <path
+        d="M-20,-50 Q-30,0 -15,25"
+        fill="none"
+        stroke="rgba(255,255,255,0.4)"
+        stroke-width="5"
+        stroke-linecap="round"
+      />
+      <path
+        d="M-35,-45 Q-65,-45 -60,-20 Q-55,5 -40,-10"
+        fill="none"
+        stroke="#d7eff5"
+        stroke-width="8"
+        stroke-linecap="round"
+      />
+      <path
+        d="M35,-45 Q65,-45 60,-20 Q55,5 40,-10"
+        fill="none"
+        stroke="#d7eff5"
+        stroke-width="8"
+        stroke-linecap="round"
+      />
+      <rect x="-15" y="35" width="30" height="10" rx="2" fill="#575d5e" />
+      <rect x="-25" y="45" width="50" height="8" rx="3" fill="#575d5e" />
+    </g>
+  }
+  @if (type() === 'crown') {
+    <g transform="translate(100,100)">
+      <path
+        d="M-50,20 L-50,-20 L-25,10 L0,-50 L25,10 L50,-20 L50,20 Z"
+        fill="#FFD700"
+        stroke="#C8920A"
+        stroke-width="3"
+      />
+      <rect
+        x="-50"
+        y="20"
+        width="100"
+        height="18"
+        rx="4"
+        fill="#FFD700"
+        stroke="#C8920A"
+        stroke-width="3"
+      />
+      <circle cx="0" cy="-5" r="9" fill="#FF4444" stroke="#AA0000" stroke-width="1.5" />
+      <circle cx="-2" cy="-7" r="2.5" fill="white" opacity="0.6" />
+    </g>
+  }
+
+  @if (type() === 'smiley') {
+    <g transform="translate(100,100)">
+      <circle cx="0" cy="-10" r="65" fill="#faea98" stroke="#C8920A" stroke-width="4" />
+      <ellipse
+        cx="-20"
+        cy="-45"
+        rx="18"
+        ry="12"
+        fill="rgba(255,255,255,0.3)"
+        transform="rotate(-30,-20,-45)"
+      />
+      <circle cx="-22" cy="-22" r="9" fill="white" stroke="#333" stroke-width="2" />
+      <circle cx="22" cy="-22" r="9" fill="white" stroke="#333" stroke-width="2" />
+      <circle cx="-20" cy="-21" r="4.5" fill="#333" />
+      <circle cx="24" cy="-21" r="4.5" fill="#333" />
+      <circle cx="-18" cy="-23" r="1.5" fill="white" />
+      <circle cx="26" cy="-23" r="1.5" fill="white" />
+      <path
+        d="M-30 0 Q0 30 30 0"
+        stroke="#C8920A"
+        stroke-width="4"
+        fill="#faea98"
+        stroke-linecap="round"
+      />
+      <ellipse cx="-42" cy="-5" rx="12" ry="8" fill="rgba(255,120,100,0.3)" />
+      <ellipse cx="42" cy="-5" rx="12" ry="8" fill="rgba(255,120,100,0.3)" />
+    </g>
+  }
+
+  @if (type() === 'checkmark') {
+    <g transform="translate(100,100)">
+      <circle cx="0" cy="-10" r="68" fill="#45bbff" stroke="#133447" stroke-width="4" />
+      <ellipse
+        cx="-20"
+        cy="-50"
+        rx="18"
+        ry="12"
+        fill="rgba(255,255,255,0.25)"
+        transform="rotate(-30,-20,-50)"
+      />
+      <polyline
+        points="-35,0 -10,28 40,-30"
+        fill="none"
+        stroke="white"
+        stroke-width="14"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </g>
+  }
+
+ @if (type() === 'icecream') {
+  <g transform="translate(100,100)">
+    <!-- cone -->
+    <polygon points="-28,20 28,20 0,80" fill="#F5C842" stroke="#C8920A" stroke-width="3"/>
+    <!-- scoop 1 pink -->
+    <circle cx="-12" cy="10" r="26" fill="#FF9EC4" stroke="#CC5588" stroke-width="3"/>
+    <!-- scoop 2 blue -->
+    <circle cx="14" cy="-5" r="24" fill="#88CCFF" stroke="#4488CC" stroke-width="3"/>
+    <!-- scoop 3 yellow on top -->
+    <circle cx="0" cy="-30" r="22" fill="#FFE87A" stroke="#C8920A" stroke-width="3"/>
+    <!-- sprinkles -->
+    <line x1="-5" y1="-38" x2="5" y2="-32" stroke="#FF4444" stroke-width="3" stroke-linecap="round"/>
+    <line x1="8" y1="-28" x2="2" y2="-20" stroke="#44CC44" stroke-width="3" stroke-linecap="round"/>
+    <line x1="-10" y1="-22" x2="-4" y2="-30" stroke="#FF8800" stroke-width="3" stroke-linecap="round"/>
+    <!-- shine -->
+  </g>
+ }
+
+ @if(type()==='bear'){
+  <g transform="translate(100,100)">
+    <circle cx="-30" cy="-42" r="22" fill="#5c4303" stroke="#241a00" stroke-width="3"/>
+    <circle cx="30" cy="-42" r="22" fill="#5c4303" stroke="#241a00" stroke-width="3"/>
+    <circle cx="-30" cy="-44" r="14" fill="a87e0f" stroke="#241a00" stroke-width="2"/>
+    <circle cx="30" cy="-44" r="14" fill="a87e0f" stroke="#241a00" stroke-width="2"/>
+    <circle cx="-28" cy="-43" r="7" fill="#111"/>
+    <circle cx="32" cy="-43" r="7" fill="#111"/>
+    <ellipse cx="0" cy="-10" rx="55" ry="45" fill="#5c4303" stroke="#241a00" stroke-width="3"/>
+    <circle cx="-12" cy="-8" r="4" fill="#241a00"/>
+    <circle cx="12" cy="-8" r="4" fill="#241a00"/>
+    <path d="M-35 10 Q0 45 35 10" stroke="#241a00" stroke-width="4" fill="#a87e0f" stroke-linecap="round"/>
+
+  </g>
+ }
+
+ @if(type()==='bear2'){
+  <g transform="translate(100,105)">
+    <circle cx="-38" cy="-58" r="20" fill="#C8822A" stroke="#8B5500" stroke-width="3"/>
+    <circle cx="38" cy="-58" r="20" fill="#C8822A" stroke="#8B5500" stroke-width="3"/>
+    <circle cx="-38" cy="-58" r="11" fill="#E8A050"/>
+    <circle cx="38" cy="-58" r="11" fill="#E8A050"/>
+    <circle cx="0" cy="-18" r="52" fill="#C8822A" stroke="#8B5500" stroke-width="3"/>
+    <ellipse cx="0" cy="8" rx="26" ry="20" fill="#E8A050" stroke="#8B5500" stroke-width="2"/>
+    <ellipse cx="0" cy="-2" rx="12" ry="8" fill="#4A2800" stroke="#2A1000" stroke-width="1.5"/>
+    <ellipse cx="-3" cy="-4" rx="4" ry="2.5" fill="rgba(255,255,255,0.3)"/>
+    <circle cx="-22" cy="-30" r="11" fill="white" stroke="#8B5500" stroke-width="2"/>
+    <circle cx="22" cy="-30" r="11" fill="white" stroke="#8B5500" stroke-width="2"/>
+    <circle cx="-20" cy="-29" r="6" fill="#2A1000"/>
+    <circle cx="24" cy="-29" r="6" fill="#2A1000"/>
+    <circle cx="-18" cy="-31" r="2" fill="white"/>
+    <circle cx="26" cy="-31" r="2" fill="white"/>
+    <path d="M-14 14 Q0 26 14 14" stroke="#8B5500" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <line x1="0" y1="8" x2="0" y2="14" stroke="#8B5500" stroke-width="2" stroke-linecap="round"/>
+    <ellipse cx="-36" cy="-10" rx="13" ry="9" fill="rgba(255,120,80,0.3)"/>
+    <ellipse cx="36" cy="-10" rx="13" ry="9" fill="rgba(255,120,80,0.3)"/>
+  </g>
+ }
+</svg>

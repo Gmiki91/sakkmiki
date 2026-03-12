@@ -1,0 +1,10 @@
+<div class="brush-picker">
+  @for (brush of brushOptions; track brush.key) {
+    <div
+      class="brush-option"
+      [style.background]="brush.color"
+      [class.selected]="selectedBrush() === brush.key"
+      (click)="this.selectedBrush.set(brush.key)"
+    ></div>
+  }
+</div>

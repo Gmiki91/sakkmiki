@@ -1,0 +1,22 @@
+.stamp-wrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 10;
+
+  .stamp {
+    display: flex; 
+    animation: stamp 3s ease-out forwards;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+  }
+}
+
+@keyframes stamp {
+  0%   { transform: scale(10);    opacity: 0; }
+  20%  { transform: scale(0.7);  opacity: 1; }
+  25%  { transform: scale(1);    opacity: 1; }
+  70%  { transform: scale(1);    opacity: 1; }
+  100% { transform: scale(1);    opacity: 0; }
+}

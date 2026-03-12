@@ -2,7 +2,7 @@ import { AfterViewInit, Component, ElementRef, ViewChild, input, effect } from '
 import { Chessground } from '@lichess-org/chessground';
 import { Api } from '@lichess-org/chessground/api';
 import { Config } from '@lichess-org/chessground/config';
-
+import { DEFAULT_BRUSHES } from '../../utils/brushes';
 @Component({
   selector: 'app-chess-board',
   imports: [],
@@ -31,13 +31,17 @@ export class ChessBoard implements AfterViewInit {
     });
   }
 
-  ngAfterViewInit(): void {
-    this.api = Chessground(this.boardElement.nativeElement, {
-      ...this.config(),
-      animation: {
-        enabled: true,
-        duration: 400,
-      },
-    });
-  }
+ngAfterViewInit(): void {
+  this.api = Chessground(this.boardElement.nativeElement, {
+    ...this.config(),
+    animation: {
+      enabled: true,
+      duration: 400,
+    },
+    drawable: {
+      ...this.config()?.drawable,
+      brushes: DEFAULT_BRUSHES,
+    },
+  });
+}
 }

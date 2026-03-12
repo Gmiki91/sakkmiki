@@ -21,6 +21,7 @@
             [mushroomMode]="myPair() ? false : currentExercise()?.exerciseType === 'mushroom'"
           ></app-chess-board>
           <app-piece-overlay #pieceOverlay [orientation]="'white'"> </app-piece-overlay>
+          <app-stamp-overlay #stampOverlay></app-stamp-overlay>
         </div>
         @if (pendingPromotion()) {
           <div class="promotion-overlay">
@@ -39,15 +40,22 @@
         }
       </div>
 
-      @if (!myPair()) {
+      <!-- @if (!myPair()) {
         <div class="feedback">
           <span>{{ status() }}</span>
           @if (realtimeService.mode() === 'normal') {
             <span>{{ feedback() }}</span>
           }
         </div>
+      } -->
+      <!-- <app-brush-picker #brushPicker></app-brush-picker> -->
+      @if (stampCollection().length > 0) {
+        <div class="stamp-collection">
+          @for (stamp of stampCollection(); track $index) {
+            <app-stamp-svg [type]="stamp" [size]="48"></app-stamp-svg>
+          }
+        </div>
       }
-      <app-brush-picker></app-brush-picker>
     </mat-card-content>
   </mat-card>
 </div>

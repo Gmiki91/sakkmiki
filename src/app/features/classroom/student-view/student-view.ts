@@ -29,6 +29,11 @@ import { RealtimeService } from '../../../core/services/realtime.service';
 import { ChallengePair } from '../../../shared/models/challenge-pair.model';
 import { BrushPicker } from '../../../shared/components/brush-picker/brush-picker';
 import { PieceOverlay } from '../../../shared/components/piece-overlay/piece-overlay';
+import { SoundService } from '../../../core/services/sound.service';
+import { StampOverlay } from '../../../shared/components/stamp-overlay/stamp-overlay';
+import { Exercise } from '../../../shared/models/exercise.model';
+import { StampSvg } from '../../../shared/components/stamp-svg/stamp-svg';
+import { StampType } from '../../../shared/models/stamp.model';
 
 @Component({
   selector: 'app-student-view',
@@ -43,12 +48,18 @@ import { PieceOverlay } from '../../../shared/components/piece-overlay/piece-ove
     ChessBoard,
     BrushPicker,
     PieceOverlay,
+    StampOverlay,
+    StampSvg
   ],
 })
 export class StudentView implements AfterViewInit {
   @ViewChild('chessBoard') chessBoard!: ChessBoard;
   @ViewChild('pieceOverlay') pieceOverlay!: PieceOverlay;
+  @ViewChild('stampOverlay') stampOverlay!: StampOverlay;
+  @ViewChild('brushPicker')brushPicker!:BrushPicker
+  stampCollection=signal<StampType[]>([]);
   realtimeService = inject(RealtimeService);
+  soundService = inject(SoundService);
   loadedList = this.realtimeService.loadedExercises;
   exIndex = linkedSignal({
     source: () => this.loadedList(),
@@ -100,7 +111,8 @@ export class StudentView implements AfterViewInit {
   pendingPromotion = signal<{ orig: Key; dest: Key; pair: ChallengePair } | null>(null);
 
   private challengeChess = new Chess();
-
+  private isLocked = signal(false);
+  private isWaitingForStamp = signal(false);
   // --- Board config ---
   boardConfig = computed<Config | null>(() => {
     const mode = this.realtimeService.mode();
@@ -146,7 +158,7 @@ export class StudentView implements AfterViewInit {
     // Exercise mode
     if (exercise) {
       return {
-        fen: exercise.fen,
+        fen:   this.exerciseChess.fen(),
         orientation: 'white',
         coordinates: true,
         turnColor: this.exerciseChess.turn() === 'w' ? 'white' : 'black',
@@ -171,6 +183,7 @@ export class StudentView implements AfterViewInit {
     effect(() => {
       const exercise = this.currentExercise();
       if (!exercise) return;
+      
       if (exercise.exerciseType === 'challenge') {
         loadChess(this.challengeChess, exercise.fen);
       } else {
@@ -195,6 +208,8 @@ export class StudentView implements AfterViewInit {
         status: this.status(),
         feedback: this.feedback(),
         exIndex: this.exIndex(),
+        locked: this.isLocked(),
+        awaitingStamp:this.isWaitingForStamp()
       });
     });
 
@@ -206,6 +221,24 @@ export class StudentView implements AfterViewInit {
       } else {
         this.onDisperse();
       }
+    });
+
+    // handle resume
+    effect(() => {
+      const resume = this.realtimeService.resume();
+      if (!resume) return;
+      this.handleMistake(this.currentExercise());
+      this.realtimeService.resume.set(null); // reset
+    });
+
+    // handle stamp
+    effect(() => {
+      const stamp = this.realtimeService.stamp();
+      if (!stamp) return;
+     
+     
+      this.realtimeService.stamp.set(null); // reset
+      this.progress();
     });
 
     // --- Challenge effects ---
@@ -326,6 +359,8 @@ export class StudentView implements AfterViewInit {
     try {
       const move = this.challengeChess.move({ from: orig, to: dest, promotion });
       if (move) {
+        this.playSound(move);
+
         const win = this.checkWinConditions(move);
         this.realtimeService.sendChallengeMove(
           pair.white,
@@ -343,6 +378,8 @@ export class StudentView implements AfterViewInit {
           status: this.challengeChess.turn() === 'w' ? 'White to move' : 'Black to move',
           feedback: '',
           exIndex: this.exIndex(),
+          locked: this.isLocked(),
+          awaitingStamp:this.isWaitingForStamp()
         });
         if (promotion) this.chessBoard.api?.set({ fen: this.challengeChess.fen() });
       }
@@ -357,24 +394,29 @@ export class StudentView implements AfterViewInit {
     if (!ex) return;
 
     const newHistory = [...this.moveHistory(), move.san];
-    const mistakes = ex.commonMistakes ?? [];
     const solution = ex.solutions?.find((line) => newHistory.every((m, i) => line[i] === m));
     if (solution) {
+      this.isLocked.set(false);
+      this.playSound(move);
       this.updateStatus();
       this.realtimeService.updatePresence({
         fen: this.exerciseChess.fen(),
         status: this.status(),
         feedback: this.feedback(),
         exIndex: this.exIndex(),
+        locked: this.isLocked(),
+        awaitingStamp:this.isWaitingForStamp()
       });
       this.moveHistory.set(newHistory);
       const isSolved = ex.solutions?.some((line) => line.length === newHistory.length);
       if (isSolved) {
-        this.feedback.set('Solved! ✓');
-        setTimeout(() => {
-          //leave droppedExercise set so currentExercise doesn't recompute and defaults to the loadedListExercise
-          if (!this.realtimeService.droppedExercise()) this.nextExercise();
-        }, 1500);
+      // Automatic progress turned off for now, always check with teacher
+      // if(automaticProgress)
+      // this.progress()
+      // else
+        this.isWaitingForStamp.set(true);
+        this.lockBoard();
+        
       } else {
         this.feedback.set('Good move!');
         //gombaszedés, same color always
@@ -384,26 +426,21 @@ export class StudentView implements AfterViewInit {
         } else {
           const nextIndex = newHistory.length;
           // computer thinking
-          setTimeout(()=>{
+          setTimeout(() => {
             const computerMove = this.exerciseChess.move(solution[nextIndex]);
+            this.playSound(computerMove);
             this.updateBoard([computerMove.from as Key, computerMove.to as Key]);
             this.moveHistory.set([...newHistory, solution[nextIndex]]);
             this.pieceOverlay.hide();
-          },2000)
+          }, 2000);
         }
       }
     } else {
-      this.exerciseChess.undo();
-      if (ex.exerciseType === 'mushroom') {
-        this.exerciseChess.setTurn('w');
-      }
-      this.updateBoard();
-      const mistake = mistakes.find((m) => m.move === move.san);
-      if (mistake) {
-        this.feedback.set(mistake.hint);
-      } else {
-        this.feedback.set(ex.defaultHint ?? 'Wrong move, try again');
-      }
+      // Automatic reset turned off for now, always check with teacher
+      // if(automaticReset)
+      // this.handleMistake(ex,move)
+      // else
+      this.lockBoard();
     }
   }
 
@@ -416,6 +453,7 @@ export class StudentView implements AfterViewInit {
     } else if (this.exerciseChess.isDraw()) {
       this.status.set('Draw!');
     } else if (this.exerciseChess.isCheck()) {
+      this.soundService.play('gasp');
       this.status.set(
         'Check! ' + (this.exerciseChess.turn() === 'w' ? 'White' : 'Black') + ' to move',
       );
@@ -426,6 +464,7 @@ export class StudentView implements AfterViewInit {
   }
 
   nextExercise() {
+    this.pieceOverlay.hide()
     const size = this.loadedList().length - 1;
     if (this.exIndex() < size) {
       this.exIndex.update((n) => n + 1);
@@ -435,6 +474,7 @@ export class StudentView implements AfterViewInit {
   }
 
   private onGather() {
+    this.pieceOverlay.hide();
     this.isGathered = true;
     this.frozenFen = this.exerciseChess.fen();
     this.frozenMoveHistory = [...this.moveHistory()];
@@ -515,4 +555,52 @@ export class StudentView implements AfterViewInit {
   private youWin() {
     console.log('you win!');
   }
+  private playSound(move: Move) {
+    if (move.captured) this.soundService.play('take');
+    else this.soundService.play('move');
+  }
+
+  private handleMistake(ex: Exercise, move?: Move) {
+    this.exerciseChess.undo();
+    const mistakes = ex.commonMistakes ?? [];
+    if (ex.exerciseType === 'mushroom') {
+      this.exerciseChess.setTurn('w');
+    }
+    this.updateBoard();
+    if (move) {
+      const mistake = mistakes.find((m) => m.move === move.san);
+      if (mistake) {
+        this.feedback.set(mistake.hint);
+      } else {
+        this.feedback.set(ex.defaultHint ?? 'Wrong move, try again');
+      }
+    }
+  }
+
+  private lockBoard(){
+    this.isLocked.set(true);
+    this.chessBoard.api?.set({ movable: { color: undefined } });
+    this.realtimeService.updatePresence({
+      fen: this.exerciseChess.fen(), 
+      status: this.status(),
+      feedback: this.feedback(),
+      exIndex: this.exIndex(),
+      locked: true,
+      awaitingStamp:this.isWaitingForStamp(),
+    });
+  }
+  private progress(){
+    this.feedback.set('Solved! ✓');
+    this.soundService.play('stamp');
+    // this.soundService.playRandomCheering();
+    this.stampOverlay.stamp();
+    const stamp = this.stampOverlay.currentStamp();
+    this.isWaitingForStamp.set(false);
+    this.isLocked.set(false);
+    setTimeout(() => {
+      //leave droppedExercise set so currentExercise doesn't recompute and defaults to the loadedListExercise
+      this.stampCollection.update(arr=>[...arr,stamp as StampType]);
+      if (!this.realtimeService.droppedExercise()) this.nextExercise();
+    }, 3000);
+  } 
 }

@@ -1,0 +1,24 @@
+.brush-picker {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 4px 0;
+
+  .brush-option {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.15s, border-color 0.15s;
+
+    &:hover {
+      transform: scale(1.2);
+    }
+
+    &.selected {
+      border-color: black;
+      transform: scale(1.4);
+    }
+  }
+}

@@ -1,0 +1,1 @@
+export type StampType = 'star' | 'trophy' | 'crown' | 'smiley'|'checkmark'|'icecream'|'bear'|'bear2'|'elephant';
