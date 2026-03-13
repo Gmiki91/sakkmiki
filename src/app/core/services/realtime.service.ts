@@ -4,6 +4,7 @@ import { DrawShape } from '@lichess-org/chessground/draw';
 import { SupabaseService } from './supabase.service';
 import { ChallengePair } from '../../shared/models/challenge-pair.model';
 import { Exercise } from '../../shared/models/exercise.model';
+import { STARTING_FEN } from '../../shared/utils/chess.utils';
 
 export type StudentPresence = {
   name: string;
@@ -138,7 +139,7 @@ export class RealtimeService {
           this.isJoined.set(true);
           await this.trackPresence({
             name,
-            fen: '',
+            fen: STARTING_FEN,
             status: '',
             feedback: '',
             exIndex: 0,
