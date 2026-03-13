@@ -184,12 +184,13 @@ export class StudentView implements AfterViewInit, OnDestroy {
     effect(() => {
       const exercise = this.currentExercise();
       if (!exercise) return;
-       this.pieceOverlay.hide()
+       this.pieceOverlay.hide();
       if (exercise.exerciseType === 'challenge') {
         loadChess(this.challengeChess, exercise.fen);
       } else {
         loadChess(this.exerciseChess, exercise.fen);
       }
+       this.updateStatus();
       this.chessBoard?.api?.set({ lastMove: [] });
     });
 
@@ -273,6 +274,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
     effect(() => {
       const pair = this.myPair();
       if (pair) {
+        this.pieceOverlay.hide();
         this.challengeChess = new Chess(); // reset to starting position
         this.chessBoard?.api?.set({ lastMove: [] });
       }
