@@ -42,7 +42,7 @@ export class JoinScreen implements OnInit {
       () => {
         // onError
         this.isLoading.set(false);
-        this.snackbar.open('Nem sikerült a csatlakozás');
+        this.snackbar.open('Nem sikerült a csatlakozás','', { duration: 2500 });
       },
     );
   }
