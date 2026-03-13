@@ -63,3 +63,17 @@ body {
 .cg-wrap piece.bishop.black { background-image: url('/pieces/cooke/bB.svg'); }
 .cg-wrap piece.knight.black { background-image: url('/pieces/cooke/bN.svg'); }
 .cg-wrap piece.pawn.black   { background-image: url('/pieces/cooke/bP.svg'); }
+
+.cg-wrap coords.ranks coord,
+.cg-wrap coords.files coord {
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+
+  -webkit-text-stroke: 1px rgba(0,0,0,0.8);
+  paint-order: stroke fill; // stroke renders behind the fill
+}
+.cg-wrap coords.files {
+  bottom: 0px; 
+  left:20px;
+}

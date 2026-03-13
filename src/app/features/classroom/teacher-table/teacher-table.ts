@@ -31,7 +31,7 @@ export class TeacherTable implements AfterViewInit {
   selectedExercise = input<Exercise | null>(null);
   boardConfig = signal<Config>({
     orientation: 'white',
-    coordinates: false,
+    coordinates: true,
     movable: {
       free: true,
       events: {
