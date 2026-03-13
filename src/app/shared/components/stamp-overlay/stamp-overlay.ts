@@ -14,7 +14,7 @@ export class StampOverlay {
   visible = signal(false);
   currentStamp = signal<StampType>('star');
 
-  private readonly stamps: StampType[] = ['star', 'trophy', 'crown', 'smiley','checkmark','bear','icecream'];
+  private readonly stamps: StampType[] = ['star', 'trophy', 'crown', 'smiley','checkmark','bear','icecream','bear2','diamond','ruby','emerald'];
 
   stamp() {
     const random = this.stamps[Math.floor(Math.random() * this.stamps.length)];

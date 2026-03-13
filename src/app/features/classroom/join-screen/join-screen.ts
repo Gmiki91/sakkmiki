@@ -1,5 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, inject, OnInit, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -14,13 +14,21 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   templateUrl: './join-screen.html',
   styleUrl: './join-screen.scss',
 })
-export class JoinScreen {
+export class JoinScreen implements OnInit {
   private router = inject(Router);
   private realtimeService = inject(RealtimeService);
   private snackbar = inject(MatSnackBar);
+  private route = inject(ActivatedRoute)
   isLoading = signal(false);
   name = signal('');
 
+  ngOnInit(): void {
+    const nameParam = this.route.snapshot.paramMap.get('name');
+    if (nameParam) {
+      this.name.set(decodeURIComponent(nameParam));
+      this.join();
+    }
+  }
   join(): void {
     const trimmed = this.name().trim();
     if (!trimmed) {
@@ -34,7 +42,7 @@ export class JoinScreen {
       () => {
         // onError
         this.isLoading.set(false);
-        this.snackbar.open('Could not connect. Please try again.', '', { duration: 2500 });
+        this.snackbar.open('Nem sikerült a csatlakozás');
       },
     );
   }

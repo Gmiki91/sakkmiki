@@ -12,11 +12,20 @@
     filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
   }
 }
+// wooshing stamp
+// @keyframes stamp {
+//   0%   { transform: scale(10);    opacity: 0; }
+//   20%  { transform: scale(0.7);  opacity: 1; }
+//   25%  { transform: scale(1);    opacity: 1; }
+//   70%  { transform: scale(1);    opacity: 1; }
+//   100% { transform: scale(1);    opacity: 0; }
+// }
 
+// basic stamp
 @keyframes stamp {
-  0%   { transform: scale(10);    opacity: 0; }
-  20%  { transform: scale(0.7);  opacity: 1; }
-  25%  { transform: scale(1);    opacity: 1; }
+  0%   { transform: scale(2);    opacity: 0; }
+  10%  { transform: scale(0.7);  opacity: 1; }
+  15%  { transform: scale(1);    opacity: 1; }
   70%  { transform: scale(1);    opacity: 1; }
   100% { transform: scale(1);    opacity: 0; }
 }

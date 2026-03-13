@@ -8,6 +8,7 @@ import {
   effect,
   AfterViewInit,
   signal,
+  OnDestroy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Chess, Move } from 'chess.js';
@@ -52,7 +53,7 @@ import { StampType } from '../../../shared/models/stamp.model';
     StampSvg
   ],
 })
-export class StudentView implements AfterViewInit {
+export class StudentView implements AfterViewInit, OnDestroy {
   @ViewChild('chessBoard') chessBoard!: ChessBoard;
   @ViewChild('pieceOverlay') pieceOverlay!: PieceOverlay;
   @ViewChild('stampOverlay') stampOverlay!: StampOverlay;
@@ -183,7 +184,7 @@ export class StudentView implements AfterViewInit {
     effect(() => {
       const exercise = this.currentExercise();
       if (!exercise) return;
-      
+       this.pieceOverlay.hide()
       if (exercise.exerciseType === 'challenge') {
         loadChess(this.challengeChess, exercise.fen);
       } else {
@@ -276,6 +277,9 @@ export class StudentView implements AfterViewInit {
         this.chessBoard?.api?.set({ lastMove: [] });
       }
     });
+  }
+  ngOnDestroy(): void {
+    this.realtimeService.leave();
   }
 
   ngAfterViewInit(): void {
@@ -591,8 +595,8 @@ export class StudentView implements AfterViewInit {
   }
   private progress(){
     this.feedback.set('Solved! ✓');
-    // this.soundService.play('stamp');
-    this.soundService.playRandomCheering();
+    this.soundService.play('stamp');
+    // this.soundService.playRandomCheering();
     this.stampOverlay.stamp();
     const stamp = this.stampOverlay.currentStamp();
     this.isWaitingForStamp.set(false);
@@ -603,4 +607,11 @@ export class StudentView implements AfterViewInit {
       if (!this.realtimeService.droppedExercise()) this.nextExercise();
     }, 3000);
   } 
+
+ readonly emoji = signal(this.pickEmoji());
+
+private pickEmoji(): string {
+  const list = ['🐣','🐵','🐶','🐱','🦁','🐯','🐮','🐷','🐭','🐰','🐹','🐻','🐻‍❄️','🐼','🐣','🦉'];
+  return list[Math.floor(Math.random() * list.length)];
+}
 }

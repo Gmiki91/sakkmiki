@@ -5,6 +5,11 @@ import { studentGuard } from './core/guards/student.guard';
 
 export const routes: Routes = [
   { path: '', loadComponent: () => import('./features/lobby/lobby').then((m) => m.Lobby) },
+  { 
+  path: 'join/:name', 
+  loadComponent: () =>
+    import('./features/classroom/join-screen/join-screen').then((m) => m.JoinScreen),
+},
   {
     path: 'join',
     loadComponent: () =>
