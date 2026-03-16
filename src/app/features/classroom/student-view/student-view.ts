@@ -50,15 +50,15 @@ import { StampType } from '../../../shared/models/stamp.model';
     BrushPicker,
     PieceOverlay,
     StampOverlay,
-    StampSvg
+    StampSvg,
   ],
 })
 export class StudentView implements AfterViewInit, OnDestroy {
   @ViewChild('chessBoard') chessBoard!: ChessBoard;
   @ViewChild('pieceOverlay') pieceOverlay!: PieceOverlay;
   @ViewChild('stampOverlay') stampOverlay!: StampOverlay;
-  @ViewChild('brushPicker')brushPicker!:BrushPicker
-  stampCollection=signal<StampType[]>([]);
+  @ViewChild('brushPicker') brushPicker!: BrushPicker;
+  stampCollection = signal<StampType[]>([]);
   realtimeService = inject(RealtimeService);
   soundService = inject(SoundService);
   loadedList = this.realtimeService.loadedExercises;
@@ -159,7 +159,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
     // Exercise mode
     if (exercise) {
       return {
-        fen:   this.exerciseChess.fen(),
+        fen: this.exerciseChess.fen(),
         orientation: 'white',
         coordinates: true,
         turnColor: this.exerciseChess.turn() === 'w' ? 'white' : 'black',
@@ -184,13 +184,13 @@ export class StudentView implements AfterViewInit, OnDestroy {
     effect(() => {
       const exercise = this.currentExercise();
       if (!exercise) return;
-       this.pieceOverlay.hide();
+      this.pieceOverlay.hide();
       if (exercise.exerciseType === 'challenge') {
         loadChess(this.challengeChess, exercise.fen);
       } else {
         loadChess(this.exerciseChess, exercise.fen);
       }
-       this.updateStatus();
+      this.updateStatus();
       this.chessBoard?.api?.set({ lastMove: [] });
     });
 
@@ -211,7 +211,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
         feedback: this.feedback(),
         exIndex: this.exIndex(),
         locked: this.isLocked(),
-        awaitingStamp:this.isWaitingForStamp()
+        awaitingStamp: this.isWaitingForStamp(),
       });
     });
 
@@ -237,8 +237,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
     effect(() => {
       const stamp = this.realtimeService.stamp();
       if (!stamp) return;
-     
-     
+
       this.realtimeService.stamp.set(null); // reset
       this.progress();
     });
@@ -385,7 +384,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
           feedback: '',
           exIndex: this.exIndex(),
           locked: this.isLocked(),
-          awaitingStamp:this.isWaitingForStamp()
+          awaitingStamp: this.isWaitingForStamp(),
         });
         if (promotion) this.chessBoard.api?.set({ fen: this.challengeChess.fen() });
       }
@@ -403,7 +402,11 @@ export class StudentView implements AfterViewInit, OnDestroy {
     const solution = ex.solutions?.find((line) => newHistory.every((m, i) => line[i] === m));
     if (solution) {
       this.isLocked.set(false);
-      this.playSound(move);
+      if(ex.exerciseType==='mushroom'){
+        this.soundService.playRandomBite();
+      }else{
+        this.playSound(move);
+      }
       this.updateStatus();
       this.realtimeService.updatePresence({
         fen: this.exerciseChess.fen(),
@@ -411,18 +414,16 @@ export class StudentView implements AfterViewInit, OnDestroy {
         feedback: this.feedback(),
         exIndex: this.exIndex(),
         locked: this.isLocked(),
-        awaitingStamp:this.isWaitingForStamp()
+        awaitingStamp: this.isWaitingForStamp(),
       });
       this.moveHistory.set(newHistory);
       const isSolved = ex.solutions?.some((line) => line.length === newHistory.length);
       if (isSolved) {
-      // Automatic progress turned off for now, always check with teacher
-      // if(automaticProgress)
-      // this.progress()
-      // else
-        this.isWaitingForStamp.set(true);
-        this.lockBoard();
-        
+        if (this.realtimeService.autoProgress()) this.progress();
+        else {
+          this.isWaitingForStamp.set(true);
+          this.lockBoard();
+        }
       } else {
         this.feedback.set('Good move!');
         //gombaszedés, same color always
@@ -442,10 +443,9 @@ export class StudentView implements AfterViewInit, OnDestroy {
         }
       }
     } else {
-      // Automatic reset turned off for now, always check with teacher
-      // if(automaticReset)
-      // this.handleMistake(ex,move)
-      // else
+      if(this.realtimeService.autoRedo())
+      this.handleMistake(ex,move)
+      else
       this.lockBoard();
     }
   }
@@ -470,7 +470,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
   }
 
   nextExercise() {
-    this.pieceOverlay.hide()
+    this.pieceOverlay.hide();
     const size = this.loadedList().length - 1;
     if (this.exIndex() < size) {
       this.exIndex.update((n) => n + 1);
@@ -583,34 +583,41 @@ export class StudentView implements AfterViewInit, OnDestroy {
     }
   }
 
-  private lockBoard(){
+  private lockBoard() {
     this.isLocked.set(true);
     this.chessBoard.api?.set({ movable: { color: undefined } });
     this.realtimeService.updatePresence({
-      fen: this.exerciseChess.fen(), 
+      fen: this.exerciseChess.fen(),
       status: this.status(),
       feedback: this.feedback(),
       exIndex: this.exIndex(),
       locked: true,
-      awaitingStamp:this.isWaitingForStamp(),
+      awaitingStamp: this.isWaitingForStamp(),
     });
   }
-  private progress(){
+  private progress(stampActive: boolean = false) {
     this.feedback.set('Solved! ✓');
-    this.soundService.play('stamp');
-    // this.soundService.playRandomCheering();
-    this.stampOverlay.stamp();
-    const stamp = this.stampOverlay.currentStamp();
-    this.isWaitingForStamp.set(false);
-    this.isLocked.set(false);
-    setTimeout(() => {
-      //leave droppedExercise set so currentExercise doesn't recompute and defaults to the loadedListExercise
-      this.stampCollection.update(arr=>[...arr,stamp as StampType]);
-      if (!this.realtimeService.droppedExercise()) this.nextExercise();
-    }, 3000);
-  } 
+    if (stampActive) {
+      this.soundService.play('stamp');
+      this.stampOverlay.stamp();
+      const stamp = this.stampOverlay.currentStamp();
+      this.isWaitingForStamp.set(false);
+      this.isLocked.set(false);
+      setTimeout(() => {
+        //leave droppedExercise set so currentExercise doesn't recompute and defaults to the loadedListExercise
+        this.stampCollection.update((arr) => [...arr, stamp as StampType]);
+        if (!this.realtimeService.droppedExercise()) this.nextExercise();
+      }, 3000);
+    } else {
+      this.soundService.playRandomCheering();
+      setTimeout(() => {
+        //leave droppedExercise set so currentExercise doesn't recompute and defaults to the loadedListExercise
+        if (!this.realtimeService.droppedExercise()) this.nextExercise();
+      }, 3000);
+    }
+  }
 
- readonly emoji = signal(this.pickEmoji());
+  readonly emoji = signal(this.pickEmoji());
 
 private pickEmoji(): string {
   const list = ['🐣','🐵','🐶','🐱','🦁','🐯','🐮','🐷','🐭','🐰','🐹','🐻','🐻‍❄️','🐼','🐣','🦉'];

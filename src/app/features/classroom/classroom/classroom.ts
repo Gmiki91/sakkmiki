@@ -173,6 +173,14 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
 
   }
 
+  toggleAutoRedo(): void {
+    this.realtimeService.sendAutoRedo(!this.realtimeService.autoRedo());
+  }
+
+  toggleAutoProgress(): void {
+    this.realtimeService.sendAutoProgress(!this.realtimeService.autoProgress());
+  }
+
   freezeTimers() {
     // freeze all student timers
     this.timers.forEach((timer) => timer.stop());

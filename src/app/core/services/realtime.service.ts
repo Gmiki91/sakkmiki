@@ -13,7 +13,7 @@ export type StudentPresence = {
   feedback: string;
   exIndex: number;
   locked: boolean;
-  awaitingStamp:boolean;
+  awaitingStamp: boolean;
 };
 
 export type ClassroomMode = 'normal' | 'gathered';
@@ -28,10 +28,19 @@ type BroadcastEvent =
   | { type: 'dropped_exercise'; studentName: string; exercise: Exercise }
   | { type: 'sync_challenge_pair'; pair: ChallengePair }
   | { type: 'challenge_remove'; pair: ChallengePair }
-  | { type: 'challenge_move'; white: string; black: string; fen: string; from: string; to: string,over?:boolean }
+  | {
+      type: 'challenge_move';
+      white: string;
+      black: string;
+      fen: string;
+      from: string;
+      to: string;
+      over?: boolean;
+    }
   | { type: 'resume'; studentName: string }
-  | { type: 'stamp'; studentName: string };
-
+  | { type: 'stamp'; studentName: string }
+  | { type: 'set_auto_redo'; value: boolean }
+  | { type: 'set_auto_progress'; value: boolean };
 
 @Injectable({ providedIn: 'root' })
 export class RealtimeService {
@@ -44,6 +53,8 @@ export class RealtimeService {
   // --- Signals ---
   students = signal<StudentPresence[]>([]);
   mode = signal<ClassroomMode>('normal');
+  autoRedo = signal<boolean>(false);
+  autoProgress = signal<boolean>(false);
   resume = signal<string | null>(null);
   stamp = signal<string | null>(null);
   teacherFen = signal<string>('');
@@ -59,7 +70,7 @@ export class RealtimeService {
     fen: string;
     from: string;
     to: string;
-    over?:boolean;
+    over?: boolean;
   } | null>(null);
 
   // ----------------------------------------------------------------
@@ -82,8 +93,8 @@ export class RealtimeService {
             status: p.status,
             feedback: p.feedback,
             exIndex: p.exIndex,
-            locked:p.locked,
-            awaitingStamp:p.awaitingStamp
+            locked: p.locked,
+            awaitingStamp: p.awaitingStamp,
           }));
         this.students.set(list);
         this.onStudentsUpdate?.(list);
@@ -113,11 +124,20 @@ export class RealtimeService {
   sendDroppedExercise(studentName: string, exercise: Exercise): void {
     this.broadcast({ type: 'dropped_exercise', studentName, exercise });
   }
-  sendResume(studentName:string){
-    this.broadcast({type:'resume',studentName});
+  sendResume(studentName: string) {
+    this.broadcast({ type: 'resume', studentName });
   }
-  sendStamp(studentName:string){
-    this.broadcast({type:'stamp',studentName});
+  sendStamp(studentName: string) {
+    this.broadcast({ type: 'stamp', studentName });
+  }
+  sendAutoRedo(value: boolean): void {
+    this.autoRedo.set(value);
+    this.broadcast({ type: 'set_auto_redo', value });
+  }
+
+  sendAutoProgress(value: boolean): void {
+    this.autoProgress.set(value);
+    this.broadcast({ type: 'set_auto_progress', value });
   }
   // clearDroppedExercise(): void {
   //   this.droppedExercise.set(null);
@@ -143,8 +163,8 @@ export class RealtimeService {
             status: '',
             feedback: '',
             exIndex: 0,
-            locked:false,
-            awaitingStamp:false
+            locked: false,
+            awaitingStamp: false,
           });
           onJoined();
         } else if (status === 'TIMED_OUT' || status === 'CLOSED' || status === 'CHANNEL_ERROR') {
@@ -171,8 +191,15 @@ export class RealtimeService {
     this.broadcast({ type: 'sync_challenge_pair', pair });
   }
 
-  sendChallengeMove(white: string, black: string, fen: string, from: string, to: string,over?:boolean): void {
-    this.broadcast({ type: 'challenge_move', white, black, fen, from, to ,over});
+  sendChallengeMove(
+    white: string,
+    black: string,
+    fen: string,
+    from: string,
+    to: string,
+    over?: boolean,
+  ): void {
+    this.broadcast({ type: 'challenge_move', white, black, fen, from, to, over });
   }
   sendChallengeRemove(pair: ChallengePair): void {
     this.broadcast({ type: 'challenge_remove', pair });
@@ -239,10 +266,16 @@ export class RealtimeService {
           this.resume.set(event.studentName);
         }
         break;
-          case 'stamp':
+      case 'stamp':
         if (event.studentName === this.studentName()) {
           this.stamp.set(event.studentName);
         }
+        break;
+      case 'set_auto_redo':
+        this.autoRedo.set(event.value);
+        break;
+      case 'set_auto_progress':
+        this.autoProgress.set(event.value);
         break;
       default:
         this.handleBroadcast(event);
@@ -275,7 +308,7 @@ export class RealtimeService {
           fen: event.fen,
           from: event.from,
           to: event.to,
-          over:event.over
+          over: event.over,
         });
         break;
     }

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-export type SoundEffect = 'move' | 'take' |'stamp'|'gasp'| 'fanfare' | 'cheering'|'bravo'|'homer';
+export type SoundEffect = 'move' | 'take' |'stamp'|'gasp'|'bite'| 'fanfare' | 'cheering'|'bravo'|'homer'|'bite1'|'bite2'|'bite3'|'bite4'|'bite5'|'bite6';
 
 @Injectable({ providedIn: 'root' })
 export class SoundService {
@@ -13,6 +13,13 @@ export class SoundService {
     cheering: new Audio('/sounds/cheering.mp3'),
     bravo: new Audio('/sounds/bravo.mp3'),
     homer: new Audio('/sounds/homer.mp3'),
+    bite: new Audio('/sounds/bite.mp3'),
+    bite1: new Audio('/sounds/bite1.mp3'),
+    bite2: new Audio('/sounds/bite2.mp3'),
+    bite3: new Audio('/sounds/bite3.mp3'),
+    bite4: new Audio('/sounds/bite4.mp3'),
+    bite5: new Audio('/sounds/bite5.mp3'),
+    bite6: new Audio('/sounds/bite6.mp3'),
   };
 
   play(sound: SoundEffect): void {
@@ -22,7 +29,15 @@ export class SoundService {
   }
   playRandomCheering():void{
     const cheering = [ 'fanfare' , 'cheering','bravo','homer'];
-     const random = cheering[Math.floor(Math.random() * cheering.length)] as SoundEffect;
-     this.sounds[random].play();
+    this.playRandom(cheering);
+  }
+    playRandomBite(){
+      const bites =['bite1','bite2','bite3','bite4','bite5','bite6'];
+     this.playRandom(bites);
+
+  }
+  playRandom(arr:string[]){
+    const random =arr[Math.floor(Math.random() * arr.length)] as SoundEffect;
+      this.sounds[random].play();
   }
 }

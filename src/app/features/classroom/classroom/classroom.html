@@ -6,7 +6,18 @@
       (onGather)="freezeTimers()"
       (onDisperse)="resumeTimers()"
     ></app-teacher-table>
+    
+<button mat-raised-button 
+  [color]="realtimeService.autoRedo() ? 'primary' : ''"
+  (click)="toggleAutoRedo()">
+  Auto Redo {{ realtimeService.autoRedo() ? 'ON' : 'OFF' }}
+</button>
 
+<button mat-raised-button 
+  [color]="realtimeService.autoProgress() ? 'primary' : ''"
+  (click)="toggleAutoProgress()">
+  Auto Progress {{ realtimeService.autoProgress() ? 'ON' : 'OFF' }}
+</button>
     <div class="exercise-lists">
       @for (list of exerciseService.exerciseLists(); track $index) {
         <h3>{{ list.title }}</h3>
