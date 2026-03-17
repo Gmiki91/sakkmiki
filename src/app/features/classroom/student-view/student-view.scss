@@ -27,6 +27,9 @@ mat-card-header {
     font-size:23px;
     justify-content: space-around;
     width: 400px;
+     &.reversed {
+    flex-direction: row-reverse;
+    }
   }
   .overlay-wrapper {
     position: relative;
