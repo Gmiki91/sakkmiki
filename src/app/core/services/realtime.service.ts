@@ -46,6 +46,7 @@ type BroadcastEvent =
 export class RealtimeService {
   private supabase = inject(SupabaseService);
   private channel!: RealtimeChannel;
+  private lastPresence: StudentPresence | null = null; // after network blips, Supabase heartbeat timeout, keep the last studentPresence in sync with classroom miniboard
   studentName = signal('');
 
   onStudentsUpdate: ((students: StudentPresence[]) => void) | null = null;
@@ -156,17 +157,25 @@ export class RealtimeService {
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
-          this.isJoined.set(true);
-          await this.trackPresence({
-            name,
-            fen: STARTING_FEN,
-            status: '',
-            feedback: '',
-            exIndex: 0,
-            locked: false,
-            awaitingStamp: false,
-          });
-          onJoined();
+          if (!this.isJoined()) {
+             // First connection — track initial state and navigate
+            this.isJoined.set(true);
+            await this.trackPresence({
+              name,
+              fen: STARTING_FEN,
+              status: '',
+              feedback: '',
+              exIndex: 0,
+              locked: false,
+              awaitingStamp: false,
+            });
+            onJoined();
+          } else {
+            // Reconnection — re-track last known state instead of resetting
+            if (this.lastPresence) {
+              await this.channel.track(this.lastPresence);
+            }
+          }
         } else if (status === 'TIMED_OUT' || status === 'CLOSED' || status === 'CHANNEL_ERROR') {
           onError();
         }
@@ -174,10 +183,9 @@ export class RealtimeService {
   }
 
   async updatePresence(state: Omit<StudentPresence, 'name'>): Promise<void> {
-    await this.channel.track({
-      name: this.studentName(),
-      ...state,
-    });
+    const presence: StudentPresence = { name: this.studentName(), ...state };
+    this.lastPresence = presence;
+    await this.channel.track(presence);
   }
 
   sendMiniboardArrows(shapes: DrawShape[]): void {
@@ -212,6 +220,7 @@ export class RealtimeService {
   leave(): void {
     if (this.channel) {
       this.isJoined.set(false);
+      this.lastPresence = null;
       this.supabase.client.removeChannel(this.channel);
     }
   }
