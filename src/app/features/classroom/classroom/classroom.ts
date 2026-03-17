@@ -164,13 +164,14 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
     );
   }
 
-  handleStamp(studentName:string){
+  handleStamp(studentName: string) {
     this.realtimeService.sendStamp(studentName);
     // Update miniboard locally immediately
     this.realtimeService.students.update((students) =>
-      students.map((s) => (s.name === studentName ? { ...s, locked: false,awaitingStamp:false } : s)),
+      students.map((s) =>
+        s.name === studentName ? { ...s, locked: false, awaitingStamp: false } : s,
+      ),
     );
-
   }
 
   toggleAutoRedo(): void {
@@ -287,7 +288,7 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private resetTimer(name: string): void {
-    this.timers.find(t => t.name() === name)?.reset();
+    this.timers.find((t) => t.name() === name)?.reset();
   }
 
   private updateMushroomcollecting(bool: boolean, name: string) {
@@ -295,12 +296,18 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
     else this.mushroomCollectingStudents.update((arr) => arr.filter((value) => value !== name));
   }
 
-  private updateExerciseTitle(ex: Exercise,studentName: string,listTitle: string,allSame?: boolean,) {
+  private updateExerciseTitle(
+    ex: Exercise,
+    studentName: string,
+    listTitle: string,
+    allSame?: boolean,
+  ) {
     const title = ex?.title ? `${listTitle}/${ex?.title}` : 'No exercise loaded';
     if (allSame) {
-      this.exerciseTitles.update(t =>Object.fromEntries(Object.keys(t).map((key) => [key, title])),);
+      const names = this.realtimeService.students().map((s) => s.name);
+      this.exerciseTitles.set(Object.fromEntries(names.map((name) => [name, title])));
     } else {
-      this.exerciseTitles.update(t => ({ ...t, [studentName]: title }));
+      this.exerciseTitles.update((t) => ({ ...t, [studentName]: title }));
     }
   }
 }
