@@ -328,6 +328,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
         }
       }
     } else {
+      this.soundService.play('wrongMove');
       if(this.realtimeService.autoRedo())
       this.handleMistake(ex,move)
       else
@@ -449,6 +450,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
       if (!pair || move.white !== pair.white || move.black !== pair.black) return;
       if (move.over) {
         this.challengeChess.move({ ...move, promotion: 'q' });
+        this.soundService.play('lost');
       } else {
         loadChess(this.challengeChess, move.fen);
       }
@@ -512,7 +514,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
   }
 
   private youWin() {
-    console.log('you win!');
+    this.soundService.play('won');
   }
   private playSound(move: Move) {
     if (move.captured) this.soundService.play('take');
