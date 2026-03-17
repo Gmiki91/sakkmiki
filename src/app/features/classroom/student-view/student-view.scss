@@ -21,14 +21,14 @@ mat-card-header {
   margin-bottom: 12px;
   position: relative;
 
-  .file-helper{
-    display:flex;
-    margin-top:5px;
-    font-size:23px;
+  .file-helper {
+    display: flex;
+    margin-top: 5px;
+    font-size: 23px;
     justify-content: space-around;
     width: 400px;
-     &.reversed {
-    flex-direction: row-reverse;
+    &.reversed {
+      flex-direction: row-reverse;
     }
   }
   .overlay-wrapper {
@@ -40,6 +40,17 @@ mat-card-header {
       display: block;
       width: 400px;
       height: 400px;
+    }
+    &.locked::after {
+      content: '🔒';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 64px;
+      z-index: 5;
+      pointer-events: none;
+      opacity: 0.6;
     }
   }
   .promotion-overlay {
@@ -106,15 +117,23 @@ mat-card-header {
 .collection app-stamp-svg {
   animation: stamp-pop 0.4s ease-out forwards;
 }
-.collection-item{
+.collection-item {
   font-size: 23px;
 }
 
 @keyframes stamp-pop {
-  0%   { transform: scale(0); }
-  60%  { transform: scale(1.3); }
-  80%  { transform: scale(0.9); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(0);
+  }
+  60% {
+    transform: scale(1.3);
+  }
+  80% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 @media (max-width: 600px) {
   .chess-container {

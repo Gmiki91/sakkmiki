@@ -89,7 +89,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
     computation: () => '',
   });
 
-   private isLocked: WritableSignal<boolean> = linkedSignal({
+   isLocked: WritableSignal<boolean> = linkedSignal({
     source: () => this.currentExercise(),
     computation: () => false,
   });
@@ -141,7 +141,6 @@ export class StudentView implements AfterViewInit, OnDestroy {
     drawable: {
       enabled: true,
       visible: true,
-      shapes: this.realtimeService.sharedArrows(),
     },
   }));
   private challengeConfig = computed<Config>(() => ({
@@ -159,7 +158,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
       draggable: { enabled: true, showGhost: true },
       highlight: { lastMove: true, check: true },
       lastMove: this.challengeLastMove(),
-      drawable: { enabled: true, visible: true, shapes: this.realtimeService.sharedArrows() },
+      drawable: { enabled: true, visible: true},
     }));
 
      private exerciseConfig = computed<Config>(() => ({
@@ -177,7 +176,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
     draggable: { enabled: true, showGhost: true },
     highlight: { lastMove: true, check: true },
     lastMove: this.exerciseLastMove(),
-    drawable: { enabled: true, visible: true, shapes: this.realtimeService.sharedArrows() },
+    drawable: { enabled: true, visible: true },
   }));
 
   boardConfig = computed<Config | null>(() => {
@@ -423,6 +422,12 @@ export class StudentView implements AfterViewInit, OnDestroy {
       this.challengeLastMove.set(undefined);
       this.chessBoard?.api?.set({ lastMove: [] });
     });
+
+    // arrows
+    effect(() => {
+      const shapes = this.realtimeService.sharedArrows();
+      this.chessBoard?.api?.set({ drawable: { shapes } });
+    });
   }
 
   private setupEventHandlers(): void {
@@ -440,6 +445,14 @@ export class StudentView implements AfterViewInit, OnDestroy {
       if (!stamp) return;
       this.realtimeService.stamp.set(null);
       this.progressWithStamp();
+    });
+
+    // Teacher locks/unlocks board
+    effect(() => {
+      const lock = this.realtimeService.lock();
+      if (!lock) return;
+      this.realtimeService.lock.set(null);
+      this.isLocked.set(true);
     });
 
     // Incoming challenge move from opponent

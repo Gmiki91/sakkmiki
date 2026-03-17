@@ -7,8 +7,7 @@ import {
   ViewChildren,
   effect,
   signal,
-  AfterViewInit,
-  ChangeDetectionStrategy,
+  AfterViewInit
 } from '@angular/core';
 import { TeacherTable } from '../teacher-table/teacher-table';
 import { Exercise } from '../../../shared/models/exercise.model';
@@ -26,6 +25,7 @@ import { MatIcon } from '@angular/material/icon';
 import { Key } from '@lichess-org/chessground/types';
 import { StudentTimer } from '../timer';
 import { STARTING_FEN } from '../../../shared/utils/chess.utils';
+import { MatTooltip } from '@angular/material/tooltip';
 
 type ConfigParam = {
   fen: string;
@@ -43,6 +43,7 @@ type ConfigParam = {
     MatButtonModule,
     MatIcon,
     MatProgressSpinnerModule,
+    MatTooltip,
     StudentTimer,
   ],
   templateUrl: './classroom.html',
@@ -58,6 +59,7 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   listTitleForAll = signal<string>('');
   isLoadingList = signal(false);
   mushroomCollectingStudents = signal<string[]>([]);
+  teacherLockedStudents = signal<Set<string>>(new Set());
   private lastExIndex: Record<string, number> = {};
 
   // Track which board elements already have listeners to avoid duplicates
@@ -268,6 +270,19 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
       pairs.map((p) => (p.white === pair.white && p.black === pair.black ? swapped : p)),
     );
     this.realtimeService.sendChallengeRematch(swapped);
+  }
+
+  handleLock(studentName: string) {
+  if (this.realtimeService.students().find(s => s.name === studentName)?.locked) {
+    this.teacherLockedStudents.update(set => { set.delete(studentName); return new Set(set); });
+    this.handleResume(studentName);
+  } else {
+    this.teacherLockedStudents.update(set => new Set(set).add(studentName));
+    this.realtimeService.sendLock(studentName);
+    this.realtimeService.students.update(students =>
+      students.map(s => s.name === studentName ? { ...s, locked: true } : s)
+    );
+  }
 }
 
   private attachStudentBoardListeners(): void {

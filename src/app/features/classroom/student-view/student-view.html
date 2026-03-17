@@ -14,7 +14,7 @@
 
     <mat-card-content>
       <div class="board-wrapper" #boardWrapper>
-        <div class="overlay-wrapper">
+        <div class="overlay-wrapper" [class.locked]="isLocked()">
           <app-chess-board
             #chessBoard
             [config]="boardConfig()!"

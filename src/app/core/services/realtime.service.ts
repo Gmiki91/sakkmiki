@@ -41,7 +41,8 @@ type BroadcastEvent =
   | { type: 'resume'; studentName: string }
   | { type: 'stamp'; studentName: string }
   | { type: 'set_auto_redo'; value: boolean }
-  | { type: 'set_auto_progress'; value: boolean };
+  | { type: 'set_auto_progress'; value: boolean }
+  | { type: 'lock'; studentName: string };
 
 @Injectable({ providedIn: 'root' })
 export class RealtimeService {
@@ -59,6 +60,7 @@ export class RealtimeService {
   autoProgress = signal<boolean>(false);
   resume = signal<string | null>(null);
   stamp = signal<string | null>(null);
+  lock = signal<string | null>(null);
   teacherFen = signal<string>('');
   sharedArrows = signal<DrawShape[]>([]);
   miniboardArrows = signal<{ name: string; shapes: DrawShape[] } | null>(null);
@@ -131,6 +133,9 @@ export class RealtimeService {
   }
   sendStamp(studentName: string) {
     this.broadcast({ type: 'stamp', studentName });
+  }
+  sendLock(studentName: string) {
+    this.broadcast({ type: 'lock', studentName });
   }
   sendAutoRedo(value: boolean): void {
     this.autoRedo.set(value);
@@ -301,6 +306,11 @@ export class RealtimeService {
             ),
           );
           this.challengeMove.set(null);
+        }
+        break;
+      case 'lock':
+        if (event.studentName === this.studentName()) {
+          this.lock.set(event.studentName);
         }
         break;
       default:

@@ -92,16 +92,20 @@
             </div>
           </mat-card-content>
           <mat-card-actions style="justify-content: center;">
-            @if (student.locked && !student.awaitingStamp) {
+            @if (student.locked && !student.awaitingStamp&& !teacherLockedStudents().has(student.name)) {
               <button mat-raised-button class="resume-btn" 
                 (click)="handleResume(student.name)">
                 Redo
               </button>
             }
-             @if (student.awaitingStamp) {
+             @else if (student.awaitingStamp) {
               <button mat-raised-button class="stamp-btn" 
                 (click)="handleStamp(student.name)">
                 Stamp
+              </button>
+            }@else {
+              <button mat-icon-button (click)="handleLock(student.name)" [matTooltip]="student.locked ?'unlock board':'lock board'">
+                <mat-icon>{{ student.locked ? 'lock_open' : 'lock' }}</mat-icon>
               </button>
             }
           </mat-card-actions>
