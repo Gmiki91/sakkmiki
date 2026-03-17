@@ -79,6 +79,7 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
       board?.api?.set({ drawable: { shapes: update.shapes } });
     });
   }
+
   ngOnInit(): void {
     this.exerciseService.loadExerciseLists();
     this.realtimeService.joinAsTeacher();
@@ -260,6 +261,14 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
     if (whiteFen) return { fen: whiteFen };
     return { fen: STARTING_FEN };
   }
+
+  triggerRematch(pair: ChallengePair): void {
+    const swapped: ChallengePair = { white: pair.black, black: pair.white };
+    this.realtimeService.challengePairs.update((pairs) =>
+      pairs.map((p) => (p.white === pair.white && p.black === pair.black ? swapped : p)),
+    );
+    this.realtimeService.sendChallengeRematch(swapped);
+}
 
   private attachStudentBoardListeners(): void {
     this.studentBoards.forEach((board, index) => {

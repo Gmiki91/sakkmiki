@@ -28,6 +28,7 @@ type BroadcastEvent =
   | { type: 'dropped_exercise'; studentName: string; exercise: Exercise }
   | { type: 'sync_challenge_pair'; pair: ChallengePair }
   | { type: 'challenge_remove'; pair: ChallengePair }
+  | { type: 'challenge_rematch'; pair: ChallengePair }
   | {
       type: 'challenge_move';
       white: string;
@@ -158,7 +159,7 @@ export class RealtimeService {
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           if (!this.isJoined()) {
-             // First connection — track initial state and navigate
+            // First connection — track initial state and navigate
             this.isJoined.set(true);
             await this.trackPresence({
               name,
@@ -211,6 +212,9 @@ export class RealtimeService {
   }
   sendChallengeRemove(pair: ChallengePair): void {
     this.broadcast({ type: 'challenge_remove', pair });
+  }
+  sendChallengeRematch(pair: ChallengePair): void {
+    this.broadcast({ type: 'challenge_rematch', pair });
   }
 
   // ----------------------------------------------------------------
@@ -286,6 +290,19 @@ export class RealtimeService {
       case 'set_auto_progress':
         this.autoProgress.set(event.value);
         break;
+      case 'challenge_rematch':
+        if (event.pair.white === this.studentName() || event.pair.black === this.studentName()) {
+          this.challengePairs.update((pairs) =>
+            pairs.map((p) =>
+              (p.white === event.pair.white && p.black === event.pair.black) ||
+              (p.white === event.pair.black && p.black === event.pair.white)
+                ? event.pair
+                : p,
+            ),
+          );
+          this.challengeMove.set(null);
+        }
+        break;
       default:
         this.handleBroadcast(event);
     }
@@ -319,6 +336,17 @@ export class RealtimeService {
           to: event.to,
           over: event.over,
         });
+        break;
+      case 'challenge_rematch':
+        this.challengePairs.update((pairs) =>
+          pairs.map((p) =>
+            (p.white === event.pair.white && p.black === event.pair.black) ||
+            (p.white === event.pair.black && p.black === event.pair.white)
+              ? event.pair
+              : p,
+          ),
+        );
+        this.challengeMove.set(null);
         break;
     }
   }

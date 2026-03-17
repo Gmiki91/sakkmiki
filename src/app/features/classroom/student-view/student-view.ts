@@ -155,6 +155,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
         dests: getValidMoves(this.challengeChess),
         events: { after: (orig, dest) => this.handleChallengeMove(orig, dest) },
       },
+      check: this.challengeChess.isCheck(),
       draggable: { enabled: true, showGhost: true },
       highlight: { lastMove: true, check: true },
       lastMove: this.challengeLastMove(),
@@ -172,6 +173,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
       dests: getValidMoves(this.exerciseChess),
       events: { after: (orig, dest) => this.handleMove(orig, dest) },
     },
+    check: this.exerciseChess.isCheck(),
     draggable: { enabled: true, showGhost: true },
     highlight: { lastMove: true, check: true },
     lastMove: this.exerciseLastMove(),
@@ -405,16 +407,20 @@ export class StudentView implements AfterViewInit, OnDestroy {
       else this.onDisperse();
     });
 
-    // Reset challenge board when a pair is assigned
+    // Reset challenge board when a pair is assigned/rematch is set
     effect(() => {
       const pair = this.myPair();
-      if (pair) {
-        this.pieceOverlay.hide();
+      if (!pair) return;
+      this.pieceOverlay.hide();
+      const ex = this.currentExercise();
+      if (ex?.fen) {
+        loadChess(this.challengeChess, ex.fen);
+      } else {
         this.challengeChess = new Chess();
-        this.challengeFen.set(STARTING_FEN);
-        this.challengeLastMove.set(undefined);
-        this.chessBoard?.api?.set({ lastMove: [] });
       }
+      this.challengeFen.set(this.challengeChess.fen());
+      this.challengeLastMove.set(undefined);
+      this.chessBoard?.api?.set({ lastMove: [] });
     });
   }
 
@@ -496,21 +502,8 @@ export class StudentView implements AfterViewInit, OnDestroy {
         .filter(Boolean)
         .every((p) => p!.color === (this.myColor() === 'white' ? 'w' : 'b'));
     const reachSquareWin = conditions?.includes(normalizedSan);
-    if (captureAllWin || reachSquareWin) {
-      // setTimeout(() => {
-      //   const pairSwap = { white: pair.black, black: pair.white };
-      //   this.realtimeService.challengePairs.update((pairs) =>
-      //     pairs.filter((p) => p.white !== pair.white || p.black !== pair.black),
-      //   );
-      //   this.realtimeService.challengePairs.update((pairs) => [...pairs, pairSwap]);
-      //   // this.realtimeService.sendChallengeRemove(pair);
-      //   // this.realtimeService.syncChallengePair(pairSwap);
-      //     this.challengeChess.load(this.currentExercise().fen,{skipValidation:this.currentExercise()?.skipFenValidation});
-      //   this.feedback.set('');
-      // }, 3000);
-      return true;
-    }
-    return false;
+    return !!(captureAllWin || reachSquareWin);
+   
   }
   private backrankpawnWins(dest: Key) {
     const ex = this.currentExercise();
