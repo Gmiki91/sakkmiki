@@ -62,6 +62,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
 
   // --- Exercise state ---
   stampCollection = signal<StampType[]>([]);
+  mushroomCollection = signal<number>(0);
   loadedList = this.realtimeService.loadedExercises;
 
   exIndex = linkedSignal({
@@ -289,6 +290,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
       this.isLocked.set(false);
       if(ex.exerciseType==='mushroom'){
         this.soundService.playRandomBite();
+        this.mushroomCollection.update(n=>n+1);
       }else{
         this.playSound(move);
       }
@@ -385,12 +387,6 @@ export class StudentView implements AfterViewInit, OnDestroy {
     effect(() => {
       const exercise = this.currentExercise();
       if (!exercise) return;
-      //   let fen;
-      // if (type === 'challenge') {
-      //   fen = exercise ? this.challengeChess.fen() : STARTING_FEN;
-      // } else {
-      //   fen = exercise ? this.exerciseChess.fen() : STARTING_FEN;
-      // }
       const fen = exercise.exerciseType === 'challenge' ? this.challengeFen() : this.exerciseFen();
       this.realtimeService.updatePresence({
         fen,

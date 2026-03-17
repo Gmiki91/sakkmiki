@@ -93,15 +93,18 @@ mat-card-header {
   justify-content: center;
   padding-top: 8px;
 }
-.stamp-collection {
+.collection {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
   padding: 8px 0;
   justify-content: center;
 }
-.stamp-collection app-stamp-svg {
+.collection app-stamp-svg {
   animation: stamp-pop 0.4s ease-out forwards;
+}
+.collection-item{
+  font-size: 23px;
 }
 
 @keyframes stamp-pop {

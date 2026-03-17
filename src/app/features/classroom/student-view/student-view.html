@@ -7,7 +7,7 @@
         } @else if (myPair()) {
           <span> {{ myPair()!.white }} vs {{ myPair()!.black }}</span>
         } @else {
-          <span> Szia {{ realtimeService.studentName() }}! {{emoji()}}</span>
+          <span> Szia {{ realtimeService.studentName() }}! {{ emoji() }}</span>
         }
       </mat-card-title>
     </mat-card-header>
@@ -18,7 +18,12 @@
           <app-chess-board
             #chessBoard
             [config]="boardConfig()!"
-            [mushroomMode]="myPair() ? false : realtimeService.mode() === 'normal' && currentExercise()?.exerciseType === 'mushroom'"
+            [mushroomMode]="
+              myPair()
+                ? false
+                : realtimeService.mode() === 'normal' &&
+                  currentExercise()?.exerciseType === 'mushroom'
+            "
           ></app-chess-board>
           <app-piece-overlay #pieceOverlay [orientation]="'white'"> </app-piece-overlay>
           <app-stamp-overlay #stampOverlay></app-stamp-overlay>
@@ -47,7 +52,7 @@
           <span>🪥</span>
           <span>🍄</span>
           <span>☃️</span>
-                 </div>
+        </div>
       </div>
       <!-- @if (!myPair()) {
         <div class="feedback">
@@ -59,10 +64,15 @@
       } -->
       <!-- <app-brush-picker #brushPicker></app-brush-picker> -->
       @if (stampCollection().length > 0) {
-        <div class="stamp-collection">
+        <div class="collection">
           @for (stamp of stampCollection(); track $index) {
             <app-stamp-svg [type]="stamp" [size]="48"></app-stamp-svg>
           }
+        </div>
+      }
+      @if (mushroomCollection() > 0) {
+        <div class="collection">
+          <span class="collection-item">{{mushroomCollection()}}x🍄</span>
         </div>
       }
     </mat-card-content>
