@@ -15,10 +15,19 @@ mat-card-header {
 
 .board-wrapper {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
   margin-bottom: 12px;
   position: relative;
 
+  .file-helper{
+    display:flex;
+    margin-top:5px;
+    font-size:23px;
+    justify-content: space-around;
+    width: 400px;
+  }
   .overlay-wrapper {
     position: relative;
     width: 400px;
