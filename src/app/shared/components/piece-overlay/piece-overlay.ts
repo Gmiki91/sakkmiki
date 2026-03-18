@@ -7,7 +7,7 @@ import { PieceOverlayData, OverlayExpression } from '../../models/piece-overlay.
   styleUrl: './piece-overlay.scss',
 })
 export class PieceOverlay {
-  boardSize = 400
+  boardSize = 640;
   orientation = input<'white' | 'black'>('white');
 
   overlay = signal<PieceOverlayData>(null);

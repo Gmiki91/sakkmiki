@@ -67,13 +67,12 @@ body {
 .cg-wrap coords.ranks coord,
 .cg-wrap coords.files coord {
   color: white;
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 700;
-
   -webkit-text-stroke: 1px rgba(0,0,0,0.8);
   paint-order: stroke fill; // stroke renders behind the fill
 }
 .cg-wrap coords.files {
   bottom: 0px; 
-  left:20px;
+  left:32px;
 }

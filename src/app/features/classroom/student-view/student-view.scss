@@ -21,25 +21,25 @@ mat-card-header {
   margin-bottom: 12px;
   position: relative;
 
-  .file-helper {
-    display: flex;
-    margin-top: 5px;
-    font-size: 23px;
-    justify-content: space-around;
-    width: 400px;
-    &.reversed {
-      flex-direction: row-reverse;
-    }
-  }
+  // .file-helper {
+  //   display: flex;
+  //   margin-top: 5px;
+  //   font-size: 30px;
+  //   justify-content: space-around;
+  //   width: 640px;
+  //   &.reversed {
+  //     flex-direction: row-reverse;
+  //   }
+  // }
   .overlay-wrapper {
     position: relative;
-    width: 400px;
-    height: 400px;
+    width: 640px;
+    height: 640px;
 
     app-chess-board {
       display: block;
-      width: 400px;
-      height: 400px;
+      width: 640px;
+      height: 640px;
     }
     &.locked::after {
       content: '🔒';
