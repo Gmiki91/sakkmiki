@@ -447,13 +447,22 @@ export class StudentView implements AfterViewInit, OnDestroy {
       this.progressWithStamp();
     });
 
-    // Teacher locks/unlocks board
+    // Teacher locks board
     effect(() => {
       const lock = this.realtimeService.lock();
       if (!lock) return;
       this.realtimeService.lock.set(null);
       this.isLocked.set(true);
     });
+
+      // Teacher unlocks board
+    effect(() => {
+      const unlock = this.realtimeService.unlock();
+      if (!unlock) return;
+      this.realtimeService.unlock.set(null);
+      this.isLocked.set(false);
+    });
+
 
     // Incoming challenge move from opponent
     effect(() => {

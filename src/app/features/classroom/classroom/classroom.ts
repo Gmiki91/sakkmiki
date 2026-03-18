@@ -276,7 +276,10 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   handleLock(studentName: string) {
     if (this.realtimeService.students().find(s => s.name === studentName)?.locked) {
       this.teacherLockedStudents.update(set => { set.delete(studentName); return new Set(set); });
-      this.handleResume(studentName);
+      this.realtimeService.sendUnlock(studentName);
+      this.realtimeService.students.update((students) =>
+      students.map((s) => (s.name === studentName ? { ...s, locked: false } : s)),
+    );
     } else {
       this.teacherLockedStudents.update(set => new Set(set).add(studentName));
       this.realtimeService.sendLock(studentName);
