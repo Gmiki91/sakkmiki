@@ -26,11 +26,17 @@
       <mat-icon>arrow_back</mat-icon> {{ selectedList()!.title }}
     </button>
     @for (exercise of selectedList()!.exercises; track exercise.id) {
-      <button mat-button (click)="selectExercise(exercise)">{{ exercise.title }}</button>
+      <div style="display:flex;justify-content: center;">
+        <span class="list-item"  (click)="selectExercise(exercise)">{{ exercise.title }}</span>
+        <button matIconButton  (click)="deleteExercise(exercise.id)"><mat-icon class="trash-icon">delete</mat-icon></button>
+      </div>
     }
     <button mat-button (click)="addExercise(selectedList()!.id)">
       + New exercise
     </button>
+    <button mat-button class="delete-btn" (click)="deleteList(selectedList()!.id)">
+       Delete list
+     </button>
   }
   </div>
   <main class="content">

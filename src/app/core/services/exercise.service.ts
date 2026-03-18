@@ -25,6 +25,14 @@ export class ExerciseService {
       this.exerciseLists.update((lists) => [...lists, { ...newList, exercises: [] }]);
     });
   }
+  
+  async deleteExerciseList(listId: string) {
+    await this.withLoading(async () => {
+       await this.supabase.deleteExerciseList(listId);
+        this.exerciseLists.update((lists) => lists.filter(list=>list.id!==listId));
+        this.snackbar.open('List deleted','',{duration:3000});
+    });
+  }
 
   async addExercise(listId: string, exercise: ExerciseInput): Promise<Exercise | null> {
     return await this.withLoading(async () => {
@@ -41,6 +49,18 @@ export class ExerciseService {
       return newEx;
     });
   }
+  async deleteExercise(exerciseId: string): Promise<void> {
+  await this.withLoading(async () => {
+    await this.supabase.deleteExercise(exerciseId);
+    this.snackbar.open('Exercise deleted','',{duration:3000});
+    this.exerciseLists.update(lists =>
+      lists.map(list => ({
+        ...list,
+        exercises: list.exercises.filter(ex => ex.id !== exerciseId),
+      }))
+    );
+  });
+}
   async updateExercise(exercise: Exercise) {
     await this.withLoading(async () => {
       const updated = await this.supabase.updateExercise(exercise);

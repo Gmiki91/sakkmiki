@@ -19,6 +19,11 @@ export class SupabaseService {
     return data[0];
   }
 
+  async deleteExerciseList(id:string){
+       const { error }= await this.client.from('exercise_lists').delete().eq('id',id);
+       if (error) throw error;
+  }
+
   async saveExercise(exercise: ExerciseInput): Promise<Exercise> {
     const { data, error } = await this.client
       .from('exercises')
@@ -28,6 +33,14 @@ export class SupabaseService {
     if (error) throw error;
     return this.fromDbExercise(data[0]);
   }
+
+  async deleteExercise(exerciseId: string): Promise<void> {
+  const { error } = await this.client
+    .from('exercises')
+    .delete()
+    .eq('id', exerciseId);
+  if (error) throw error;
+}
 
   async updateExercise(exercise: Exercise) {
     const { data, error } = await this.client
