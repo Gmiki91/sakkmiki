@@ -5,23 +5,33 @@
         <mat-spinner diameter="32"></mat-spinner>
       </div>
     }
-    @for (list of exerciseService.exerciseLists(); track $index) {
-      <h3 (click)="selectExercise(list.exercises[0])">{{ list.title }}</h3>
-      <app-exercise-list
-        [list]="list"
-        (selectExercise)="selectExercise($event)"
-      ></app-exercise-list>
-      <button mat-button (click)="addExercise(list.id)">+ New exercise</button>
-    }
-    @if (isListCreationActive()) {
-      <mat-form-field>
-        <mat-label>Lista címe</mat-label>
-        <input matInput [(ngModel)]="title" />
-      </mat-form-field>
-    }
-    <button mat-button (click)="addList()">
-      {{ isListCreationActive() ? 'Save list' : '+New list' }}
+   
+  @if (!selectedList()) {
+    <!-- Panel 1 -->
+    <app-exercise-list-picker (select)="onListSelected($event)"></app-exercise-list-picker>
+    <div class="sidebar-actions">
+      @if (isListCreationActive()) {
+        <mat-form-field>
+          <mat-label>Lista címe</mat-label>
+          <input matInput [(ngModel)]="title" />
+        </mat-form-field>
+      }
+      <button mat-button (click)="addList()">
+        {{ isListCreationActive() ? 'Save list' : '+New list' }}
+      </button>
+    </div>
+  } @else {
+    <!-- Panel 2 -->
+    <button matButton="tonal" (click)="selectedList.set(null)">
+      <mat-icon>arrow_back</mat-icon> {{ selectedList()!.title }}
     </button>
+    @for (exercise of selectedList()!.exercises; track exercise.id) {
+      <button mat-button (click)="selectExercise(exercise)">{{ exercise.title }}</button>
+    }
+    <button mat-button (click)="addExercise(selectedList()!.id)">
+      + New exercise
+    </button>
+  }
   </div>
   <main class="content">
     <router-outlet></router-outlet>

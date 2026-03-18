@@ -6,22 +6,37 @@
       (onGather)="freezeTimers()"
       (onDisperse)="resumeTimers()"
     ></app-teacher-table>
-    
-<button mat-raised-button 
-  [color]="realtimeService.autoRedo() ? 'primary' : ''"
-  (click)="toggleAutoRedo()">
-  Auto Redo {{ realtimeService.autoRedo() ? 'ON' : 'OFF' }}
-</button>
 
-<button mat-raised-button 
-  [color]="realtimeService.autoProgress() ? 'primary' : ''"
-  (click)="toggleAutoProgress()">
-  Auto Progress {{ realtimeService.autoProgress() ? 'ON' : 'OFF' }}
-</button>
+    <button
+      mat-raised-button
+      [color]="realtimeService.autoRedo() ? 'primary' : ''"
+      (click)="toggleAutoRedo()"
+    >
+      Auto Redo {{ realtimeService.autoRedo() ? 'ON' : 'OFF' }}
+    </button>
+
+    <button
+      mat-raised-button
+      [color]="realtimeService.autoProgress() ? 'primary' : ''"
+      (click)="toggleAutoProgress()"
+    >
+      Auto Progress {{ realtimeService.autoProgress() ? 'ON' : 'OFF' }}
+    </button>
     <div class="exercise-lists">
-      @for (list of exerciseService.exerciseLists(); track $index) {
-        <h3>{{ list.title }}</h3>
-        <button mat-raised-button color="primary" (click)="loadListToAll(list)">Load to all</button>
+      <button mat-raised-button (click)="openPicker()">
+        <mat-icon>playlist_add</mat-icon>
+        Load list
+      </button>
+      @for (list of loadedLists(); track list.id) {
+        <div class="loaded-list-header">
+          <h3>{{ list.title }}</h3>
+          <button mat-icon-button (click)="removeList(list)">
+            <mat-icon>close</mat-icon>
+          </button>
+          <button mat-raised-button color="primary" (click)="loadListToAll(list)">
+            Load to all
+          </button>
+        </div>
         <app-exercise-list
           [list]="list"
           (selectExercise)="loadExerciseToDemo($event)"
@@ -36,9 +51,11 @@
       @if (getPair(student.name); as pair) {
         @if (pair.white === student.name) {
           <!-- Challenge card (only needed one board for 2 players, so we render the board of white's and skip black's)-->
-          <mat-card class="student-card challenge-card"
-          (dragover)="$event.preventDefault()"
-          (drop)="onDrop(student.name,$event)">
+          <mat-card
+            class="student-card challenge-card"
+            (dragover)="$event.preventDefault()"
+            (drop)="onDrop(student.name, $event)"
+          >
             <mat-card-header>
               <mat-card-title>{{ pair.white }} vs {{ pair.black }}</mat-card-title>
             </mat-card-header>
@@ -50,26 +67,28 @@
             </mat-card-content>
             <mat-card-actions>
               <button mat-icon-button (click)="removePair(pair)"><mat-icon>close</mat-icon></button>
-              <button mat-icon-button (click)="triggerRematch(pair)"><mat-icon>swap_horiz</mat-icon></button>
+              <button mat-icon-button (click)="triggerRematch(pair)">
+                <mat-icon>swap_horiz</mat-icon>
+              </button>
             </mat-card-actions>
           </mat-card>
         }
         <!-- skipping black -->
       } @else {
         <!-- Exercise card -->
-        <mat-card class="student-card"
-        draggable="true"
+        <mat-card
+          class="student-card"
+          draggable="true"
           (dragstart)="onDragStart(student.name)"
           (dragover)="$event.preventDefault()"
-          (drop)="onDrop(student.name,$event)">
-        
+          (drop)="onDrop(student.name, $event)"
+        >
           <mat-card-header>
             <mat-card-title>{{ student.name }}</mat-card-title>
-            <mat-card-subtitle> 
+            <mat-card-subtitle>
               {{ exerciseTitles()[student.name] ?? 'No exercise loaded' }} -
-              <app-student-timer  #studentTimer  [name]="student.name"></app-student-timer>
-              </mat-card-subtitle
-            >
+              <app-student-timer #studentTimer [name]="student.name"></app-student-timer>
+            </mat-card-subtitle>
           </mat-card-header>
           <mat-card-content>
             <div class="mini-board">
@@ -79,7 +98,7 @@
                 </div>
               } @else {
                 <app-chess-board
-                  [config]="boardConfigFor({fen:student.fen})"
+                  [config]="boardConfigFor({ fen: student.fen })"
                   [mushroomMode]="mushroomCollectingStudents().includes(student.name)"
                   #studentBoard
                 >
@@ -91,20 +110,23 @@
               <span class="feedback">{{ student.feedback }}</span>
             </div>
           </mat-card-content>
-          <mat-card-actions style="justify-content: center;">
-            @if (student.locked && !student.awaitingStamp&& !teacherLockedStudents().has(student.name)) {
-              <button mat-raised-button class="resume-btn" 
-                (click)="handleResume(student.name)">
+          <mat-card-actions style="justify-content: center">
+            @if (
+              student.locked && !student.awaitingStamp && !teacherLockedStudents().has(student.name)
+            ) {
+              <button mat-raised-button class="resume-btn" (click)="handleResume(student.name)">
                 Redo
               </button>
-            }
-             @else if (student.awaitingStamp) {
-              <button mat-raised-button class="stamp-btn" 
-                (click)="handleStamp(student.name)">
+            } @else if (student.awaitingStamp) {
+              <button mat-raised-button class="stamp-btn" (click)="handleStamp(student.name)">
                 Stamp
               </button>
-            }@else {
-              <button mat-icon-button (click)="handleLock(student.name)" [matTooltip]="student.locked ?'unlock board':'lock board'">
+            } @else {
+              <button
+                mat-icon-button
+                (click)="handleLock(student.name)"
+                [matTooltip]="student.locked ? 'unlock board' : 'lock board'"
+              >
                 <mat-icon>{{ student.locked ? 'lock_open' : 'lock' }}</mat-icon>
               </button>
             }

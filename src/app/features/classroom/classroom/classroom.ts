@@ -26,6 +26,8 @@ import { Key } from '@lichess-org/chessground/types';
 import { StudentTimer } from '../timer';
 import { STARTING_FEN } from '../../../shared/utils/chess.utils';
 import { MatTooltip } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
+import { ExerciseListPicker, ExerciseListPickerData } from '../../../shared/components/exercise-list-picker/exercise-list-picker';
 
 type ConfigParam = {
   fen: string;
@@ -56,19 +58,18 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   realtimeService = inject(RealtimeService);
   demoExercise = signal<Exercise | null>(null);
   loadedList = signal<Exercise[]>([]);
+  loadedLists = signal<List[]>([]);
   listTitleForAll = signal<string>('');
   isLoadingList = signal(false);
+  exerciseTitles = signal<Record<string, string>>({});
   mushroomCollectingStudents = signal<string[]>([]);
   teacherLockedStudents = signal<Set<string>>(new Set());
   private lastExIndex: Record<string, number> = {};
-
+  readonly dialog = inject(MatDialog);
   // Track which board elements already have listeners to avoid duplicates
   private listenedElements = new Set<HTMLElement>();
-
   // For challenge
   pendingPair = signal<string | null>(null);
-
-  exerciseTitles = signal<Record<string, string>>({});
 
   constructor() {
     // Apply arrows to the correct miniboard when miniboardArrows updates:
@@ -273,17 +274,36 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   }
 
   handleLock(studentName: string) {
-  if (this.realtimeService.students().find(s => s.name === studentName)?.locked) {
-    this.teacherLockedStudents.update(set => { set.delete(studentName); return new Set(set); });
-    this.handleResume(studentName);
-  } else {
-    this.teacherLockedStudents.update(set => new Set(set).add(studentName));
-    this.realtimeService.sendLock(studentName);
-    this.realtimeService.students.update(students =>
-      students.map(s => s.name === studentName ? { ...s, locked: true } : s)
-    );
+    if (this.realtimeService.students().find(s => s.name === studentName)?.locked) {
+      this.teacherLockedStudents.update(set => { set.delete(studentName); return new Set(set); });
+      this.handleResume(studentName);
+    } else {
+      this.teacherLockedStudents.update(set => new Set(set).add(studentName));
+      this.realtimeService.sendLock(studentName);
+      this.realtimeService.students.update(students =>
+        students.map(s => s.name === studentName ? { ...s, locked: true } : s)
+      );
+    }
   }
-}
+
+  openPicker(): void {
+   this.dialog.open(ExerciseListPicker, {
+     width: '360px',
+     data: {
+       multiSelect: true,
+       alreadySelected: this.loadedLists(),
+     } 
+   })
+   .afterClosed()
+   .subscribe((selections: List[] | null) => {
+     if (!selections?.length) return;
+     this.loadedLists.update(current => [...current, ...selections]);
+   });
+  }
+
+  removeList(list: List): void {
+    this.loadedLists.update(lists => lists.filter(l => l.id !== list.id));
+  }
 
   private attachStudentBoardListeners(): void {
     this.studentBoards.forEach((board, index) => {

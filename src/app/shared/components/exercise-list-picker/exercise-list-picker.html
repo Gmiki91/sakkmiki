@@ -1,0 +1,43 @@
+<div class="picker-container">
+  <!-- Placeholder for search/sort -->
+  <mat-form-field appearance="outline" class="search-field">
+    <mat-label>Search</mat-label>
+    <input matInput disabled placeholder="Coming soon..." />
+    <mat-icon matSuffix>search</mat-icon>
+  </mat-form-field>
+
+  <!-- List items -->
+  <div class="list-items">
+    @for (list of exerciseService.exerciseLists(); track list.id) {
+      <div
+        class="list-item"
+        [class.already-selected]="isAlreadySelected(list)"
+        [class.pending]="isPending(list)"
+        (click)="toggleList(list)"
+      >
+        <span class="list-title">{{ list.title }}</span>
+        <span class="list-meta">{{ list.exercises.length }} exercises</span>
+        @if (isAlreadySelected(list)) {
+          <span class="already-label">already loaded</span>
+        } @else if (isPending(list)) {
+          <mat-icon class="check-icon">check</mat-icon>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Actions: only shown in multiSelect mode -->
+  @if (isMultiSelect()) {
+    <div class="actions">
+      <button mat-button (click)="cancel()">Cancel</button>
+      <button
+        mat-raised-button
+        color="primary"
+        [disabled]="pendingSelection().length === 0"
+        (click)="confirm()"
+      >
+        Load ({{ pendingSelection().length }})
+      </button>
+    </div>
+  }
+</div>

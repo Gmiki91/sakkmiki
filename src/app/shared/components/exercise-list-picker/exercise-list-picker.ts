@@ -1,0 +1,85 @@
+import { Component, input, output, inject, signal, computed } from '@angular/core';
+import { ExerciseList } from '../../models/exercise-list.model';
+import { ExerciseService } from '../../../core/services/exercise.service';
+import { MatButtonModule } from '@angular/material/button';
+import { MatInputModule } from '@angular/material/input';
+import { MatIconModule } from '@angular/material/icon';
+import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
+
+export type ExerciseListPickerData = {
+  multiSelect: boolean;
+  alreadySelected: ExerciseList[];
+};
+
+@Component({
+  selector: 'app-exercise-list-picker',
+  imports: [MatButtonModule, MatInputModule, MatIconModule, MatDialogModule],
+  templateUrl: './exercise-list-picker.html',
+  styleUrl: './exercise-list-picker.scss',
+})
+export class ExerciseListPicker {
+  // select one list and close (puzzle rush) or multiple lists are selectable (classroom) 
+  multiSelect = input<boolean>(false);
+  // for graying out list(s) that are already loaded (1 for puzzle rush, 1+ for classroom)
+  alreadySelected = input<ExerciseList[]>([]);
+  select = output<ExerciseList[]>();
+
+  exerciseService = inject(ExerciseService);
+
+  // Optional — only present when opened as a dialog
+  private dialogRef = inject(MatDialogRef<ExerciseListPicker>, { optional: true });
+  private dialogData = inject<ExerciseListPickerData>(MAT_DIALOG_DATA, { optional: true });
+
+  isModal = computed(() => !!this.dialogRef);
+  // dialogData values from modal use (classroom, puzzlerush), input values for inline use (exercises)
+  isMultiSelect  = computed(() => this.dialogData?.multiSelect ?? this.multiSelect());
+  currentAlreadySelected  = computed(() => this.dialogData?.alreadySelected ?? this.alreadySelected());
+
+  pendingSelection = signal<ExerciseList[]>([]);
+
+  isAlreadySelected(list: ExerciseList): boolean {
+    return this.currentAlreadySelected().some(l => l.id === list.id);
+  }
+
+  isPending(list: ExerciseList): boolean {
+    return this.pendingSelection().some(l => l.id === list.id);
+  }
+
+  toggleList(list: ExerciseList): void {
+    if (this.isAlreadySelected(list)) return;
+
+    if (!this.isMultiSelect()) {
+      // Single select: emit and close immediately
+      this.emit([list]);
+      return;
+    }
+
+    // Multi select: toggle pending
+    if (this.isPending(list)) {
+      this.pendingSelection.update(prev => prev.filter(l => l.id !== list.id));
+    } else {
+      this.pendingSelection.update(prev => [...prev, list]);
+    }
+  }
+
+  confirm(): void {
+    this.emit(this.pendingSelection());
+  }
+
+  cancel(): void {
+    if (this.dialogRef) {
+      this.dialogRef.close(null);
+    } else {
+      this.pendingSelection.set([]);
+    }
+  }
+
+  private emit(lists: ExerciseList[]): void {
+    if (this.dialogRef) {
+      this.dialogRef.close(lists);
+    } else {
+      this.select.emit(lists);
+      this.pendingSelection.set([]);
+    }
+  }
+}

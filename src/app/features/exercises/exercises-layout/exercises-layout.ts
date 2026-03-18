@@ -1,23 +1,25 @@
 import { Component, inject, signal, model, OnInit } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
-import { ExerciseList } from '../../../shared/components/exercise-list/exercise-list';
-import { ExerciseListInput } from '../../../shared/models/exercise-list.model';
+import { ExerciseListInput, ExerciseList as List } from '../../../shared/models/exercise-list.model';
 import { MatFormField, MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
 import { Exercise } from '../../../shared/models/exercise.model';
 import { ExerciseService } from '../../../core/services/exercise.service';
+import { ExerciseListPicker } from '../../../shared/components/exercise-list-picker/exercise-list-picker';
+import { MatIcon } from '@angular/material/icon';
 @Component({
   selector: 'app-exercises-layout',
   imports: [
-    ExerciseList,
+    ExerciseListPicker,
     RouterOutlet,
     MatFormField,
     MatInputModule,
     FormsModule,
     MatProgressSpinnerModule,
     MatButtonModule,
+    MatIcon
   ],
   templateUrl: './exercises-layout.html',
   styleUrl: './exercises-layout.scss',
@@ -27,6 +29,8 @@ export class ExercisesLayout implements OnInit  {
   isListCreationActive = signal<boolean>(false);
   title = model<string>('');
   router = inject(Router);
+  selectedList = signal<List | null>(null);
+
 
   ngOnInit(): void {
     this.exerciseService.loadExerciseLists();
@@ -47,5 +51,8 @@ export class ExercisesLayout implements OnInit  {
     } else {
       this.isListCreationActive.set(true);
     }
+  }
+  onListSelected(lists: List[]): void {
+    this.selectedList.set(lists[0] ?? null);
   }
 }
