@@ -5,10 +5,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
+import { ExerciseType } from '../../models/exercise.model';
 
 export type ExerciseListPickerData = {
   multiSelect: boolean;
   alreadySelected: ExerciseList[];
+  allowedTypes?: ExerciseType[];
 };
 
 @Component({
@@ -18,7 +20,7 @@ export type ExerciseListPickerData = {
   styleUrl: './exercise-list-picker.scss',
 })
 export class ExerciseListPicker {
-  // select one list and close (puzzle rush) or multiple lists are selectable (classroom) 
+  // select one list and close (puzzle rush) or multiple lists are selectable (classroom)
   multiSelect = input<boolean>(false);
   // for graying out list(s) that are already loaded (1 for puzzle rush, 1+ for classroom)
   alreadySelected = input<ExerciseList[]>([]);
@@ -32,17 +34,23 @@ export class ExerciseListPicker {
 
   isModal = computed(() => !!this.dialogRef);
   // dialogData values from modal use (classroom, puzzlerush), input values for inline use (exercises)
-  isMultiSelect  = computed(() => this.dialogData?.multiSelect ?? this.multiSelect());
-  currentAlreadySelected  = computed(() => this.dialogData?.alreadySelected ?? this.alreadySelected());
+  isMultiSelect = computed(() => this.dialogData?.multiSelect ?? this.multiSelect());
+  computedAlreadySelected = computed(() => this.dialogData?.alreadySelected ?? this.alreadySelected());
+  computedAllowedTypes = computed(() => this.dialogData?.allowedTypes ?? this.allowedTypes());
 
   pendingSelection = signal<ExerciseList[]>([]);
+  allowedTypes = input<ExerciseType[]>(['puzzle', 'mushroom', 'challenge']);
 
   isAlreadySelected(list: ExerciseList): boolean {
-    return this.currentAlreadySelected().some(l => l.id === list.id);
+    return this.computedAlreadySelected().some((l) => l.id === list.id);
+  }
+
+  isDisabled(list: ExerciseList): boolean {
+    return !this.computedAllowedTypes().includes(list.type) || this.isAlreadySelected(list);
   }
 
   isPending(list: ExerciseList): boolean {
-    return this.pendingSelection().some(l => l.id === list.id);
+    return this.pendingSelection().some((l) => l.id === list.id);
   }
 
   toggleList(list: ExerciseList): void {
@@ -56,9 +64,9 @@ export class ExerciseListPicker {
 
     // Multi select: toggle pending
     if (this.isPending(list)) {
-      this.pendingSelection.update(prev => prev.filter(l => l.id !== list.id));
+      this.pendingSelection.update((prev) => prev.filter((l) => l.id !== list.id));
     } else {
-      this.pendingSelection.update(prev => [...prev, list]);
+      this.pendingSelection.update((prev) => [...prev, list]);
     }
   }
 

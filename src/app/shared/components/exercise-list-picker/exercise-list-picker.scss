@@ -25,11 +25,11 @@
   cursor: pointer;
   transition: background 0.15s;
 
-  &:hover:not(.already-selected) {
+  &:hover:not(.disabled) {
     background: var(--mat-sys-surface-container-high);
   }
 
-  &.already-selected {
+  &.disabled {
     opacity: 0.45;
     cursor: default;
   }
