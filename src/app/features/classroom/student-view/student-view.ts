@@ -327,7 +327,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
         }
       }
     } else {
-      this.soundService.play('wrongMove');
+      this.soundService.play('error');
       if(this.realtimeService.autoRedo())
       this.handleMistake(ex,move)
       else

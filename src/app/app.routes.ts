@@ -27,6 +27,11 @@ export const routes: Routes = [
     canActivate: [studentGuard],
   },
   {
+  path: 'puzzle-rush',
+  loadComponent: () =>
+    import('./features/puzzle-rush/puzzle-rush').then(m => m.PuzzleRush),
+},
+  {
     path: 'exercises',
     loadComponent: () =>
       import('./features/exercises/exercises-layout/exercises-layout').then(

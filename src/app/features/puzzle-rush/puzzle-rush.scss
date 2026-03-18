@@ -1,0 +1,169 @@
+.puzzle-rush-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: calc(100vh - 64px);
+  padding: 24px;
+}
+
+// --- Idle / Setup ---
+.setup-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 400px;
+
+  h2 {
+    margin: 0;
+    font-size: 1.8rem;
+  }
+}
+
+.settings-card,
+.list-card {
+  width: 100%;
+}
+
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+
+  label {
+    font-size: 0.9rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  input {
+    width: 70px;
+    text-align: center;
+    border: 1px solid var(--mat-sys-outline);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.95rem;
+  }
+}
+
+.selected-list {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  span.meta {
+    font-size: 0.8rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  // push the edit button to the right
+  button {
+    margin-left: auto;
+  }
+}
+
+// --- Running ---
+.game-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.hud {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+
+  .hud-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 1.4rem;
+    font-weight: 600;
+
+    mat-icon {
+      font-size: 1.4rem;
+      width: 1.4rem;
+      height: 1.4rem;
+    }
+
+    &.score mat-icon  { color: #4caf50; }
+    &.wrong mat-icon  { color: #f44336; }
+    &.timer mat-icon  { color: var(--mat-sys-on-surface-variant); }
+
+    &.low-time {
+      color: #f44336;
+      animation: pulse 1s infinite;
+    }
+  }
+}
+
+.board-wrapper {
+  width: 400px;
+  height: 400px;
+  border-radius: 4px;
+
+  app-chess-board {
+    display: block;
+    width: 400px;
+    height: 400px;
+  }
+}
+
+@keyframes flash-correct {
+  0%, 100% { box-shadow: none; }
+  50%       { box-shadow: 0 0 0 8px rgba(76, 175, 80, 0.6); }
+}
+
+@keyframes flash-incorrect {
+  0%, 100% { box-shadow: none; }
+  50%       { box-shadow: 0 0 0 8px rgba(244, 67, 54, 0.6); }
+}
+
+.flash-correct   { animation: flash-correct   0.6s ease-out; }
+.flash-incorrect { animation: flash-incorrect  0.6s ease-out; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+// --- Finished ---
+.result-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+
+  h2 {
+    margin: 0;
+    font-size: 2rem;
+  }
+}
+
+.stats {
+  display: flex;
+  gap: 40px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+
+  .stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 0.85rem;
+    color: var(--mat-sys-on-surface-variant);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+}
