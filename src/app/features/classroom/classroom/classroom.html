@@ -7,21 +7,18 @@
       (onDisperse)="resumeTimers()"
     ></app-teacher-table>
 
-    <button
-      mat-raised-button
-      [color]="realtimeService.autoRedo() ? 'primary' : ''"
-      (click)="toggleAutoRedo()"
-    >
-      Auto Redo {{ realtimeService.autoRedo() ? 'ON' : 'OFF' }}
-    </button>
-
-    <button
-      mat-raised-button
-      [color]="realtimeService.autoProgress() ? 'primary' : ''"
-      (click)="toggleAutoProgress()"
-    >
-      Auto Progress {{ realtimeService.autoProgress() ? 'ON' : 'OFF' }}
-    </button>
+ <div class="teacher-controls">
+  <button mat-raised-button
+    [color]="realtimeService.autoRedo() ? 'primary' : ''"
+    (click)="toggleAutoRedo()">
+    Auto Redo {{ realtimeService.autoRedo() ? 'ON' : 'OFF' }}
+  </button>
+  <button mat-raised-button
+    [color]="realtimeService.autoProgress() ? 'primary' : ''"
+    (click)="toggleAutoProgress()">
+    Auto Progress {{ realtimeService.autoProgress() ? 'ON' : 'OFF' }}
+  </button>
+</div>
     <div class="exercise-lists">
       <button mat-raised-button (click)="openPicker()">
         <mat-icon>playlist_add</mat-icon>

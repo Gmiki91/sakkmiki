@@ -31,6 +31,7 @@ export class TeacherTable implements AfterViewInit {
   selectedExercise = input<Exercise | null>(null);
   boardConfig = signal<Config>({
     orientation: 'white',
+    coordinates: false,
     movable: {
       free: true,
       events: {
@@ -64,7 +65,6 @@ export class TeacherTable implements AfterViewInit {
     effect(() => {
       const shapes = this.realtimeService.sharedArrows();
       if (this.realtimeService.mode() === 'gathered') {
-        console.log('shapes!', shapes);
         this.chessBoard?.api?.set({ drawable: { shapes } });
       }
     });
