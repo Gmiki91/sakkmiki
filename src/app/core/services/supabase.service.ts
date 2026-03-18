@@ -74,6 +74,7 @@ export class SupabaseService {
     return data.map((list) => ({
       id: list.id,
       title: list.title,
+      type:list.type,
       exercises: list.exercise_list_items
         .sort((a: { position: number }, b: { position: number }) => a.position - b.position)
         .map((item: { exercises: any }) => {

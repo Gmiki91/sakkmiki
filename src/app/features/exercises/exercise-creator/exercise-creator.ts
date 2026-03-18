@@ -21,9 +21,10 @@ import { Exercise } from '../../../shared/models/exercise.model';
 import { ActivatedRoute } from '@angular/router';
 import { ExerciseService } from '../../../core/services/exercise.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import {  MatTooltipModule } from '@angular/material/tooltip';
 @Component({
   selector: 'app-exercise-creator',
-  imports: [ChessBoard, MatRadioModule, MatButtonModule, MatCheckboxModule, FormsModule, MatIcon],
+  imports: [ChessBoard, MatRadioModule, MatButtonModule, MatCheckboxModule, FormsModule, MatIcon, MatTooltipModule],
   templateUrl: './exercise-creator.html',
   styleUrl: './exercise-creator.scss',
 })

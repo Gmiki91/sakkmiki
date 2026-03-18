@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, inject, model, signal, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, inject, model, signal, computed, ViewChild } from '@angular/core';
 import { Color, Role } from '@lichess-org/chessground/types';
 import { Config } from '@lichess-org/chessground/config';
 import { Chess } from 'chess.js';
@@ -12,9 +12,11 @@ import { ExerciseInput, ExerciseType } from '../../../shared/models/exercise.mod
 import { ExerciseService } from '../../../core/services/exercise.service';
 import { EMPTY_BOARD_FEN } from '../../../shared/utils/chess.utils';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
 @Component({
   selector: 'app-board-creator',
-  imports: [ChessBoard, FormsModule, MatRadioModule, MatCheckboxModule, MatInputModule],
+  imports: [ChessBoard, FormsModule, MatRadioModule, MatCheckboxModule, MatInputModule,MatButton, MatIcon],
   templateUrl: './board-creator.html',
   styleUrl: './board-creator.scss',
 })
@@ -27,7 +29,11 @@ export class BoardCreator implements AfterViewInit {
   blackCastlingKingSide = model(true);
   blackCastlingQueenSide = model(true);
   turnOrder = model<'w' | 'b'>('w');
-  exerciseType = model<ExerciseType>('regular');
+  exerciseType = computed<ExerciseType>(() => {
+    const listId = this.activatedRoute.snapshot.paramMap.get('listId');
+    const list = this.exerciseService.exerciseLists().find(l => l.id === listId);
+    return list?.type ?? 'puzzle';
+  });
   private chess = new Chess();
   private router = inject(Router);
   private snackbar = inject(MatSnackBar);
@@ -58,6 +64,10 @@ export class BoardCreator implements AfterViewInit {
   onDragStart(event: DragEvent, role: Role, color: Color) {
     event.dataTransfer?.setData('role', role);
     event.dataTransfer?.setData('color', color);
+
+    // set the drag image to just the element being dragged
+    const el = event.target as HTMLElement;
+    event.dataTransfer?.setDragImage(el, el.offsetWidth / 2, el.offsetHeight / 2);
   }
 
   resetBoard() {
@@ -72,7 +82,7 @@ export class BoardCreator implements AfterViewInit {
     const fen = this.chessBoard.api.getFen() + this.fenAppendix();
     const type = this.exerciseType();
     try {
-      if (type === 'regular') {
+      if (type === 'puzzle') {
         this.chess.load(fen);
       }
       const exercise: ExerciseInput = {

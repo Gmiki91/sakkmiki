@@ -9,10 +9,11 @@ import { ActivatedRoute } from '@angular/router';
 import { ExerciseService } from '../../../core/services/exercise.service';
 import { Exercise } from '../../../shared/models/exercise.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import {  MatTooltipModule } from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-challenge-creator',
-  imports: [ChessBoard, MatButtonModule, MatCheckboxModule, MatIconModule],
+  imports: [ChessBoard, MatButtonModule, MatCheckboxModule, MatIconModule,MatTooltipModule],
   templateUrl: './challenge-creator.html',
   styleUrl: './challenge-creator.scss',
 })

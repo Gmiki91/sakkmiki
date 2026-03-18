@@ -12,9 +12,15 @@
     <div class="sidebar-actions">
       @if (isListCreationActive()) {
         <mat-form-field>
-          <mat-label>Lista címe</mat-label>
+          <mat-label>New list title</mat-label>
           <input matInput [(ngModel)]="title" />
         </mat-form-field>
+         <mat-label>Exercises' type</mat-label>
+          <mat-radio-group class="radio-group" [(ngModel)]="exerciseType">
+            <mat-radio-button value="puzzle">Puzzle</mat-radio-button>
+            <mat-radio-button value="mushroom">Mushroom</mat-radio-button>
+            <mat-radio-button value="challenge" matTooltip="For two player games">Challenge</mat-radio-button>
+          </mat-radio-group>
       }
       <button mat-button (click)="addList()">
         {{ isListCreationActive() ? 'Save list' : '+New list' }}
@@ -22,7 +28,7 @@
     </div>
   } @else {
     <!-- Panel 2 -->
-    <button matButton="tonal" (click)="selectedList.set(null)">
+    <button matButton="tonal" (click)="backToPanel1()">
       <mat-icon>arrow_back</mat-icon> {{ selectedList()!.title }}
     </button>
     @for (exercise of selectedList()!.exercises; track exercise.id) {

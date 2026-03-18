@@ -7,41 +7,85 @@
     display: block;
     width: 400px;
     height: 400px;
-  }
-
-  .row {
-    display: flex;
-    align-items: center;
-    gap: 4px;
+    flex-shrink: 0;
   }
 
   .column {
     display: flex;
     flex-direction: column;
-    padding: 15px;
+    gap: 8px;
+    padding: 8px;
+    min-width: 220px;
   }
 
-  .piece {
-    width: 56px;
-    height: 56px;
-    font-size: 48px;
-    cursor: pointer;
+  .solutions {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 8px;
+  }
+
+  .solution-row {
     display: flex;
     align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
+     flex-wrap: wrap;
+    padding:0px  8px;
+    border-radius: 4px;
+    background: var(--mat-sys-surface-container);
+  }
 
-    &:hover {
-      transform: scale(1.15);
-    }
+  .row {
+    display: flex;
+    align-items: center;
   }
 
   .step {
     cursor: pointer;
+    font-size: 0.9rem;
+    padding:2px 4px;
+    &:hover {
+      color: var(--mat-sys-primary);
+    }
   }
 
-  .radio-group {
+  .recording-panel {
     display: flex;
     flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--mat-sys-outline-variant);
+    background: var(--mat-sys-surface-container-low);
   }
+
+  .recording-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .recording-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #f44336;
+    animation: blink 1s infinite;
+    flex-shrink: 0;
+  }
+
+  .recording-text {
+    font-style: italic;
+  }
+
+  .save-row {
+    padding-top: 16px;
+    border-top: 1px solid var(--mat-sys-outline-variant);
+    text-align:center;
+  }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.2; }
 }

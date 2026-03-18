@@ -8,10 +8,12 @@ import { MatFormField, MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
-import { Exercise } from '../../../shared/models/exercise.model';
+import { Exercise, ExerciseType } from '../../../shared/models/exercise.model';
 import { ExerciseService } from '../../../core/services/exercise.service';
 import { ExerciseListPicker } from '../../../shared/components/exercise-list-picker/exercise-list-picker';
 import { MatIcon } from '@angular/material/icon';
+import { MatRadioModule } from '@angular/material/radio';
+import { MatTooltipModule } from '@angular/material/tooltip';
 @Component({
   selector: 'app-exercises-layout',
   imports: [
@@ -22,7 +24,9 @@ import { MatIcon } from '@angular/material/icon';
     FormsModule,
     MatProgressSpinnerModule,
     MatButtonModule,
-    MatIcon
+    MatIcon,
+    MatRadioModule,
+    MatTooltipModule
   ],
   templateUrl: './exercises-layout.html',
   styleUrl: './exercises-layout.scss',
@@ -31,6 +35,7 @@ export class ExercisesLayout implements OnInit {
   exerciseService = inject(ExerciseService);
   isListCreationActive = signal<boolean>(false);
   title = model<string>('');
+  exerciseType = model<ExerciseType>('puzzle');
   router = inject(Router);
   selectedList = signal<List | null>(null);
 
@@ -46,7 +51,7 @@ export class ExercisesLayout implements OnInit {
     this.router.navigate([`/exercises/${type}/${exercise.id}`]);
   }
   async deleteExercise(id: string) {
-    const isOkDelete: boolean = confirm('Are you sure you?');
+    const isOkDelete: boolean = confirm('Are you sure you want to delete this exercise?');
     if (!isOkDelete) return
     await this.exerciseService.deleteExercise(id);
     this.selectedList.update((list) =>
@@ -58,7 +63,7 @@ export class ExercisesLayout implements OnInit {
   }
   addList() {
     if (this.isListCreationActive()) {
-      const list: ExerciseListInput = { title: this.title() };
+      const list: ExerciseListInput = { title: this.title(),type:this.exerciseType() };
       this.exerciseService.addExerciseList(list);
       this.isListCreationActive.set(false);
     } else {
@@ -66,7 +71,7 @@ export class ExercisesLayout implements OnInit {
     }
   }
   async deleteList(listId: string) {
-    const isOkDelete: boolean = confirm('Are you sure you?');
+    const isOkDelete: boolean = confirm('Are you sure you want to delete this list?');
     if (isOkDelete) {
       await this.exerciseService.deleteExerciseList(listId);
       this.selectedList.set(null);
@@ -74,5 +79,9 @@ export class ExercisesLayout implements OnInit {
   }
   onListSelected(lists: List[]): void {
     this.selectedList.set(lists[0] ?? null);
+  }
+  backToPanel1():void{
+    this.selectedList.set(null);
+    this.router.navigate(['/exercises']);
   }
 }

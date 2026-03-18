@@ -3,7 +3,7 @@ export type CommonMistake = {
   hint: string;
 }
 
-export type ExerciseType = 'regular' | 'mushroom' | 'challenge';
+export type ExerciseType = 'puzzle' | 'mushroom' | 'challenge';
 
 export type ExerciseInput = {
   title: string;

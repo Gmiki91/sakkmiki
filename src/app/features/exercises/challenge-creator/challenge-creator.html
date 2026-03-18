@@ -24,7 +24,7 @@
         @for (move of whiteWinMoves(); track $index; let i = $index) {
           <div class="move-item">
             <strong>{{ move }}</strong>
-            <button mat-icon-button (click)="removeWhiteMove(i)">
+            <button mat-icon-button matTooltip="Remove position" (click)="removeWhiteMove(i)">
               <mat-icon>close</mat-icon>
             </button>
           </div>
@@ -49,7 +49,7 @@
         @for (move of blackWinMoves(); track $index; let i = $index) {
           <div class="move-item">
             <strong>{{ move }}</strong>
-            <button mat-icon-button (click)="removeBlackMove(i)">
+            <button mat-icon-button matTooltip="Remove position" (click)="removeBlackMove(i)">
               <mat-icon>close</mat-icon>
             </button>
           </div>

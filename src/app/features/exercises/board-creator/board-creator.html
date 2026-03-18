@@ -1,7 +1,6 @@
-  <div class="container">
-  <div class="column">
-    <!-- blacks -->
-    <div class="row">
+<div class="container">
+  <div class="board-column">
+    <div class="piece-rack">
       <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'king', 'black')">♚</div>
       <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'queen', 'black')">♛</div>
       <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'rook', 'black')">♜</div>
@@ -10,10 +9,13 @@
       <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'pawn', 'black')">♟</div>
     </div>
 
-    <app-chess-board [mushroomMode]="exerciseType() === 'mushroom'" [config]="boardConfig()" #chessBoard></app-chess-board>
+    <app-chess-board
+      [mushroomMode]="exerciseType() === 'mushroom'"
+      [config]="boardConfig()"
+      #chessBoard>
+    </app-chess-board>
 
-    <!-- whites -->
-    <div class="row">
+    <div class="piece-rack">
       <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'king', 'white')">♔</div>
       <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'queen', 'white')">♕</div>
       <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'rook', 'white')">♖</div>
@@ -23,36 +25,53 @@
     </div>
   </div>
 
- 
-  <div class="column">
-    <mat-radio-group class="radio-group" [(ngModel)]="exerciseType">
-      <mat-radio-button value="regular">Regular</mat-radio-button>
-      <mat-radio-button value="mushroom">Mushroom</mat-radio-button>
-      <mat-radio-button value="challenge">Challenge</mat-radio-button>
-    </mat-radio-group>
-    @if (exerciseType() !== 'mushroom') {
-      <mat-radio-group class="radio-group" [(ngModel)]="turnOrder">
-        <mat-radio-button value="w">White to move</mat-radio-button>
-        <mat-radio-button value="b">Black to move</mat-radio-button>
-      </mat-radio-group>
-      <div class="column">
-        <span>White castling rights</span>
-        <mat-checkbox  [(ngModel)]="whiteCastlingKingSide">O-O</mat-checkbox>
-        <mat-checkbox [(ngModel)]="whiteCastlingQueenSide">O-O-O</mat-checkbox>
-      </div>
-      <div class="column">
-        <span>Black castling rights</span>
-        <mat-checkbox  [(ngModel)]="blackCastlingKingSide">O-O</mat-checkbox>
-        <mat-checkbox [(ngModel)]="blackCastlingQueenSide">O-O-O</mat-checkbox>
-      </div>
-  }
-    <mat-form-field class="example-full-width">
-      <mat-label>Cím</mat-label>
-      <input type="text" [(ngModel)]="title" matInput>
-    </mat-form-field>
-    <button mat-button (click)="resetBoard()">reset</button>
-    <button mat-button (click)="clearBoard()">clear</button>
-    <button mat-button (click)="save()">save</button>
+  <div class="controls-column">
+    <div class="control-section">
+      <span class="section-label">Type</span>
+      <span class="type-badge">{{ exerciseType() }}</span>
+    </div>
 
+    @if (exerciseType() !== 'mushroom') {
+      <div class="control-section">
+        <span class="section-label">Turn</span>
+        <mat-radio-group class="radio-group" [(ngModel)]="turnOrder">
+          <mat-radio-button value="w">White to move</mat-radio-button>
+          <mat-radio-button value="b">Black to move</mat-radio-button>
+        </mat-radio-group>
+      </div>
+
+      <div class="control-section">
+        <span class="section-label">Castling rights</span>
+        <div class="castling-grid">
+          <mat-checkbox [(ngModel)]="whiteCastlingKingSide">White O-O</mat-checkbox>
+          <mat-checkbox [(ngModel)]="whiteCastlingQueenSide">White O-O-O</mat-checkbox>
+          <mat-checkbox [(ngModel)]="blackCastlingKingSide">Black O-O</mat-checkbox>
+          <mat-checkbox [(ngModel)]="blackCastlingQueenSide">Black O-O-O</mat-checkbox>
+        </div>
+      </div>
+    }
+
+    <div class="control-section">
+      <span class="section-label">Title</span>
+      <mat-form-field appearance="outline">
+        <input type="text" [(ngModel)]="title" matInput placeholder="Exercise title" />
+      </mat-form-field>
+    </div>
+
+    <div class="board-actions">
+      <button mat-stroked-button (click)="resetBoard()">
+        Reset board
+      </button>
+      <button mat-stroked-button (click)="clearBoard()">
+        Clear board
+      </button>
+    </div>
+
+    <div class="save-action">
+      <button mat-raised-button color="primary" (click)="save()">
+        <mat-icon>save</mat-icon>
+        Save exercise
+      </button>
+    </div>
   </div>
-  </div>
+</div>

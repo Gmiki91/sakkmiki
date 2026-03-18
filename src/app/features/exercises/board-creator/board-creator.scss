@@ -1,45 +1,104 @@
 .container {
   display: flex;
-  gap: 24px;
-  padding: 16px;
+  gap: 32px;
+  padding: 24px;
+  align-items: flex-start;
+}
 
-  .column {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-  }
+.board-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
 
-  .row {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-  }
-
-  app-chess-board {
-    display: block;
-    width: 400px;
-    height: 400px;
-  }
+.piece-rack {
+  display: flex;
+  gap: 4px;
+  background: var(--mat-sys-surface-container);
+  border-radius: 8px;
+  padding: 6px 10px;
+  width: 100%;
+  justify-content: center;
 
   .piece {
-    width: 48px;
-    height: 48px;
-    font-size: 40px;
+    width: 44px;
+    height: 44px;
+    font-size: 36px;
     cursor: grab;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.15s;
+    border-radius: 4px;
+    transition: transform 0.15s, background 0.15s;
 
     &:hover {
       transform: scale(1.2);
+      background: var(--mat-sys-surface-container-high);
+    }
+
+    &:active {
+      cursor: grabbing;
     }
   }
+}
 
-  .radio-group {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+app-chess-board {
+  display: block;
+  width: 400px;
+  height: 400px;
+}
+
+.controls-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 8px;
+  min-width: 200px;
+}
+
+.control-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  .section-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--mat-sys-on-surface-variant);
+    margin-bottom: 2px;
   }
+}
+
+.type-badge {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--mat-sys-primary);
+  text-transform: capitalize;
+}
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.castling-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 16px;
+}
+
+.board-actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
+
+.save-action {
+  padding-top: 8px;
+  text-align: center;
 }
