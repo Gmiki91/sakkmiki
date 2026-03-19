@@ -1,4 +1,4 @@
-import { Component, inject, signal, model, OnInit } from '@angular/core';
+import { Component, computed, inject, signal, model, OnInit } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import {
   ExerciseListInput,
@@ -26,7 +26,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
     MatButtonModule,
     MatIcon,
     MatRadioModule,
-    MatTooltipModule
+    MatTooltipModule,
   ],
   templateUrl: './exercises-layout.html',
   styleUrl: './exercises-layout.scss',
@@ -37,7 +37,11 @@ export class ExercisesLayout implements OnInit {
   title = model<string>('');
   exerciseType = model<ExerciseType>('puzzle');
   router = inject(Router);
-  selectedList = signal<List | null>(null);
+  selectedListId = signal<string | null>(null);
+
+  selectedList = computed(
+    () => this.exerciseService.exerciseLists().find((l) => l.id === this.selectedListId()) ?? null,
+  );
 
   ngOnInit(): void {
     this.exerciseService.loadExerciseLists();
@@ -52,18 +56,15 @@ export class ExercisesLayout implements OnInit {
   }
   async deleteExercise(id: string) {
     const isOkDelete: boolean = confirm('Are you sure you want to delete this exercise?');
-    if (!isOkDelete) return
+    if (!isOkDelete) return;
     await this.exerciseService.deleteExercise(id);
-    this.selectedList.update((list) =>
-      list ? { ...list, exercises: list.exercises.filter((ex) => ex.id !== id) } : null,
-    );
     if (this.router.url.includes(id)) {
-     this.router.navigate(['/exercises']);
+      this.router.navigate(['/exercises']);
     }
   }
   addList() {
     if (this.isListCreationActive()) {
-      const list: ExerciseListInput = { title: this.title(),type:this.exerciseType() };
+      const list: ExerciseListInput = { title: this.title(), type: this.exerciseType() };
       this.exerciseService.addExerciseList(list);
       this.isListCreationActive.set(false);
     } else {
@@ -74,14 +75,14 @@ export class ExercisesLayout implements OnInit {
     const isOkDelete: boolean = confirm('Are you sure you want to delete this list?');
     if (isOkDelete) {
       await this.exerciseService.deleteExerciseList(listId);
-      this.selectedList.set(null);
+      this.selectedListId.set(null);
     }
   }
   onListSelected(lists: List[]): void {
-    this.selectedList.set(lists[0] ?? null);
+    this.selectedListId.set(lists[0]?.id ?? null);
   }
-  backToPanel1():void{
-    this.selectedList.set(null);
+  backToPanel1(): void {
+    this.selectedListId.set(null);
     this.router.navigate(['/exercises']);
   }
 }
