@@ -86,18 +86,19 @@ export class SupabaseService {
   }
 
   private fromDbExercise(raw: any): Exercise {
-  return {
-    id: raw.id,
-    title: raw.title,
-    fen: raw.fen,
-    exerciseType:raw.exercise_type,
-    solutions: raw.solutions,
-    commonMistakes: raw.common_mistakes,
-    defaultHint: raw.default_hint,
-    whiteWinConditions:raw.white_win_conditions,
-    blackWinConditions:raw.black_win_conditions
-  };
-}
+    return {
+      id: raw.id,
+      title: raw.title,
+      fen: raw.fen,
+      exerciseType:raw.exercise_type,
+      solutions: raw.solutions,
+      commonMistakes: raw.common_mistakes,
+      defaultHint: raw.default_hint,
+      whiteWinConditions:raw.white_win_conditions,
+      blackWinConditions:raw.black_win_conditions,
+      lastMove:raw.last_move
+    };
+  }
 private toDbExercise(exercise: ExerciseInput) {
   return {
     title: exercise.title,
@@ -107,7 +108,8 @@ private toDbExercise(exercise: ExerciseInput) {
     common_mistakes: exercise.commonMistakes,
     default_hint: exercise.defaultHint,
     white_win_conditions:exercise.whiteWinConditions,
-    black_win_conditions:exercise.blackWinConditions
-  };
-}
+    black_win_conditions:exercise.blackWinConditions,
+    last_move:exercise.lastMove
+    };
+  }
 }

@@ -53,12 +53,19 @@ export class ExerciseCreator implements OnInit {
 
       if (!found) return;
       this.exercise = signal(found);
-      loadChess(this.chess,found.fen)
-      this.playerColor = this.chess.turn()
+      loadChess(this.chess,found.fen);
+
+      if(found.lastMove){
+        this.playerColor = this.chess.turn()==='b'? 'w':'b';
+      }else{
+        this.playerColor = this.chess.turn()
+      }
       this.boardConfig = signal({
         fen: found.fen,
-        orientation: 'white',
+        orientation: this.playerColor === 'w' ? 'white' : 'black',
         coordinates: false,
+        turnColor:found.lastMove?.color,
+        lastMove: found.lastMove?  [found.lastMove.to,found.lastMove.from] : [],
         movable: {
           free: false,
           dests: getValidMoves(this.chess),
@@ -74,6 +81,10 @@ export class ExerciseCreator implements OnInit {
           lastMove: false,
         },
       });
+
+     if (found.lastMove) {
+      this.playLastMove(found);
+}
     });
   }
 
@@ -136,9 +147,27 @@ export class ExerciseCreator implements OnInit {
     this.exerciseService.updateExercise(this.exercise());
   }
 
+  private playLastMove(ex:Exercise){
+    setTimeout(() => {
+      const { from, to } = ex.lastMove!;
+      this.chess.move({ from, to });
+      this.playerColor = this.chess.turn(); 
+      this.boardConfig.update(c => ({
+        ...c,
+        fen: this.chess.fen(),
+        lastMove: [from as Key, to as Key],
+      }));
+    }, 250);
+  }
+
   private resetBoard() {
     this.recording.set([]);
     loadChess(this.chess,this.exercise().fen )
+    // replay last move if exists so recording starts from the correct position
+    if (this.exercise().lastMove) {
+      const { from, to } = this.exercise().lastMove!;
+      this.chess.move({ from, to });
+    }
     this.chessBoard.api?.set(boardConfig(this.chess, false));
   }
 

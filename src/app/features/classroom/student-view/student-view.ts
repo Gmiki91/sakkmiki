@@ -321,7 +321,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
             this.exerciseLastMove.set([computerMove.from as Key, computerMove.to as Key]);
             this.moveHistory.set([...newHistory, solution[nextIndex]]);
             this.pieceOverlay.hide();
-          }, 2000);
+          }, 250);
         }
       }
     } else {
@@ -378,6 +378,15 @@ export class StudentView implements AfterViewInit, OnDestroy {
       } else {
         loadChess(this.exerciseChess, exercise.fen);
         this.exerciseFen.set(this.exerciseChess.fen());
+        if(exercise.lastMove){
+          setTimeout(() => {
+            const { from, to } = exercise.lastMove!;
+            this.exerciseLastMove.set([from, to] );
+            this.exerciseChess.move({ from, to });
+            this.exerciseFen.set(this.exerciseChess.fen())
+            this.exerciseLastMove.set([from as Key, to as Key]);
+          }, 250);
+        }
       }
       this.updateStatus();
       this.chessBoard?.api?.set({ lastMove: [] });

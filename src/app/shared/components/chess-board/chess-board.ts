@@ -36,7 +36,7 @@ ngAfterViewInit(): void {
     ...this.config(),
     animation: {
       enabled: true,
-      duration: 400,
+      duration: 250,
     },
     drawable: {
       ...this.config()?.drawable,

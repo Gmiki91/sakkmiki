@@ -146,8 +146,18 @@ export class PuzzleRush implements OnInit, OnDestroy {
     const puzzle = this.puzzleQueue[index];
     this.moveHistory.set([]);
     loadChess(this.chess, puzzle.fen);  
-    this.currentPuzzle.set(puzzle);
     this.currentFen.set(this.chess.fen());
+    this.lastMove.set([]);
+    this.currentPuzzle.set(puzzle);
+    if (puzzle.lastMove) {
+      setTimeout(() => {
+        const { from, to } = puzzle.lastMove!;
+        this.chess.move({ from, to });
+        this.soundService.play('move');
+        this.currentFen.set(this.chess.fen());
+        this.lastMove.set([from as Key, to as Key]);
+      }, 250);
+    }
   }
 
   private handleMove(orig: Key, dest: Key): void {
@@ -186,7 +196,7 @@ export class PuzzleRush implements OnInit, OnDestroy {
             this.lastMove.set([computerMove.from as Key, computerMove.to as Key]);
             this.moveHistory.set([...newHistory, solution[nextIndex]]);
           }
-        }, 500);
+        }, 250);
       }
     } else {
       this.onWrong();

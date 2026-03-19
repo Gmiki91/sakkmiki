@@ -2,30 +2,50 @@
   <div class="board-column">
     <div class="piece-rack">
       <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'king', 'black')">♚</div>
-      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'queen', 'black')">♛</div>
+      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'queen', 'black')">
+        ♛
+      </div>
       <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'rook', 'black')">♜</div>
-      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'bishop', 'black')">♝</div>
-      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'knight', 'black')">♞</div>
+      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'bishop', 'black')">
+        ♝
+      </div>
+      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'knight', 'black')">
+        ♞
+      </div>
       <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'pawn', 'black')">♟</div>
     </div>
 
     <app-chess-board
       [mushroomMode]="exerciseType() === 'mushroom'"
       [config]="boardConfig()"
-      #chessBoard>
+      #chessBoard
+    >
     </app-chess-board>
 
     <div class="piece-rack">
       <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'king', 'white')">♔</div>
-      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'queen', 'white')">♕</div>
+      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'queen', 'white')">
+        ♕
+      </div>
       <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'rook', 'white')">♖</div>
-      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'bishop', 'white')">♗</div>
-      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'knight', 'white')">♘</div>
+      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'bishop', 'white')">
+        ♗
+      </div>
+      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'knight', 'white')">
+        ♘
+      </div>
       <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'pawn', 'white')">♙</div>
     </div>
   </div>
 
   <div class="controls-column">
+    <div class="control-section">
+      <span class="section-label">Title</span>
+      <mat-form-field appearance="outline">
+        <input type="text" [(ngModel)]="title" matInput placeholder="Exercise title" />
+      </mat-form-field>
+    </div>
+
     <div class="control-section">
       <span class="section-label">Type</span>
       <span class="type-badge">{{ exerciseType() }}</span>
@@ -50,25 +70,36 @@
         </div>
       </div>
     }
-
-    <div class="control-section">
-      <span class="section-label">Title</span>
-      <mat-form-field appearance="outline">
-        <input type="text" [(ngModel)]="title" matInput placeholder="Exercise title" />
-      </mat-form-field>
+    <div class="board-actions">
+      <button mat-stroked-button (click)="resetBoard()">Reset board</button>
+      <button mat-stroked-button (click)="clearBoard()">Clear board</button>
     </div>
 
-    <div class="board-actions">
-      <button mat-stroked-button (click)="resetBoard()">
-        Reset board
-      </button>
-      <button mat-stroked-button (click)="clearBoard()">
-        Clear board
-      </button>
+    <div class="control-section">
+      @if (!lastMove()) {
+        @if (!isRecordingLastMove()) {
+          <button mat-stroked-button (click)="isRecordingLastMove.set(true)">
+            Record last move
+          </button>
+        } @else {
+          <div class="recording-indicator">
+            <span class="recording-dot"></span>
+            <span class="recording-text">Recording</span>
+          </div>
+          <button mat-button (click)="isRecordingLastMove.set(false)">Cancel</button>
+        }
+      } @else {
+        <div class="last-move-display">
+          <span>{{ lastMove()!.from }} → {{ lastMove()!.to }}</span>
+          <button mat-icon-button (click)="lastMove.set(null)">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      }
     </div>
 
     <div class="save-action">
-      <button mat-raised-button color="primary" (click)="save()">
+      <button mat-raised-button (click)="save()">
         <mat-icon>save</mat-icon>
         Save exercise
       </button>

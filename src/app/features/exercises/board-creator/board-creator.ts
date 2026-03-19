@@ -1,5 +1,13 @@
-import { AfterViewInit, Component, inject, model, signal, computed, ViewChild } from '@angular/core';
-import { Color, Role } from '@lichess-org/chessground/types';
+import {
+  AfterViewInit,
+  Component,
+  inject,
+  model,
+  signal,
+  computed,
+  ViewChild,
+} from '@angular/core';
+import { Color, Key, Role } from '@lichess-org/chessground/types';
 import { Config } from '@lichess-org/chessground/config';
 import { Chess } from 'chess.js';
 import { ChessBoard } from '../../../shared/components/chess-board/chess-board';
@@ -8,15 +16,26 @@ import { FormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatInputModule } from '@angular/material/input';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ExerciseInput, ExerciseType } from '../../../shared/models/exercise.model';
+import { ExerciseInput, ExerciseType, LastMove } from '../../../shared/models/exercise.model';
 import { ExerciseService } from '../../../core/services/exercise.service';
-import { EMPTY_BOARD_FEN } from '../../../shared/utils/chess.utils';
+import {
+  BARE_STARTING_FEN,
+  EMPTY_BOARD_FEN,
+} from '../../../shared/utils/chess.utils';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 @Component({
   selector: 'app-board-creator',
-  imports: [ChessBoard, FormsModule, MatRadioModule, MatCheckboxModule, MatInputModule,MatButton, MatIcon],
+  imports: [
+    ChessBoard,
+    FormsModule,
+    MatRadioModule,
+    MatCheckboxModule,
+    MatInputModule,
+    MatButton,
+    MatIcon,
+  ],
   templateUrl: './board-creator.html',
   styleUrl: './board-creator.scss',
 })
@@ -29,19 +48,25 @@ export class BoardCreator implements AfterViewInit {
   blackCastlingKingSide = model(true);
   blackCastlingQueenSide = model(true);
   turnOrder = model<'w' | 'b'>('w');
+  currentFen = signal<string>(BARE_STARTING_FEN);
   exerciseType = computed<ExerciseType>(() => {
+    //inferred from the exerciseList
     const listId = this.activatedRoute.snapshot.paramMap.get('listId');
-    const list = this.exerciseService.exerciseLists().find(l => l.id === listId);
+    const list = this.exerciseService.exerciseLists().find((l) => l.id === listId);
     return list?.type ?? 'puzzle';
   });
+
+  // opponents last move for puzzle
+  lastMove = signal<LastMove | null>(null);
+  isRecordingLastMove = signal(false);
+
   private chess = new Chess();
   private router = inject(Router);
   private snackbar = inject(MatSnackBar);
   private activatedRoute = inject(ActivatedRoute);
 
-  boardConfig = signal<Config>({
-    // fen: this.chess.fen(),
-    orientation: 'white',
+  boardConfig = computed<Config>(() => ({
+    fen: this.currentFen(),
     coordinates: false,
     movable: {
       free: true,
@@ -53,12 +78,22 @@ export class BoardCreator implements AfterViewInit {
     highlight: {
       lastMove: false,
     },
-  });
+  }));
 
   ngAfterViewInit(): void {
     const board = this.chessBoard.boardElement.nativeElement;
     this.addDragListener(board);
     this.addDropListener(board);
+    this.chessBoard.api.set({
+      events: {
+        change: () => this.boardChange(), // to update when dragging off pieces
+      },
+      movable: {
+        events: {
+          after: (orig: Key, dest: Key) => this.handleMove(orig, dest),
+        },
+      },
+    });
   }
 
   onDragStart(event: DragEvent, role: Role, color: Color) {
@@ -71,15 +106,17 @@ export class BoardCreator implements AfterViewInit {
   }
 
   resetBoard() {
-    const fen = `rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR` + this.fenAppendix();
-    this.updateFen(fen);
+    this.lastMove.set(null);
+    const fen = `rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR`;
+    this.currentFen.set(fen);
   }
   clearBoard() {
-    this.updateFen(EMPTY_BOARD_FEN);
+    this.lastMove.set(null);
+    this.currentFen.set(EMPTY_BOARD_FEN);
   }
 
   async save() {
-    const fen = this.chessBoard.api.getFen() + this.fenAppendix();
+    const fen = this.currentFen().split(' ')[0] + this.fenAppendix();
     const type = this.exerciseType();
     try {
       if (type === 'puzzle') {
@@ -89,12 +126,12 @@ export class BoardCreator implements AfterViewInit {
         title: this.title(),
         fen: fen,
         exerciseType: type,
+        lastMove: this.lastMove() ?? undefined,
       };
       const listId = this.activatedRoute.snapshot.paramMap.get('listId');
       if (!listId) return;
       const ex = await this.exerciseService.addExercise(listId, exercise);
       if (!ex) return;
-      console.log(ex);
       if (ex.exerciseType === 'challenge') {
         this.router.navigate([`/exercises/challenge/${ex.id}`]);
       } else {
@@ -102,6 +139,32 @@ export class BoardCreator implements AfterViewInit {
       }
     } catch (e) {
       this.snackbar.open((e as Error).message, '', { duration: 2000 });
+    }
+  }
+
+  handleMove(orig: Key, dest: Key) {
+    if (this.isRecordingLastMove()) {
+      try {
+        this.chess.load(this.currentFen() + this.fenAppendix());
+        this.chess.move({ from: orig, to: dest });
+        const color = this.chessBoard.api.state.pieces.get(dest)!.color;
+        this.lastMove.set({ from: orig, to: dest, color: color });
+        this.turnOrder.set(color === 'white' ? 'b' : 'w');
+        
+      } catch (e) {
+        this.snackbar.open((e as Error).message+". Check turn order too!", '', { duration: 2000 });
+        this.chessBoard.api.set({ fen: this.currentFen() });
+        
+      }finally{
+        this.isRecordingLastMove.set(false);
+      }
+    }
+  }
+  private boardChange() {
+    if (!this.isRecordingLastMove()) {
+      // If user set last move, but then touches the board, the last move gets removed
+      this.lastMove.set(null);
+      this.currentFen.set(this.chessBoard.api.getFen());
     }
   }
 
@@ -113,6 +176,7 @@ export class BoardCreator implements AfterViewInit {
     const color = event.dataTransfer?.getData('color') as Color;
     if (role && color && square) {
       this.chessBoard.api?.setPieces(new Map([[square, { role, color }]]));
+      this.boardChange();
     }
   }
 
@@ -129,16 +193,16 @@ export class BoardCreator implements AfterViewInit {
   }
 
   private fenAppendix(): string {
+    const turn = this.lastMove()
+      ? this.lastMove()!.color === 'white'
+        ? 'w'
+        : 'b'
+      : this.turnOrder();
     const castling =
       (this.whiteCastlingKingSide() ? 'K' : '') +
         (this.whiteCastlingQueenSide() ? 'Q' : '') +
         (this.blackCastlingKingSide() ? 'k' : '') +
         (this.blackCastlingQueenSide() ? 'q' : '') || '-';
-    return ` ${this.turnOrder()} ${castling} - 0 1`;
-  }
-
-  private updateFen(fen: string) {
-    this.chessBoard.api.set({ fen });
-    this.boardConfig.update((value) => ({ ...value, fen }));
+    return ` ${turn} ${castling} - 0 1`;
   }
 }

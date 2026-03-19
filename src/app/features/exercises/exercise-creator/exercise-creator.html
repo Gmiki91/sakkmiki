@@ -32,16 +32,15 @@
         <div class="row">
           <button 
             mat-raised-button 
-            color="primary" 
             [disabled]="recording().length === 0"
             (click)="addSolution()">
             Save solution
           </button>
-          <button mat-button (click)="cancelRecording()">Discard</button>
+          <button mat-button (click)="cancelRecording()">Cancel</button>
         </div>
       </div>
     } @else {
-      <button mat-button (click)="addSolution()">+ Add solution</button>
+      <button mat-button (click)="addSolution()">Record solution</button>
     }
 
     <div class="save-btn">

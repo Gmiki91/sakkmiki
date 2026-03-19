@@ -1,3 +1,4 @@
+@use '../../../shared/recording' as *;
 .container {
   display: flex;
   gap: 32px;
@@ -70,6 +71,8 @@ app-chess-board {
     color: var(--mat-sys-on-surface-variant);
     margin-bottom: 2px;
   }
+
+ 
 }
 
 .type-badge {
@@ -101,4 +104,21 @@ app-chess-board {
 .save-action {
   padding-top: 8px;
   text-align: center;
+}
+ .last-move-display {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: var(--mat-sys-surface-container);
+  color: var(--mat-sys-on-surface-variant);
+
+  span:first-child {
+    font-size: 1.2rem;
+  }
+
+  button {
+    margin-left: auto;
+  }
 }
