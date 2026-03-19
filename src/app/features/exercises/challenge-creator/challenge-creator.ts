@@ -60,7 +60,7 @@ export class ChallengeCreator implements OnInit {
       this.whiteWinMoves.set(white.filter((c) => c !== 'capture_all'));
       this.blackWinMoves.set(black.filter((c) => c !== 'capture_all'));
 
-      this.boardConfig.set({ fen: found.fen, highlight: { lastMove: false } });
+      this.boardConfig.update(config=>({...config, fen: found.fen, highlight: { lastMove: false } }));
     });
   }
 
@@ -80,8 +80,9 @@ export class ChallengeCreator implements OnInit {
   stopRecording(): void {
     this.recording.set(null);
     this.chessBoard.api?.set({
-      ...{ fen: this.startFen },
+      fen: this.startFen,
       movable: {
+        free:true,
         events: { after: undefined },
       },
     });

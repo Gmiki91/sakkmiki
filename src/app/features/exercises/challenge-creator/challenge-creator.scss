@@ -1,14 +1,14 @@
 .container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: flex-start;
   gap: 16px;
   padding: 16px;
 
   app-chess-board {
     display: block;
-    width: 400px;
-    height: 400px;
+    width: var(--board-size);
+    height: var(--board-size);
   }
 }
 
@@ -30,5 +30,10 @@
       display:flex;
       align-items: center;
     }
+  }
+  .save-btn {
+    padding-top: 16px;
+    border-top: 1px solid var(--mat-sys-outline-variant);
+    text-align:center;
   }
 }

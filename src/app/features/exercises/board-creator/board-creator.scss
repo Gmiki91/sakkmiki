@@ -45,8 +45,8 @@
 
 app-chess-board {
   display: block;
-  width: 400px;
-  height: 400px;
+  width: var(--board-size);
+  height: var(--board-size);
 }
 
 .controls-column {

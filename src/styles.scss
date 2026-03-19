@@ -36,6 +36,15 @@ body {
   height: 100%;
 }
 /* You can add global styles to this file, and also import other style files */
+
+// Global styles
+
+:root {
+  --board-size: 640px;
+  --mini-board-size: 250px;
+}
+
+// Board overwrites
 .mushroom-mode piece.black.pawn {
   background-image: none !important;
 }

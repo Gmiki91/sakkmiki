@@ -101,14 +101,14 @@
 }
 
 .board-wrapper {
-  width: 640px;
-  height: 640px;
+  width: var(--board-size);
+  height: var(--board-size);
   border-radius: 4px;
 
   app-chess-board {
     display: block;
-    width: 640px;
-    height: 640px;
+    width: var(--board-size);
+    height: var(--board-size);
   }
 }
 

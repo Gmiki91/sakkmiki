@@ -1,6 +1,6 @@
 .classroom-container {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: minmax(280px, auto) 1fr;
   height: calc(100vh - 64px);
   overflow: hidden;
 }
@@ -56,7 +56,7 @@
 // Right panel
 .student-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(calc(var(--mini-board-size) + 48px), 1fr));
   gap: 16px;
   padding: 16px;
   overflow-y: auto;
@@ -102,8 +102,8 @@
   }
 
   .mini-board {
-    width: 200px;
-    height: 200px;
+    width: var(--mini-board-size);
+    height:var(--mini-board-size);;
     margin: 0 auto 10px;
     border-radius: 4px;
     overflow: hidden;

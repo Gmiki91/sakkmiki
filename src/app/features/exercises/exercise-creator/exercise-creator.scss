@@ -5,8 +5,8 @@
 
   app-chess-board {
     display: block;
-    width: 400px;
-    height: 400px;
+    width: var(--board-size);
+    height: var(--board-size);
     flex-shrink: 0;
   }
 
@@ -78,7 +78,7 @@
     font-style: italic;
   }
 
-  .save-row {
+  .save-btn {
     padding-top: 16px;
     border-top: 1px solid var(--mat-sys-outline-variant);
     text-align:center;

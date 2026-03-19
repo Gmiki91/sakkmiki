@@ -5,15 +5,19 @@
 
   @if (recording()) {
     <div class="recording-bar">
-      <span >🔴 Recording winning moves for {{ recording() }}...</span>
+      <span>🔴 Recording winning moves for {{ recording() }}...</span>
       <button mat-button (click)="stopRecording()">Stop recording</button>
     </div>
   }
 
-  <div class="conditions-row">
+  <div class="conditions-column">
     <div class="conditions-column">
       <h4>White wins if...</h4>
-      <mat-checkbox  labelPosition="before" [checked]="whiteCaptureAll()" (change)="whiteCaptureAll.set($event.checked)">
+      <mat-checkbox
+        labelPosition="before"
+        [checked]="whiteCaptureAll()"
+        (change)="whiteCaptureAll.set($event.checked)"
+      >
         Captures all enemy pieces
       </mat-checkbox>
       <span>Reaches the following position(s):</span>
@@ -56,9 +60,12 @@
         }
       </div>
     </div>
+     <div class="save-btn">
+      <button mat-raised-button  [disabled]="recording() !== null" (click)="save()">
+        <mat-icon>save</mat-icon>
+        Save exercise
+      </button>
+    </div>
+   
   </div>
-
-  <button mat-raised-button color="primary" [disabled]="recording() !== null" (click)="save()">
-    Save
-  </button>
 </div>
