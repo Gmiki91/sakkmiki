@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Exercise, ExerciseInput } from '../../shared/models/exercise.model';
+import { ExerciseListInput } from '../../shared/models/exercise-list.model';
 @Injectable({
   providedIn: 'root',
 })
@@ -12,8 +13,8 @@ export class SupabaseService {
     this.client = createClient(environment.supabaseUrl, environment.supabaseKey);
   }
 
-  async saveExerciseList(title: string) {
-    const { data, error } = await this.client.from('exercise_lists').insert({ title }).select();
+  async saveExerciseList(list: ExerciseListInput) {
+    const { data, error } = await this.client.from('exercise_lists').insert({ title:list.title,type:list.type }).select();
 
     if (error) throw error;
     return data[0];

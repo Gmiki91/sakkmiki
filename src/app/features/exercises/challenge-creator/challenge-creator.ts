@@ -36,7 +36,7 @@ export class ChallengeCreator implements OnInit {
 
   boardConfig = signal<Config>({
     orientation: 'white',
-    coordinates: true,
+    coordinates: false,
     movable: { free: true },
     draggable: { enabled: true, deleteOnDropOff: true },
     highlight: { lastMove: false },

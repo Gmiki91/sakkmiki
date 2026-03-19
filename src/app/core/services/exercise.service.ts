@@ -21,7 +21,7 @@ export class ExerciseService {
 
   async addExerciseList(list: ExerciseListInput) {
     await this.withLoading(async () => {
-      const newList = await this.supabase.saveExerciseList(list.title);
+      const newList = await this.supabase.saveExerciseList(list);
       this.exerciseLists.update((lists) => [...lists, { ...newList, exercises: [] }]);
     });
   }

@@ -79,7 +79,6 @@ export class PuzzleRush implements OnInit, OnDestroy {
     return {
       fen,
       orientation: 'white',
-      coordinates: true,
       turnColor: this.chess.turn() === 'w' ? 'white' : 'black',
       movable: {
         free: false,

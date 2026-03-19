@@ -147,7 +147,6 @@ export class StudentView implements AfterViewInit, OnDestroy {
       fen: this.challengeFen(),
       orientation: this.myColor(),
       turnColor: this.challengeChess.turn() === 'w' ? 'white' : 'black',
-      coordinates: true,
       movable: {
         free: false,
         color: this.myColor(),
@@ -164,7 +163,6 @@ export class StudentView implements AfterViewInit, OnDestroy {
      private exerciseConfig = computed<Config>(() => ({
     fen: this.exerciseFen(),
     orientation: 'white',
-    coordinates: true,
     turnColor: this.exerciseChess.turn() === 'w' ? 'white' : 'black',
     movable: {
       free: false,
