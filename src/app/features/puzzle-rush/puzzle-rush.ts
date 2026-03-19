@@ -26,7 +26,7 @@ import { ExerciseList } from '../../shared/models/exercise-list.model';
 import { Exercise } from '../../shared/models/exercise.model';
 import { ExerciseService } from '../../core/services/exercise.service';
 import { SoundService } from '../../core/services/sound.service';
-import { getValidMoves, loadChess, STARTING_FEN } from '../../shared/utils/chess.utils';
+import { getPlayerOrientation, getValidMoves, loadChess, STARTING_FEN } from '../../shared/utils/chess.utils';
 
 type Phase = 'idle' | 'running' | 'finished';
 
@@ -78,7 +78,7 @@ export class PuzzleRush implements OnInit, OnDestroy {
     if (!puzzle || this.phase() !== 'running') return null;
     return {
       fen,
-      orientation: 'white',
+      orientation: getPlayerOrientation(puzzle),
       turnColor: this.chess.turn() === 'w' ? 'white' : 'black',
       movable: {
         free: false,

@@ -15,6 +15,7 @@ import { Chess, Move } from 'chess.js';
 import { Key } from '@lichess-org/chessground/types';
 import {
   getKingSquare,
+  getPlayerOrientation,
   getValidMoves,
   loadChess,
   STARTING_FEN,
@@ -162,7 +163,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
 
      private exerciseConfig = computed<Config>(() => ({
     fen: this.exerciseFen(),
-    orientation: 'white',
+    orientation: getPlayerOrientation(this.currentExercise()),
     turnColor: this.exerciseChess.turn() === 'w' ? 'white' : 'black',
     movable: {
       free: false,

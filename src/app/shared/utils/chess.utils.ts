@@ -1,6 +1,7 @@
 import { Config } from '@lichess-org/chessground/config';
 import { Key } from '@lichess-org/chessground/types';
 import { Chess, SQUARES } from 'chess.js';
+import { Exercise } from '../models/exercise.model';
 export const STARTING_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 export const BARE_STARTING_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR'
 export const EMPTY_BOARD_FEN = '8/8/8/8/8/8/8/8 w - - 0 1';
@@ -54,3 +55,11 @@ export const getKingSquare = (chess: Chess): string | null => {
   }
   return null;
 };
+
+export const getPlayerOrientation=(exercise: Exercise): 'white' | 'black' => {
+  if (exercise.exerciseType === 'mushroom') return 'white';
+  if (exercise.lastMove) {
+    return exercise.lastMove.color === 'white' ? 'black' : 'white';
+  }
+  return exercise.fen.split(' ')[1] === 'w' ? 'white' : 'black';
+}
