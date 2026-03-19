@@ -66,13 +66,21 @@ body {
 
 .cg-wrap coords.ranks coord,
 .cg-wrap coords.files coord {
-  color: white;
   font-size: 16px;
   font-weight: 700;
-  -webkit-text-stroke: 1px rgba(0,0,0,0.8);
-  paint-order: stroke fill; // stroke renders behind the fill
+}
+.cg-wrap coords.ranks {
+  left: auto;
+  right: 3px;
+ 
 }
 .cg-wrap coords.files {
-  bottom: 0px; 
-  left:32px;
+  bottom: 2px; 
+  right:31px;
+  left:auto;
+}
+
+//for future theming
+cg-board {
+  background-color: #f0d9b5 !important; 
 }
