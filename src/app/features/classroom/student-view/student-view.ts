@@ -572,7 +572,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
 
   private progressWithStamp() {
     this.feedback.set('Solved! ✓');
-    // this.soundService.play('stamp');
+    this.soundService.play('stamp');
     this.soundService.playRandomCheering()
     this.stampOverlay.stamp();
     const stamp = this.stampOverlay.currentStamp();

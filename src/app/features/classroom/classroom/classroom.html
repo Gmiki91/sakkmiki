@@ -94,9 +94,10 @@
                   <mat-spinner diameter="32"></mat-spinner>
                 </div>
               } @else {
+                <!--  [mushroomMode]="mushroomCollectingStudents().includes(student.name)" -->
                 <app-chess-board
                   [config]="boardConfigFor({ fen: student.fen })"
-                  [mushroomMode]="mushroomCollectingStudents().includes(student.name)"
+                 
                   #studentBoard
                 >
                 </app-chess-board>
