@@ -169,6 +169,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
       free: false,
       color: this.isLocked() ? undefined : (this.exerciseChess.turn() === 'w' ? 'white' : 'black'),
       dests: getValidMoves(this.exerciseChess),
+      showDests:false,
       events: { after: (orig, dest) => this.handleMove(orig, dest) },
     },
     check: this.exerciseChess.isCheck(),
