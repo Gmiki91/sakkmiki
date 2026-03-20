@@ -75,6 +75,7 @@
       <button mat-stroked-button (click)="clearBoard()">Clear board</button>
     </div>
 
+    @if(exerciseType()==='puzzle'){
     <div class="control-section">
       @if (!lastMove()) {
         @if (!isRecordingLastMove()) {
@@ -97,7 +98,7 @@
         </div>
       }
     </div>
-
+  }
     <div class="save-action">
       <button mat-raised-button (click)="save()">
         <mat-icon>save</mat-icon>
