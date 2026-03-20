@@ -1,3 +1,10 @@
+.background {
+  width: 100vw;
+  height: 100vh;
+  position: absolute;
+  background-image: url('../../../../../public/77770.jpg');
+  background-size: cover;
+}
 .chess-container {
   padding: 12px;
   margin: 0 auto;
@@ -5,12 +12,24 @@
 
 mat-card {
   border-radius: 12px;
+  border-color: none;
+  background-color: transparent;
+  box-shadow: none;
   overflow: hidden;
 }
 
 mat-card-header {
   padding-bottom: 14px;
   justify-content: center;
+
+  mat-card-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--mat-sys-on-surface);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    padding-bottom: 6px;
+  }
 }
 
 .board-wrapper {
@@ -34,12 +53,18 @@ mat-card-header {
   .overlay-wrapper {
     position: relative;
     width: var(--board-size);
-    height:var(--board-size);
+    height: var(--board-size);
 
+    border-radius: 6px;
+    box-shadow:
+      0 12px 40px rgba(0, 0, 0, 0.4),
+      0 4px 12px rgba(0, 0, 0, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      
     app-chess-board {
       display: block;
-    width: var(--board-size);
-    height:var(--board-size);
+      width: var(--board-size);
+      height: var(--board-size);
     }
     &.locked::after {
       content: '🔒';
