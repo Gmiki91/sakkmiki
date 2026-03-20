@@ -1,4 +1,4 @@
-import { Component, inject, ViewChild, signal, OnInit, WritableSignal, model } from '@angular/core';
+import { Component, inject, ViewChild,computed, signal, OnInit, WritableSignal, model } from '@angular/core';
 import { ChessBoard } from '../../../shared/components/chess-board/chess-board';
 import { Config } from '@lichess-org/chessground/config';
 import { Key } from '@lichess-org/chessground/types';
@@ -10,7 +10,6 @@ import { ExerciseService } from '../../../core/services/exercise.service';
 import { Exercise } from '../../../shared/models/exercise.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import {  MatTooltipModule } from '@angular/material/tooltip';
-
 @Component({
   selector: 'app-challenge-creator',
   imports: [ChessBoard, MatButtonModule, MatCheckboxModule, MatIconModule,MatTooltipModule],
@@ -32,7 +31,26 @@ export class ChallengeCreator implements OnInit {
   blackWinMoves = signal<string[]>([]);
   recording = signal<'white' | 'black' | null>(null);
 
+  saveState = signal<'idle' | 'saving' | 'saved'>('idle');
+
   private startFen = '';
+  private originalWhiteConditions= signal<string[]>([]);
+  private originalBlackConditions= signal<string[]>([]);
+
+  isDirty = computed(() => {
+    const white = [
+      ...(this.whiteCaptureAll() ? ['capture_all'] : []),
+      ...this.whiteWinMoves(),
+    ];
+    const black = [
+      ...(this.blackCaptureAll() ? ['capture_all'] : []),
+      ...this.blackWinMoves(),
+    ];
+    return (
+      JSON.stringify(white) !== JSON.stringify(this.originalWhiteConditions()) ||
+      JSON.stringify(black) !== JSON.stringify(this.originalBlackConditions())
+    );
+  });
 
   boardConfig = signal<Config>({
     orientation: 'white',
@@ -44,6 +62,7 @@ export class ChallengeCreator implements OnInit {
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {
+      this.recording.set(null);
       const exerciseId = params.get('exerciseId');
       const found = this.exerciseService
         .exerciseLists()
@@ -55,6 +74,8 @@ export class ChallengeCreator implements OnInit {
       this.startFen = found.fen;
       const white = found.whiteWinConditions ?? [];
       const black = found.blackWinConditions ?? [];
+      this.originalWhiteConditions.set([...white]);
+      this.originalBlackConditions.set([...black]);
       this.whiteCaptureAll.set(white.includes('capture_all'));
       this.blackCaptureAll.set(black.includes('capture_all'));
       this.whiteWinMoves.set(white.filter((c) => c !== 'capture_all'));
@@ -96,7 +117,8 @@ export class ChallengeCreator implements OnInit {
     this.blackWinMoves.update((prev) => prev.filter((_, idx) => idx !== i));
   }
 
-  save(): void {
+  async save() {
+    this.saveState.set('saving');
     const whiteWinConditions: string[] = [];
     const blackWinConditions: string[] = [];
 
@@ -105,12 +127,18 @@ export class ChallengeCreator implements OnInit {
 
     if (this.blackCaptureAll()) blackWinConditions.push('capture_all');
     blackWinConditions.push(...this.blackWinMoves());
+
     this.exerciseService.updateExercise({
       ...this.exercise(),
       fen: this.startFen,
       whiteWinConditions,
       blackWinConditions,
     });
+
+    this.originalWhiteConditions.set([...whiteWinConditions]);
+    this.originalBlackConditions.set([...blackWinConditions]);
+    this.saveState.set('saved');
+    setTimeout(() => this.saveState.set('idle'), 2000);
   }
 
   private handleRecordingMove(dest: Key): void {

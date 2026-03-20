@@ -21,10 +21,18 @@ import { Exercise } from '../../../shared/models/exercise.model';
 import { ActivatedRoute } from '@angular/router';
 import { ExerciseService } from '../../../core/services/exercise.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import {  MatTooltipModule } from '@angular/material/tooltip';
+import { MatTooltipModule } from '@angular/material/tooltip';
 @Component({
   selector: 'app-exercise-creator',
-  imports: [ChessBoard, MatRadioModule, MatButtonModule, MatCheckboxModule, FormsModule, MatIcon, MatTooltipModule],
+  imports: [
+    ChessBoard,
+    MatRadioModule,
+    MatButtonModule,
+    MatCheckboxModule,
+    FormsModule,
+    MatIcon,
+    MatTooltipModule,
+  ],
   templateUrl: './exercise-creator.html',
   styleUrl: './exercise-creator.scss',
 })
@@ -33,18 +41,31 @@ export class ExerciseCreator implements OnInit {
   exerciseService = inject(ExerciseService);
   isRecording = signal(false);
 
-  recording = signal<string[]>([]);
-  recordingText = computed(() => this.recording().join(', '));
+  solutions = signal<string[]>([]);
+  private originalSolutions = signal<string[][]>([]);
+  recordingText = computed(() => this.solutions().join(', '));
   defaultHint = '';
   exercise!: WritableSignal<Exercise>;
   boardConfig = signal<Config | undefined>(undefined);
-  playerColor:Color = 'w';
-  private chess: Chess=new Chess();
+  playerColor: Color = 'w';
+  saveState = signal<'idle' | 'saving' | 'saved'>('idle');
+
+  private chess: Chess = new Chess();
   private route = inject(ActivatedRoute);
   private snackbar = inject(MatSnackBar);
 
+  // check whether there are unsaved solutions
+  isDirty = computed(
+    () =>
+      JSON.stringify(this.exercise().solutions ?? []) !== JSON.stringify(this.originalSolutions()),
+  );
+
   ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {
+      // reset state on every navigation
+      this.isRecording.set(false);
+      this.solutions.set([]);
+
       const exerciseId = params.get('exerciseId');
       const found = this.exerciseService
         .exerciseLists()
@@ -53,19 +74,20 @@ export class ExerciseCreator implements OnInit {
 
       if (!found) return;
       this.exercise = signal(found);
-      loadChess(this.chess,found.fen);
+      this.originalSolutions.set([...(found.solutions ?? [])]);
+      loadChess(this.chess, found.fen);
 
-      if(found.lastMove){
-        this.playerColor = this.chess.turn()==='b'? 'w':'b';
-      }else{
-        this.playerColor = this.chess.turn()
+      if (found.lastMove) {
+        this.playerColor = this.chess.turn() === 'b' ? 'w' : 'b';
+      } else {
+        this.playerColor = this.chess.turn();
       }
       this.boardConfig = signal({
         fen: found.fen,
         orientation: this.playerColor === 'w' ? 'white' : 'black',
         coordinates: false,
-        turnColor:found.lastMove?.color,
-        lastMove: found.lastMove?  [found.lastMove.to,found.lastMove.from] : [],
+        turnColor: found.lastMove?.color,
+        lastMove: found.lastMove ? [found.lastMove.to, found.lastMove.from] : [],
         movable: {
           free: false,
           dests: getValidMoves(this.chess),
@@ -82,9 +104,9 @@ export class ExerciseCreator implements OnInit {
         },
       });
 
-     if (found.lastMove) {
-      this.playLastMove(found);
-}
+      if (found.lastMove) {
+        this.playLastMove(found);
+      }
     });
   }
 
@@ -93,19 +115,19 @@ export class ExerciseCreator implements OnInit {
       const move = this.chess.move({ from: orig, to: dest });
       if (move) {
         // Update board
-        if (this.exercise().exerciseType==='mushroom') {
-          this.chess.setTurn(this.playerColor)
+        if (this.exercise().exerciseType === 'mushroom') {
+          this.chess.setTurn(this.playerColor);
         }
         this.chessBoard.api?.set(boardConfig(this.chess));
 
         // Record if recording
         if (this.isRecording()) {
-          this.recording.update((moves) => [...moves, move.san]);
+          this.solutions.update((moves) => [...moves, move.san]);
         }
       }
     } catch (e) {
       // Invalid move - revert
-      this.snackbar.open('Invalid move!','',{duration:2000})
+      this.snackbar.open('Invalid move!', '', { duration: 2000 });
       this.chessBoard.api.set({ fen: this.chess.fen() });
     }
   }
@@ -132,7 +154,7 @@ export class ExerciseCreator implements OnInit {
     if (this.isRecording()) {
       this.isRecording.set(false);
     }
-    loadChess(this.chess,this.exercise().fen)
+    loadChess(this.chess, this.exercise().fen);
     const steps = this.exercise().solutions![solutionIndex];
     for (let index = 0; index <= stepIndex; index++) {
       this.chess.move(steps[index]);
@@ -142,17 +164,21 @@ export class ExerciseCreator implements OnInit {
 
   addHint() {}
 
-  save() {
+  async save() {
+    this.saveState.set('saving');
     this.saveRecording();
-    this.exerciseService.updateExercise(this.exercise());
+    await this.exerciseService.updateExercise(this.exercise());
+    this.originalSolutions.set([...(this.exercise()?.solutions ?? [])]);
+    this.saveState.set('saved');
+    setTimeout(() => this.saveState.set('idle'), 2000);
   }
 
-  private playLastMove(ex:Exercise){
+  private playLastMove(ex: Exercise) {
     setTimeout(() => {
       const { from, to } = ex.lastMove!;
       this.chess.move({ from, to });
-      this.playerColor = this.chess.turn(); 
-      this.boardConfig.update(c => ({
+      this.playerColor = this.chess.turn();
+      this.boardConfig.update((c) => ({
         ...c,
         fen: this.chess.fen(),
         lastMove: [from as Key, to as Key],
@@ -161,8 +187,8 @@ export class ExerciseCreator implements OnInit {
   }
 
   private resetBoard() {
-    this.recording.set([]);
-    loadChess(this.chess,this.exercise().fen )
+    this.solutions.set([]);
+    loadChess(this.chess, this.exercise().fen);
     // replay last move if exists so recording starts from the correct position
     if (this.exercise().lastMove) {
       const { from, to } = this.exercise().lastMove!;
@@ -172,21 +198,24 @@ export class ExerciseCreator implements OnInit {
   }
 
   private saveRecording() {
-    if (this.recording().length > 0) {
-      const error = this.exercise().exerciseType==='mushroom' ? null: this.validateRecording(this.recording());
+    if (this.solutions().length > 0) {
+      const error =
+        this.exercise().exerciseType === 'mushroom'
+          ? null
+          : this.validateSolution(this.solutions());
       if (error) {
         this.snackbar.open(error, '', { duration: 3000 });
         return;
       }
       this.exercise.update((ex) => ({
         ...ex,
-        solutions: [...ex.solutions??[], this.recording()],
+        solutions: [...(ex.solutions ?? []), this.solutions()],
       }));
     }
   }
 
-  private validateRecording(newSolution: string[]): string | null {
-    for (const existing of this.exercise().solutions??[]) {
+  private validateSolution(newSolution: string[]): string | null {
+    for (const existing of this.exercise().solutions ?? []) {
       // find how far the two lines are identical
       const commonLength = Math.min(existing.length, newSolution.length);
       let divergesAt = -1;

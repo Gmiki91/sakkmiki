@@ -1,7 +1,7 @@
 @use '../../../shared/recording' as *;
 .container {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: flex-start;
   gap: 16px;
   padding: 16px;

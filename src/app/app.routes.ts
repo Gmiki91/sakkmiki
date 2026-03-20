@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { validListGuard } from './core/guards/valid-list.guard';
 import { validExerciseGuard } from './core/guards/valid-exercise.guard';
 import { studentGuard } from './core/guards/student.guard';
+import { unsavedChangesGuard } from './core/guards/unsaved-change.guard';
 
 export const routes: Routes = [
   { path: '', loadComponent: () => import('./features/lobby/lobby').then((m) => m.Lobby) },
@@ -52,12 +53,14 @@ export const routes: Routes = [
             (m) => m.ExerciseCreator,
           ),
         canActivate: [validExerciseGuard],
+        canDeactivate: [unsavedChangesGuard]
       },
       {
         path: 'challenge/:exerciseId',
         loadComponent:()=>
           import('./features/exercises/challenge-creator/challenge-creator').then(m=>m.ChallengeCreator),
         canActivate: [validExerciseGuard],
+        canDeactivate: [unsavedChangesGuard]
       },
     ],
   },

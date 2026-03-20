@@ -1,96 +1,103 @@
 <div class="container">
   <h3>{{ exercise().title }}</h3>
+  <div style="display: flex; gap: 10px">
+    <app-chess-board [config]="boardConfig()" #chessBoard></app-chess-board>
 
-  <app-chess-board [config]="boardConfig()" #chessBoard></app-chess-board>
-
-  @if (recording()) {
-    <div class="recording-panel">
-      <div class="recording-indicator">
-        <span class="recording-dot"></span>
-        <span class="recording-text">Recording winning moves for {{ recording() }}...</span>
+    @if (recording()) {
+      <div class="recording-panel">
+        <div class="recording-indicator">
+          <span class="recording-dot"></span>
+          <span class="recording-text">Recording winning moves for {{ recording() }}...</span>
+        </div>
+        <button mat-button (click)="stopRecording()">Stop recording</button>
+        @if (recording() === 'black') {
+          <div class="move-list">
+            @for (move of blackWinMoves(); track $index; let i = $index) {
+              <div class="move-item">
+                <strong>{{ move }}</strong>
+                <button mat-icon-button matTooltip="Remove position" (click)="removeBlackMove(i)">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="move-list">
+            @for (move of whiteWinMoves(); track $index; let i = $index) {
+              <div class="move-item">
+                <strong>{{ move }}</strong>
+                <button mat-icon-button matTooltip="Remove position" (click)="removeWhiteMove(i)">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+            }
+          </div>
+        }
       </div>
-      <button mat-button (click)="stopRecording()">Stop recording</button>
-      @if (recording() === 'black') {
-        <div class="move-list">
-          @for (move of blackWinMoves(); track $index; let i = $index) {
-            <div class="move-item">
-              <strong>{{ move }}</strong>
-              <button mat-icon-button matTooltip="Remove position" (click)="removeBlackMove(i)">
-                <mat-icon>close</mat-icon>
-              </button>
-            </div>
-          }
-        </div>
-      } @else {
-        <div class="move-list">
-          @for (move of whiteWinMoves(); track $index; let i = $index) {
-            <div class="move-item">
-              <strong>{{ move }}</strong>
-              <button mat-icon-button matTooltip="Remove position" (click)="removeWhiteMove(i)">
-                <mat-icon>close</mat-icon>
-              </button>
-            </div>
-          }
-        </div>
-      }
-    </div>
-  } @else {
-    <div class="conditions-column">
+    } @else {
       <div class="conditions-column">
-        <h4>White wins if...</h4>
-        <mat-checkbox
-          labelPosition="before"
-          [checked]="whiteCaptureAll()"
-          (change)="whiteCaptureAll.set($event.checked)"
-        >
-          Captures all enemy pieces
-        </mat-checkbox>
-        <span>Reaches the following position(s):</span>
-        <button mat-button [disabled]="recording() !== null" (click)="startRecording('white')">
-          + Record winning position
-        </button>
-        <div class="move-list">
-          @for (move of whiteWinMoves(); track $index; let i = $index) {
-            <div class="move-item">
-              <strong>{{ move }}</strong>
-              <button mat-icon-button matTooltip="Remove position" (click)="removeWhiteMove(i)">
-                <mat-icon>close</mat-icon>
-              </button>
-            </div>
-          }
+        <div class="conditions-column">
+          <h4>White wins if...</h4>
+          <mat-checkbox
+            labelPosition="before"
+            [checked]="whiteCaptureAll()"
+            (change)="whiteCaptureAll.set($event.checked)"
+          >
+            Captures all enemy pieces
+          </mat-checkbox>
+          <span>Reaches the following position(s):</span>
+          <button mat-button [disabled]="recording() !== null" (click)="startRecording('white')">
+            + Record winning position
+          </button>
+          <div class="move-list">
+            @for (move of whiteWinMoves(); track $index; let i = $index) {
+              <div class="move-item">
+                <strong>{{ move }}</strong>
+                <button mat-icon-button matTooltip="Remove position" (click)="removeWhiteMove(i)">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+            }
+          </div>
         </div>
-      </div>
 
-      <div class="conditions-column">
-        <h4>Black wins if...</h4>
-        <mat-checkbox
-          labelPosition="before"
-          [checked]="blackCaptureAll()"
-          (change)="blackCaptureAll.set($event.checked)"
-        >
-          Captures all enemy pieces
-        </mat-checkbox>
-        <span>Reaches the following position(s):</span>
-        <button mat-button [disabled]="recording() !== null" (click)="startRecording('black')">
-          + Record winning position
-        </button>
-        <div class="move-list">
-          @for (move of blackWinMoves(); track $index; let i = $index) {
-            <div class="move-item">
-              <strong>{{ move }}</strong>
-              <button mat-icon-button matTooltip="Remove position" (click)="removeBlackMove(i)">
-                <mat-icon>close</mat-icon>
-              </button>
-            </div>
-          }
+        <div class="conditions-column">
+          <h4>Black wins if...</h4>
+          <mat-checkbox
+            labelPosition="before"
+            [checked]="blackCaptureAll()"
+            (change)="blackCaptureAll.set($event.checked)"
+          >
+            Captures all enemy pieces
+          </mat-checkbox>
+          <span>Reaches the following position(s):</span>
+          <button mat-button [disabled]="recording() !== null" (click)="startRecording('black')">
+            + Record winning position
+          </button>
+          <div class="move-list">
+            @for (move of blackWinMoves(); track $index; let i = $index) {
+              <div class="move-item">
+                <strong>{{ move }}</strong>
+                <button mat-icon-button matTooltip="Remove position" (click)="removeBlackMove(i)">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+        <div class="save-btn">
+          <button
+            mat-raised-button
+            [disabled]="!isDirty() && saveState() === 'idle'"
+            (click)="save()"
+          >
+            <mat-icon>
+              {{ saveState() === 'saving' ? 'sync' : saveState() === 'saved' ? 'check' : 'save' }}
+            </mat-icon>
+            {{saveState() === 'saving'? 'Updating...': saveState() === 'saved'? 'Updated': 'Update exercise'}}
+          </button>
         </div>
       </div>
-      <div class="save-btn">
-        <button mat-raised-button [disabled]="recording() !== null" (click)="save()">
-          <mat-icon>save</mat-icon>
-          Update exercise
-        </button>
-      </div>
-    </div>
-  }
+    }
+  </div>
 </div>
