@@ -545,7 +545,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
   }
 
   private youWin() {
-    this.soundService.play('won');
+    this.soundService.playRandomCheering();
   }
   private playSound(move: Move) {
     if (move.captured) this.soundService.play('take');
