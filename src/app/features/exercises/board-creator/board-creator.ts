@@ -145,20 +145,30 @@ export class BoardCreator implements AfterViewInit {
   handleMove(orig: Key, dest: Key) {
     if (this.isRecordingLastMove()) {
       try {
-        this.chess.load(this.currentFen() + this.fenAppendix());
-        this.chess.move({ from: orig, to: dest });
-        const color = this.chessBoard.api.state.pieces.get(dest)!.color;
-        this.lastMove.set({ from: orig, to: dest, color: color });
-        this.turnOrder.set(color === 'white' ? 'b' : 'w');
-        
+     this.move(orig,dest);
       } catch (e) {
-        this.snackbar.open((e as Error).message+". Check turn order too!", '', { duration: 2000 });
-        this.chessBoard.api.set({ fen: this.currentFen() });
+        try{
+        // retry with opposite color
+        this.turnOrder.update(value=>value==='b'?'w':'b')
+        this.move(orig,dest);
+        }catch (err){
+          // it was probably an invalid move, reset original turnOrder
+          this.turnOrder.update(value=>value==='b'?'w':'b')
+          this.snackbar.open((err as Error).message, '', { duration: 2000 });
+          this.chessBoard.api.set({ fen: this.currentFen() });
+        }
         
       }finally{
         this.isRecordingLastMove.set(false);
       }
     }
+  }
+  private move(from: Key, to: Key){
+      this.chess.load(this.currentFen() + this.fenAppendix());
+        this.chess.move({ from, to });
+        const color = this.chessBoard.api.state.pieces.get(to)!.color;
+        this.lastMove.set({ from, to, color });
+        this.turnOrder.set(color === 'white' ? 'b' : 'w');
   }
   private boardChange() {
     if (!this.isRecordingLastMove()) {
