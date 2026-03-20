@@ -43,7 +43,8 @@ type BroadcastEvent =
   | { type: 'set_auto_redo'; value: boolean }
   | { type: 'set_auto_progress'; value: boolean }
   | { type: 'lock'; studentName: string }
-  | { type: 'unlock'; studentName: string };
+  | { type: 'unlock'; studentName: string }
+  | { type: 'student_fen'; studentName: string; fen: string };
 
 @Injectable({ providedIn: 'root' })
 export class RealtimeService {
@@ -57,8 +58,8 @@ export class RealtimeService {
   // --- Signals ---
   students = signal<StudentPresence[]>([]);
   mode = signal<ClassroomMode>('normal');
-  autoRedo = signal<boolean>(false);
-  autoProgress = signal<boolean>(false);
+  autoRedo = signal<boolean>(true);
+  autoProgress = signal<boolean>(true);
   resume = signal<string | null>(null);
   stamp = signal<string | null>(null);
   lock = signal<string | null>(null);
@@ -202,6 +203,9 @@ export class RealtimeService {
   sendMiniboardArrows(shapes: DrawShape[]): void {
     this.broadcast({ type: 'miniboard_arrows', shapes, studentName: this.studentName() });
   }
+  broadcastStudentFen(studentName: string, fen: string): void {
+    this.broadcast({ type: 'student_fen', studentName, fen });
+  }
 
   // ----------------------------------------------------------------
   // Challenge
@@ -330,6 +334,9 @@ export class RealtimeService {
 
   private handleBroadcast(event: BroadcastEvent) {
     switch (event.type) {
+      case 'student_fen':
+        this.students.update(list =>list.map(s => s.name === event.studentName? { ...s, fen: event.fen } : s));
+        break;
       case 'shared_arrows':
         this.sharedArrows.set(event.shapes);
         break;

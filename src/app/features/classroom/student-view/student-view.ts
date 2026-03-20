@@ -9,6 +9,7 @@ import {
   AfterViewInit,
   signal,
   OnDestroy,
+  untracked,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Chess, Move } from 'chess.js';
@@ -396,19 +397,31 @@ export class StudentView implements AfterViewInit, OnDestroy {
       this.chessBoard?.api?.set({ lastMove: [] });
     });
 
-    // Single presence sync — fires whenever any relevant state changes
+    // Presence sync — fires whenever any relevant state changes
     effect(() => {
       const exercise = this.currentExercise();
       if (!exercise) return;
-      const fen = exercise.exerciseType === 'challenge' ? this.challengeFen() : this.exerciseFen();
-      this.realtimeService.updatePresence({
-        fen,
-        status: this.status(),
-        feedback: this.feedback(),
-        exIndex: this.exIndex(),
-        locked: this.isLocked(),
-        awaitingStamp: this.isWaitingForStamp(),
-      });
+       // Only these three drive the presence update
+      const exIndex = this.exIndex();
+      const locked = this.isLocked();
+      const awaitingStamp = this.isWaitingForStamp();
+      // Everything else is just snapshotted at the time of the meaningful event
+      const fen = untracked(() =>exercise.exerciseType === 'challenge' ? this.challengeFen() : this.exerciseFen());
+      const status = untracked(() => this.status());
+      const feedback = untracked(() => this.feedback());
+      this.realtimeService.updatePresence({ fen, status, feedback, exIndex, locked, awaitingStamp });
+
+    });
+
+    // Student fen broadcast
+    effect(() => {
+     const fen = this.exerciseFen();
+     if (this.realtimeService.mode() === 'gathered') return;
+     if (this.myPair()) return; // challenge has its own flow
+     this.realtimeService.broadcastStudentFen(
+       this.realtimeService.studentName(),
+       fen
+     );
     });
 
     // Gather/disperse
