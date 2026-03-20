@@ -160,7 +160,7 @@ export class RealtimeService {
   // Student
   // ----------------------------------------------------------------
 
-  joinAsStudent(name: string, onJoined: () => void, onError: () => void): void {
+  joinAsStudent(name: string, onJoined: () => void, onError: () => void, retries = 0): void {
     this.studentName.set(name);
     this.channel = this.supabase.client
       .channel('classroom')
@@ -189,7 +189,16 @@ export class RealtimeService {
             }
           }
         } else if (status === 'TIMED_OUT' || status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-          onError();
+           if (this.isJoined() && retries < 3) {
+            // mid-session drop — silently retry
+            setTimeout(() => {
+              this.supabase.client.removeChannel(this.channel);
+              this.joinAsStudent(name, onJoined, onError);
+            }, 2000);
+          } else {
+            // either initial join failed, or we've exhausted retries
+            onError();
+          }
         }
       });
   }
@@ -335,7 +344,9 @@ export class RealtimeService {
   private handleBroadcast(event: BroadcastEvent) {
     switch (event.type) {
       case 'student_fen':
-        this.students.update(list =>list.map(s => s.name === event.studentName? { ...s, fen: event.fen } : s));
+        this.students.update((list) =>
+          list.map((s) => (s.name === event.studentName ? { ...s, fen: event.fen } : s)),
+        );
         break;
       case 'shared_arrows':
         this.sharedArrows.set(event.shapes);
