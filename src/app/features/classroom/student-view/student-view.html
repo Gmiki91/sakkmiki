@@ -67,7 +67,7 @@
       @if (stampCollection().length > 0) {
         <div class="collection">
           @for (stamp of stampCollection(); track $index) {
-            <app-stamp-svg [type]="stamp" [size]="48"></app-stamp-svg>
+            <app-stamp-svg style="background: white; border-radius: 25px;" [type]="stamp" [size]="48"></app-stamp-svg>
           }
         </div>
       }

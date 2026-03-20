@@ -361,6 +361,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
       this.exIndex.update((n) => n + 1);
     } else {
       this.status.set('All done!');
+      this.isWaitingForStamp.set(true);
     }
   }
 
@@ -571,7 +572,8 @@ export class StudentView implements AfterViewInit, OnDestroy {
 
   private progressWithStamp() {
     this.feedback.set('Solved! ✓');
-    this.soundService.play('stamp');
+    // this.soundService.play('stamp');
+    this.soundService.playRandomCheering()
     this.stampOverlay.stamp();
     const stamp = this.stampOverlay.currentStamp();
     this.isWaitingForStamp.set(false);
@@ -585,7 +587,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
 
   private progressAuto(){
     this.feedback.set('Solved! ✓');
-    this.soundService.playRandomCheering();
+    this.soundService.play('won');
     setTimeout(() => {
       //leave droppedExercise set so currentExercise doesn't recompute and defaults to the loadedListExercise
       if (!this.realtimeService.droppedExercise()) this.nextExercise();
