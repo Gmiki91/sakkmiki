@@ -36,7 +36,10 @@ import { StampOverlay } from '../../../shared/components/stamp-overlay/stamp-ove
 import { Exercise } from '../../../shared/models/exercise.model';
 import { StampSvg } from '../../../shared/components/stamp-svg/stamp-svg';
 import { StampType } from '../../../shared/models/stamp.model';
-
+import { DrawingService } from '../../../core/services/drawing.service';
+import { DrawingCanvas } from '../../../shared/components/drawing-canvas/drawing-canvas';
+import { Point } from '../../../shared/models/drawing.model';
+import { DEFAULT_BRUSH_COLOR } from '../../../shared/utils/brushes';
 @Component({
   selector: 'app-student-view',
   templateUrl: './student-view.html',
@@ -52,6 +55,7 @@ import { StampType } from '../../../shared/models/stamp.model';
     PieceOverlay,
     StampOverlay,
     StampSvg,
+    DrawingCanvas
   ],
 })
 export class StudentView implements AfterViewInit, OnDestroy {
@@ -61,6 +65,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
   @ViewChild('brushPicker') brushPicker!: BrushPicker;
   realtimeService = inject(RealtimeService);
   soundService = inject(SoundService);
+  drawingService = inject(DrawingService);
 
   // --- Exercise state ---
   stampCollection = signal<StampType[]>([]);
@@ -106,6 +111,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
   exerciseLastMove = signal<[Key, Key] | undefined>(undefined);
   challengeLastMove = signal<[Key, Key] | undefined>(undefined);
 
+  selectedColor = signal(DEFAULT_BRUSH_COLOR);
 
   private exerciseChess = new Chess();
 
@@ -368,6 +374,20 @@ export class StudentView implements AfterViewInit, OnDestroy {
     }
   }
 
+  // --- Drawing ---
+  onPointAdded(event: { strokeId: string; point: Point }): void {
+    this.drawingService.addLocalPoint(event.strokeId, event.point, this.selectedColor());
+  }
+
+  onStrokeCommitted(strokeId: string): void {
+    this.drawingService.commitLocalStroke(strokeId);
+  }
+
+  onColorSelected(color: string): void {
+    this.selectedColor.set(color);
+    this.drawingService.broadcastColor(color);
+  }
+
   // --- Effect groups ---
 
   private setupStateEffects(): void {
@@ -518,6 +538,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
     // Restore frozen state if we were gathered
     if (!this.isGathered) return;
     this.isGathered = false;
+    this.drawingService.clearLocal();
     loadChess(this.exerciseChess, this.frozenFen!);
     this.moveHistory.set(this.frozenMoveHistory ?? []);
     this.frozenFen = null;

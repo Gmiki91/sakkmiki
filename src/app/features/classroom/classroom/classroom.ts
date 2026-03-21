@@ -27,8 +27,9 @@ import { StudentTimer } from '../timer';
 import { STARTING_FEN } from '../../../shared/utils/chess.utils';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
-import { ExerciseListPicker, ExerciseListPickerData } from '../../../shared/components/exercise-list-picker/exercise-list-picker';
-
+import { ExerciseListPicker } from '../../../shared/components/exercise-list-picker/exercise-list-picker';
+import { DrawingService } from '../../../core/services/drawing.service';
+import {DEFAULT_BRUSH_COLOR} from '../../../shared/utils/brushes'
 type ConfigParam = {
   fen: string;
   from?: string;
@@ -56,6 +57,8 @@ export class Classroom implements OnInit, OnDestroy, AfterViewInit {
   @ViewChildren(StudentTimer) timers!: QueryList<StudentTimer>;
   exerciseService = inject(ExerciseService);
   realtimeService = inject(RealtimeService);
+  drawingService = inject(DrawingService);
+  defaultBrush = DEFAULT_BRUSH_COLOR;
   demoExercise = signal<Exercise | null>(null);
   loadedList = signal<Exercise[]>([]);
   loadedLists = signal<List[]>([]);

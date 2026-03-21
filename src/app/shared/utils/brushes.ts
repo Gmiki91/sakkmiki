@@ -1,4 +1,5 @@
 import { DrawBrushes } from '@lichess-org/chessground/draw';
+export const DEFAULT_BRUSH_COLOR = '#e6194B';
 export const BRUSH_KEYS =[
   'maroon','brown','olive','teal','navy','black','red','orange','yellow','green','lime','cyan','blue','purple','magenta','grey','pink','apricot','beige','mint','lavender','white'
 ]

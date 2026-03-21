@@ -1,4 +1,4 @@
-import { Component,signal } from '@angular/core';
+import { Component,signal,output } from '@angular/core';
 import { DEFAULT_BRUSHES, BRUSH_KEYS } from '../../utils/brushes';
 
 @Component({
@@ -8,8 +8,13 @@ import { DEFAULT_BRUSHES, BRUSH_KEYS } from '../../utils/brushes';
 })
 export class BrushPicker {
   selectedBrush=signal('');
+  colorSelected = output<string>();
   brushOptions = BRUSH_KEYS.map(key => ({
     key,
     color: DEFAULT_BRUSHES[key].color,
   }));
+  selectBrush(key: string): void {
+    this.selectedBrush.set(key);
+    this.colorSelected.emit(DEFAULT_BRUSHES[key].color);
+  }
 }

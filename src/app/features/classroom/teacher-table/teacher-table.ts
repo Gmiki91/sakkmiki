@@ -16,10 +16,12 @@ import { ChessBoard } from '../../../shared/components/chess-board/chess-board';
 import { RealtimeService } from '../../../core/services/realtime.service';
 import { EMPTY_BOARD_FEN, STARTING_FEN } from '../../../shared/utils/chess.utils';
 import { Exercise } from '../../../shared/models/exercise.model';
+import { DrawingService } from '../../../core/services/drawing.service';
+import { DrawingCanvas } from '../../../shared/components/drawing-canvas/drawing-canvas';
 
 @Component({
   selector: 'app-teacher-table',
-  imports: [ChessBoard, MatButtonModule, MatIconModule, MatTooltipModule],
+  imports: [ChessBoard,DrawingCanvas, MatButtonModule, MatIconModule, MatTooltipModule],
   templateUrl: './teacher-table.html',
   styleUrl: './teacher-table.scss',
 })
@@ -28,7 +30,10 @@ export class TeacherTable implements AfterViewInit {
   onGather = output<void>();
   onDisperse = output<void>();
   realtimeService = inject(RealtimeService);
+  drawingService = inject(DrawingService);
+
   selectedExercise = input<Exercise | null>(null);
+  isGathered = input<boolean>(false);
   boardConfig = signal<Config>({
     orientation: 'white',
     coordinates: false,
@@ -57,16 +62,22 @@ export class TeacherTable implements AfterViewInit {
         this.chessBoard.api.set({ fen: ex.fen, lastMove: [] });
         if (this.realtimeService.mode() === 'gathered') {
           this.realtimeService.sendTeacherFen(ex.fen);
+          this.drawingService.clearAllOnFenChange();
         }
       }
     });
 
-    // apply arrows
+    // apply shared arrows
     effect(() => {
       const shapes = this.realtimeService.sharedArrows();
       if (this.realtimeService.mode() === 'gathered') {
         this.chessBoard?.api?.set({ drawable: { shapes } });
       }
+    });
+    // Redraw chessground when board size changes between normal and gathered
+    effect(() => {
+      const gathered = this.isGathered();
+      setTimeout(() => this.chessBoard?.api?.redrawAll(), 0);
     });
   }
 
@@ -85,10 +96,12 @@ export class TeacherTable implements AfterViewInit {
 
   handleMove() {
     this.realtimeService.sendTeacherFen(this.chessBoard.api.getFen());
+    this.drawingService.clearAllOnFenChange();
   }
 
   gather(): void {
     this.realtimeService.sendTeacherFen(this.chessBoard.api.getFen());
+    this.drawingService.clearAllOnFenChange();
     this.realtimeService.gather();
     this.realtimeService.mode.set('gathered');
     this.onGather.emit();
@@ -104,11 +117,13 @@ export class TeacherTable implements AfterViewInit {
     const fen = STARTING_FEN;
     this.chessBoard.api?.set({ fen, lastMove: [] });
     this.realtimeService.sendTeacherFen(fen);
+    this.drawingService.clearAllOnFenChange();
   }
 
   clearBoard(): void {
     const fen = EMPTY_BOARD_FEN;
     this.chessBoard.api?.set({ fen, lastMove: [] });
     this.realtimeService.sendTeacherFen(fen);
+    this.drawingService.clearAllOnFenChange();
   }
 }

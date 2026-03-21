@@ -149,6 +149,12 @@ mat-card-header {
   border-radius: 25px;
 }
 
+.drawing-toolbar {
+  padding: 8px 0;
+  display: flex;
+  justify-content: center;
+}
+
 @keyframes stamp-pop {
   0% {
     transform: scale(0);

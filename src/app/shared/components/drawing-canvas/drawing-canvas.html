@@ -1,0 +1,17 @@
+<svg
+  #svg
+  class="drawing-canvas"
+  [class.active]="active()"
+  (pointerdown)="onPointerDown($event)"
+  (pointermove)="onPointerMove($event)"
+  (pointerup)="onPointerUp()"
+  (pointercancel)="onPointerUp()"
+>
+  @for (stroke of renderedStrokes(); track stroke.id) {
+    <path
+      [attr.d]="stroke.path"
+      [attr.fill]="stroke.color"
+      style="pointer-events: none"
+    />
+  }
+</svg>

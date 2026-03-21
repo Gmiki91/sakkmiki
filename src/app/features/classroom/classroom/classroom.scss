@@ -3,6 +3,10 @@
   grid-template-columns: minmax(280px, auto) 1fr;
   height: calc(100vh - 64px);
   overflow: hidden;
+  &.gathered {
+    grid-template-columns: auto 280px;
+    justify-content: center;
+  }
 }
 
 // Left panel
@@ -13,6 +17,12 @@
   display: flex;
   flex-direction: column;
   gap: 0;
+  &.gathered{
+    background: none;
+    border:none; 
+    border-right: none;
+    align-items: center;
+  }
 }
 
 .teacher-controls {
@@ -145,4 +155,40 @@
   color: var(--mat-sys-on-surface-variant);
   padding: 48px 0;
   font-size: 0.95rem;
+}
+
+.drawings-panel {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  background: var(--mat-sys-surface);
+  width: 280px;
+  flex-shrink: 0;
+}
+
+.student-drawing-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 4px;
+  border-radius: 6px;
+
+  &:hover {
+    background: var(--mat-sys-surface-container-high);
+  }
+}
+
+.color-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid var(--mat-sys-outline-variant);
+}
+
+.student-name {
+  flex: 1;
+  font-size: 0.9rem;
 }

@@ -4,7 +4,7 @@
       class="brush-option"
       [style.background]="brush.color"
       [class.selected]="selectedBrush() === brush.key"
-      (click)="this.selectedBrush.set(brush.key)"
+      (click)="selectBrush(brush.key)"
     ></div>
   }
 </div>

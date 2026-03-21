@@ -28,6 +28,12 @@
           ></app-chess-board>
           <app-piece-overlay #pieceOverlay [orientation]="'white'"> </app-piece-overlay>
           <app-stamp-overlay #stampOverlay></app-stamp-overlay>
+          <app-drawing-canvas 
+            [strokes]="drawingService.localStrokes()" 
+            [active]="realtimeService.mode() === 'gathered'" 
+            (pointAdded)="onPointAdded($event)" 
+            (strokeCommitted)="onStrokeCommitted($event)">
+          </app-drawing-canvas>
         </div>
         @if (pendingPromotion()) {
           <div class="promotion-overlay">
@@ -63,7 +69,11 @@
           }
         </div>
       } -->
-      <!-- <app-brush-picker #brushPicker></app-brush-picker> -->
+      @if (realtimeService.mode() === 'gathered') {
+        <div class="drawing-toolbar">
+          <app-brush-picker (colorSelected)="onColorSelected($event)"></app-brush-picker>
+        </div>
+      }
       @if (stampCollection().length > 0) {
         <div class="collection">
           @for (stamp of stampCollection(); track $index) {

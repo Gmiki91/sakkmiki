@@ -1,0 +1,22 @@
+:host {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  // inactive by default — only captures pointer events when active
+  pointer-events: none;
+}
+
+.drawing-canvas {
+  width: 100%;
+  height: 100%;
+  // prevents browser scroll/zoom gestures interfering with drawing on touch
+  touch-action: none;
+  pointer-events: none;
+
+  &.active {
+    pointer-events: all;
+    cursor: crosshair;
+  }
+}
