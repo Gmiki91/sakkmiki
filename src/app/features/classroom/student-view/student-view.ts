@@ -40,6 +40,8 @@ import { DrawingService } from '../../../core/services/drawing.service';
 import { DrawingCanvas } from '../../../shared/components/drawing-canvas/drawing-canvas';
 import { Point } from '../../../shared/models/drawing.model';
 import { DEFAULT_BRUSH_COLOR } from '../../../shared/utils/brushes';
+import { TeachingOverlay } from '../../../shared/components/teaching-overlay/teaching-overlay';
+import { TEACHING_CONCEPTS } from '../../../shared/models/teaching-concept.model';
 @Component({
   selector: 'app-student-view',
   templateUrl: './student-view.html',
@@ -55,7 +57,8 @@ import { DEFAULT_BRUSH_COLOR } from '../../../shared/utils/brushes';
     PieceOverlay,
     StampOverlay,
     StampSvg,
-    DrawingCanvas
+    DrawingCanvas,
+    TeachingOverlay 
   ],
 })
 export class StudentView implements AfterViewInit, OnDestroy {
@@ -523,6 +526,14 @@ export class StudentView implements AfterViewInit, OnDestroy {
       this.challengeFen.set(this.challengeChess.fen());
       this.challengeLastMove.set([move.from as Key, move.to as Key]);
     });
+
+    // Sound effect from incoming teaching overlay
+    effect(()=>{
+      const overlay = this.realtimeService.incomingTeachingOverlay();
+      if (!overlay) return;
+      const concept = TEACHING_CONCEPTS.find(c => c.id === overlay.conceptId);
+      if (concept?.sound) this.soundService.play(concept.sound);
+    })
   }
 
 

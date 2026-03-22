@@ -18,10 +18,14 @@ import { EMPTY_BOARD_FEN, STARTING_FEN } from '../../../shared/utils/chess.utils
 import { Exercise } from '../../../shared/models/exercise.model';
 import { DrawingService } from '../../../core/services/drawing.service';
 import { DrawingCanvas } from '../../../shared/components/drawing-canvas/drawing-canvas';
+import { TeachingOverlayService } from '../../../core/services/teaching-overlay.service';
+import { TEACHING_CONCEPTS, TeachingConcept } from '../../../shared/models/teaching-concept.model';
+import { clientToSquare } from '../../../shared/utils/board-geometry';
+import { TeachingOverlay } from '../../../shared/components/teaching-overlay/teaching-overlay';
 
 @Component({
   selector: 'app-teacher-table',
-  imports: [ChessBoard,DrawingCanvas, MatButtonModule, MatIconModule, MatTooltipModule],
+  imports: [ChessBoard,DrawingCanvas,TeachingOverlay, MatButtonModule, MatIconModule, MatTooltipModule],
   templateUrl: './teacher-table.html',
   styleUrl: './teacher-table.scss',
 })
@@ -31,9 +35,11 @@ export class TeacherTable implements AfterViewInit {
   onDisperse = output<void>();
   realtimeService = inject(RealtimeService);
   drawingService = inject(DrawingService);
-
+  overlayService = inject(TeachingOverlayService);
   selectedExercise = input<Exercise | null>(null);
   isGathered = input<boolean>(false);
+  readonly concepts: TeachingConcept[] = TEACHING_CONCEPTS;
+  
   boardConfig = signal<Config>({
     orientation: 'white',
     coordinates: false,
@@ -92,6 +98,11 @@ export class TeacherTable implements AfterViewInit {
         }, 0);
       }
     });
+  }
+  onInterceptorClick(event: MouseEvent): void {
+    const boardEl = this.chessBoard.boardElement.nativeElement as HTMLElement;
+    const square = clientToSquare(event.clientX, event.clientY, boardEl, 'white');
+    this.overlayService.onSquareClicked(square);
   }
 
   handleMove() {

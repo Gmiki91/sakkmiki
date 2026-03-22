@@ -56,7 +56,9 @@ type BroadcastEvent =
   | { type: 'drawing_commit'; strokeId: string }
   | { type: 'drawing_color'; studentName: string; color: string }
   | { type: 'drawing_clear'; studentName: string }
-  | { type: 'drawing_clear_all' };
+  | { type: 'drawing_clear_all' }
+  | { type: 'teaching_overlay_trigger'; conceptId: string; squares: string[] }
+  | { type: 'teaching_overlay_clear' };
 
 @Injectable({ providedIn: 'root' })
 export class RealtimeService {
@@ -102,6 +104,7 @@ export class RealtimeService {
   incomingDrawingCommit = signal<{ strokeId: string } | null>(null);
   incomingDrawingColor = signal<{ studentName: string; color: string } | null>(null);
   incomingDrawingClear = signal<{ studentName: string } | null>(null);
+  incomingTeachingOverlay = signal<{ conceptId: string; squares: string[] } | null>(null);
 
   // ----------------------------------------------------------------
   // Teacher
@@ -205,6 +208,14 @@ export class RealtimeService {
 
   sendDrawingClearAll(): void {
     this.broadcast({ type: 'drawing_clear_all' });
+  }
+
+  sendTeachingOverlay(conceptId: string, squares: string[]): void {
+    this.broadcast({ type: 'teaching_overlay_trigger', conceptId, squares });
+  }
+
+  clearTeachingOverlay(): void {
+    this.broadcast({ type: 'teaching_overlay_clear' });
   }
 
   // ----------------------------------------------------------------
@@ -470,6 +481,12 @@ export class RealtimeService {
           ),
         );
         this.challengeMove.set(null);
+        break;
+      case 'teaching_overlay_trigger':
+        this.incomingTeachingOverlay.set({ conceptId: event.conceptId, squares: event.squares });
+        break;
+      case 'teaching_overlay_clear':
+        this.incomingTeachingOverlay.set(null);
         break;
     }
   }

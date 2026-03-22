@@ -26,8 +26,17 @@
                   currentExercise()?.exerciseType === 'mushroom'
             "
           ></app-chess-board>
+
           <app-piece-overlay #pieceOverlay [orientation]="'white'"> </app-piece-overlay>
           <app-stamp-overlay #stampOverlay></app-stamp-overlay>
+          <!-- Teaching overlay: only in gathered mode when teacher has triggered a concept -->
+          @if (realtimeService.mode() === 'gathered' && realtimeService.incomingTeachingOverlay()) {
+            <app-teaching-overlay
+              [conceptId]="realtimeService.incomingTeachingOverlay()!.conceptId"
+              [squares]="realtimeService.incomingTeachingOverlay()!.squares"
+              orientation="white"
+            ></app-teaching-overlay>
+          }
           <app-drawing-canvas 
             [strokes]="drawingService.localStrokes()" 
             [active]="realtimeService.mode() === 'gathered'" 
@@ -35,6 +44,7 @@
             (strokeCommitted)="onStrokeCommitted($event)">
           </app-drawing-canvas>
         </div>
+        
         @if (pendingPromotion()) {
           <div class="promotion-overlay">
             @if (myColor() === 'white') {
