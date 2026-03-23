@@ -1,11 +1,11 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { TeachingConcept } from '../../shared/models/teaching-concept.model';
-import { RealtimeService } from './realtime.service';
+import { ClassroomStore } from './classroom-store.service';
 import { SoundService } from './sound.service';
 
 @Injectable({ providedIn: 'root' })
 export class TeachingOverlayService {
-  private realtimeService = inject(RealtimeService);
+  private classroomStore = inject(ClassroomStore);
   private soundService = inject(SoundService);
 
   activeConceptId = signal<string | null>(null);
@@ -44,7 +44,7 @@ export class TeachingOverlayService {
     this.selectedSquares.set([]);
     this.isSelectingSquares.set(false);
     this.pendingConcept.set(null);
-    this.realtimeService.clearTeachingOverlay();
+    this.classroomStore.clearTeachingOverlay();
   }
 
   private trigger(concept: TeachingConcept, squares: string[]): void {
@@ -53,6 +53,6 @@ export class TeachingOverlayService {
     this.isSelectingSquares.set(false);
     if (concept.sound) this.soundService.play(concept.sound);
     this.pendingConcept.set(null);
-    this.realtimeService.sendTeachingOverlay(concept.id, squares);
+    this.classroomStore.sendTeachingOverlay(concept.id, squares);
   }
 }

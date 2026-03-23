@@ -1,12 +1,12 @@
 import { Injectable, inject, signal, effect } from '@angular/core';
-import { RealtimeService } from './realtime.service';
+import { ClassroomStore } from './classroom-store.service';
 import { DrawingStroke, Point } from '../../shared/models/drawing.model';
 
 const THROTTLE_MS = 50;
 
 @Injectable({ providedIn: 'root' })
 export class DrawingService {
-  private realtimeService = inject(RealtimeService);
+  private classroomStore = inject(ClassroomStore);
 
   // Teacher sees all students' strokes
   allStrokes = signal<DrawingStroke[]>([]);
@@ -32,7 +32,7 @@ export class DrawingService {
   // ----------------------------------------------------------------
 
   addLocalPoint(strokeId: string, point: Point, color: string): void {
-    const studentName = this.realtimeService.studentName();
+    const studentName = this.classroomStore.studentName();
 
     // Update local strokes immediately for instant visual feedback
     this.localStrokes.update(strokes => {
@@ -64,11 +64,11 @@ export class DrawingService {
       strokes.map(s => s.id === strokeId ? { ...s, committed: true } : s)
     );
 
-    this.realtimeService.sendDrawingCommit(strokeId);
+    this.classroomStore.sendDrawingCommit(strokeId);
   }
 
   broadcastColor(color: string): void {
-    this.realtimeService.sendDrawingColor(color);
+    this.classroomStore.sendDrawingColor(color);
   }
 
   // ----------------------------------------------------------------
@@ -79,12 +79,12 @@ export class DrawingService {
     this.allStrokes.update(strokes =>
       strokes.filter(s => s.studentName !== studentName)
     );
-    this.realtimeService.sendDrawingClear(studentName);
+    this.classroomStore.sendDrawingClear(studentName);
   }
 
   clearAll(): void {
     this.allStrokes.set([]);
-    this.realtimeService.sendDrawingClearAll();
+    this.classroomStore.sendDrawingClearAll();
   }
 
   // Named explicitly so call sites are self-documenting
@@ -108,7 +108,7 @@ export class DrawingService {
   private setupIncomingEvents(): void {
     // Incoming points from a student → append to allStrokes (teacher side)
     effect(() => {
-      const event = this.realtimeService.incomingDrawingPoints();
+      const event = this.classroomStore.incomingDrawingPoints();
       if (!event) return;
       const { studentName, strokeId, color, points } = event;
       this.allStrokes.update(strokes => {
@@ -124,7 +124,7 @@ export class DrawingService {
 
     // Incoming commit from a student
     effect(() => {
-      const event = this.realtimeService.incomingDrawingCommit();
+      const event = this.classroomStore.incomingDrawingCommit();
       if (!event) return;
       this.allStrokes.update(strokes =>
         strokes.map(s => s.id === event.strokeId ? { ...s, committed: true } : s)
@@ -133,7 +133,7 @@ export class DrawingService {
 
     // Incoming color selection from a student
     effect(() => {
-      const event = this.realtimeService.incomingDrawingColor();
+      const event = this.classroomStore.incomingDrawingColor();
       if (!event) return;
       this.studentColors.update(colors => ({
         ...colors,
@@ -143,9 +143,9 @@ export class DrawingService {
 
     // Incoming clear from teacher
     effect(() => {
-      const event = this.realtimeService.incomingDrawingClear();
+      const event = this.classroomStore.incomingDrawingClear();
       if (!event) return;
-      const myName = this.realtimeService.studentName();
+      const myName = this.classroomStore.studentName();
       if (event.studentName === myName || event.studentName === 'all') {
         this.clearLocal();
       }
@@ -155,7 +155,7 @@ export class DrawingService {
   private flushPoints(): void {
     if (!this.pendingPoints.length || !this.activeStrokeId || !this.activeStrokeColor) return;
 
-    this.realtimeService.sendDrawingPoints(
+    this.classroomStore.sendDrawingPoints(
       this.activeStrokeId,
       [...this.pendingPoints],
       this.activeStrokeColor,

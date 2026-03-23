@@ -27,7 +27,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { Config } from '@lichess-org/chessground/config';
 import { ChessBoard } from '../../../shared/components/chess-board/chess-board';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { RealtimeService } from '../../../core/services/realtime.service';
+import { ClassroomStore } from '../../../core/services/classroom-store.service';
 import { ChallengePair } from '../../../shared/models/challenge-pair.model';
 import { BrushPicker } from '../../../shared/components/brush-picker/brush-picker';
 import { PieceOverlay } from '../../../shared/components/piece-overlay/piece-overlay';
@@ -66,14 +66,14 @@ export class StudentView implements AfterViewInit, OnDestroy {
   @ViewChild('pieceOverlay') pieceOverlay!: PieceOverlay;
   @ViewChild('stampOverlay') stampOverlay!: StampOverlay;
   @ViewChild('brushPicker') brushPicker!: BrushPicker;
-  realtimeService = inject(RealtimeService);
+  classroomStore = inject(ClassroomStore);
   soundService = inject(SoundService);
   drawingService = inject(DrawingService);
 
   // --- Exercise state ---
   stampCollection = signal<StampType[]>([]);
   mushroomCollection = signal<number>(0);
-  loadedList = this.realtimeService.loadedExercises;
+  loadedList = this.classroomStore.loadedExercises;
 
   exIndex = linkedSignal({
     source: () => this.loadedList(),
@@ -82,7 +82,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
 
   // droppedExercise takes precedence
   currentExercise = computed(
-    () => this.realtimeService.droppedExercise() ?? this.loadedList()[this.exIndex()] ?? null,
+    () => this.classroomStore.droppedExercise() ?? this.loadedList()[this.exIndex()] ?? null,
   );
   moveHistory: WritableSignal<string[]> = linkedSignal({
     source: () => this.currentExercise(),
@@ -126,17 +126,17 @@ export class StudentView implements AfterViewInit, OnDestroy {
   // --- Challenge props---
   myPair = computed(
     () =>
-      this.realtimeService
+      this.classroomStore
         .challengePairs()
         .find(
           (p) =>
-            p.white === this.realtimeService.studentName() ||
-            p.black === this.realtimeService.studentName(),
+            p.white === this.classroomStore.studentName() ||
+            p.black === this.classroomStore.studentName(),
         ) ?? null,
   );
 
   myColor = computed(() =>
-    this.myPair()?.white === this.realtimeService.studentName() ? 'white' : 'black',
+    this.myPair()?.white === this.classroomStore.studentName() ? 'white' : 'black',
   );
   pendingPromotion = signal<{ orig: Key; dest: Key; pair: ChallengePair } | null>(null);
   private challengeChess = new Chess();
@@ -144,7 +144,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
   // --- Board config ---
 
   private gatheredConfig = computed<Config>(() => ({
-    fen: this.realtimeService.teacherFen(),
+    fen: this.classroomStore.teacherFen(),
     orientation: 'white',
     movable: { free: false, color: undefined },
     draggable: { enabled: false },
@@ -191,7 +191,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
   }));
 
   boardConfig = computed<Config | null>(() => {
-    if (this.realtimeService.mode() === 'gathered') return this.gatheredConfig();
+    if (this.classroomStore.mode() === 'gathered') return this.gatheredConfig();
     if (this.myPair()) return this.challengeConfig();
     return this.currentExercise() ? this.exerciseConfig() : null;
   });
@@ -205,7 +205,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
 
   }
   ngOnDestroy(): void {
-    this.realtimeService.leave();
+    this.classroomStore.leave();
   }
 
   ngAfterViewInit(): void {
@@ -214,7 +214,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
     el.addEventListener(
       'pointerdown',
       (e: MouseEvent) => {
-        if (e.button === 0 && this.realtimeService.mode() === 'gathered') {
+        if (e.button === 0 && this.classroomStore.mode() === 'gathered') {
           e.preventDefault();
         }
       },
@@ -226,10 +226,10 @@ export class StudentView implements AfterViewInit, OnDestroy {
       if (e.button !== 0 && e.button !== 2) return; // middle mouse do what?
       setTimeout(() => {
         const shapes = this.chessBoard.api?.state.drawable.shapes ?? [];
-        if (this.realtimeService.mode() === 'gathered') {
-          if (e.button !== 0) this.realtimeService.sendSharedArrows(shapes);
+        if (this.classroomStore.mode() === 'gathered') {
+          if (e.button !== 0) this.classroomStore.sendSharedArrows(shapes);
         } else {
-          this.realtimeService.sendMiniboardArrows(shapes);
+          this.classroomStore.sendMiniboardArrows(shapes);
         }
       }, 0);
     });
@@ -240,7 +240,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
     if (!pair) return;
     if (this.isPawnPromotion(orig, dest)) {
       if (this.backrankpawnWins(dest)) {
-        this.realtimeService.sendChallengeMove(pair.white,pair.black,this.challengeChess.fen(),orig,dest,true);
+        this.classroomStore.sendChallengeMove(pair.white,pair.black,this.challengeChess.fen(),orig,dest,true);
         this.youWin();
       } else {
         this.pendingPromotion.set({ orig, dest, pair });
@@ -283,7 +283,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
         this.challengeLastMove.set([orig, dest]);
         this.playSound(move);
         const win = this.checkWinConditions(move);
-        this.realtimeService.sendChallengeMove(pair.white,pair.black,this.challengeChess.fen(),orig,dest,win);
+        this.classroomStore.sendChallengeMove(pair.white,pair.black,this.challengeChess.fen(),orig,dest,win);
         if (win) this.youWin();
         if (promotion) this.chessBoard.api?.set({ fen: this.challengeChess.fen() });
       }
@@ -311,7 +311,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
       this.moveHistory.set(newHistory);
       const isSolved = ex.solutions?.some((line) => line.length === newHistory.length);
       if (isSolved) {
-        if (this.realtimeService.autoProgress()) this.progressAuto();
+        if (this.classroomStore.autoProgress()) this.progressAuto();
         else {
           this.isWaitingForStamp.set(true);
           this.isLocked.set(true);
@@ -339,7 +339,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
       }
     } else {
       this.soundService.play('error');
-      if(this.realtimeService.autoRedo())
+      if(this.classroomStore.autoRedo())
       this.handleMistake(ex,move)
       else
       this.isLocked.set(true);
@@ -432,24 +432,24 @@ export class StudentView implements AfterViewInit, OnDestroy {
       const fen = untracked(() =>exercise.exerciseType === 'challenge' ? this.challengeFen() : this.exerciseFen());
       const status = untracked(() => this.status());
       const feedback = untracked(() => this.feedback());
-      this.realtimeService.updatePresence({ fen, status, feedback, exIndex, locked, awaitingStamp });
+      this.classroomStore.updatePresence({ fen, status, feedback, exIndex, locked, awaitingStamp });
 
     });
 
     // Student fen broadcast
     effect(() => {
      const fen = this.exerciseFen();
-     if (this.realtimeService.mode() === 'gathered') return;
+     if (this.classroomStore.mode() === 'gathered') return;
      if (this.myPair()) return; // challenge has its own flow
-     this.realtimeService.broadcastStudentFen(
-       this.realtimeService.studentName(),
+     this.classroomStore.broadcastStudentFen(
+       this.classroomStore.studentName(),
        fen
      );
     });
 
     // Gather/disperse
     effect(() => {
-      const mode = this.realtimeService.mode();
+      const mode = this.classroomStore.mode();
       if (mode === 'gathered') this.onGather();
       else this.onDisperse();
     });
@@ -472,7 +472,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
 
     // arrows
     effect(() => {
-      const shapes = this.realtimeService.sharedArrows();
+      const shapes = this.classroomStore.sharedArrows();
       this.chessBoard?.api?.set({ drawable: { shapes } });
     });
   }
@@ -480,40 +480,40 @@ export class StudentView implements AfterViewInit, OnDestroy {
   private setupEventHandlers(): void {
     // Teacher resume: undo last move, let student retry
     effect(() => {
-      const resume = this.realtimeService.resume();
+      const resume = this.classroomStore.resume();
       if (!resume) return;
-      this.realtimeService.resume.set(null);
+      this.classroomStore.resume.set(null);
       this.handleMistake(this.currentExercise());
     });
 
     // Teacher stamp: award stamp and advance
     effect(() => {
-      const stamp = this.realtimeService.stamp();
+      const stamp = this.classroomStore.stamp();
       if (!stamp) return;
-      this.realtimeService.stamp.set(null);
+      this.classroomStore.stamp.set(null);
       this.progressWithStamp();
     });
 
     // Teacher locks board
     effect(() => {
-      const lock = this.realtimeService.lock();
+      const lock = this.classroomStore.lock();
       if (!lock) return;
-      this.realtimeService.lock.set(null);
+      this.classroomStore.lock.set(null);
       this.isLocked.set(true);
     });
 
       // Teacher unlocks board
     effect(() => {
-      const unlock = this.realtimeService.unlock();
+      const unlock = this.classroomStore.unlock();
       if (!unlock) return;
-      this.realtimeService.unlock.set(null);
+      this.classroomStore.unlock.set(null);
       this.isLocked.set(false);
     });
 
 
     // Incoming challenge move from opponent
     effect(() => {
-      const move = this.realtimeService.challengeMove();
+      const move = this.classroomStore.challengeMove();
       if (!move) return;
       const pair = this.myPair();
       if (!pair || move.white !== pair.white || move.black !== pair.black) return;
@@ -529,7 +529,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
 
     // Sound effect from incoming teaching overlay
     effect(()=>{
-      const overlay = this.realtimeService.incomingTeachingOverlay();
+      const overlay = this.classroomStore.incomingTeachingOverlay();
       if (!overlay) return;
       const concept = TEACHING_CONCEPTS.find(c => c.id === overlay.conceptId);
       if (concept?.sound) this.soundService.play(concept.sound);
@@ -628,7 +628,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
     setTimeout(() => {
       //leave droppedExercise set so currentExercise doesn't recompute and defaults to the loadedListExercise
       this.stampCollection.update((arr) => [...arr, stamp as StampType]);
-      if (!this.realtimeService.droppedExercise()) this.nextExercise();
+      if (!this.classroomStore.droppedExercise()) this.nextExercise();
     }, 3000);
   }
 
@@ -637,7 +637,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
     this.soundService.play('won');
     setTimeout(() => {
       //leave droppedExercise set so currentExercise doesn't recompute and defaults to the loadedListExercise
-      if (!this.realtimeService.droppedExercise()) this.nextExercise();
+      if (!this.classroomStore.droppedExercise()) this.nextExercise();
     }, 3000);
   }
 
