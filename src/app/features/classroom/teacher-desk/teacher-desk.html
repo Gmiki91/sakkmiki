@@ -54,7 +54,8 @@
             (click)="toggleAutoRedo()">
             Auto Redo {{ store.autoRedo() ? 'ON' : 'OFF' }}
           </button>
-          
+         </div>
+          <div class="row">
           <button mat-raised-button
             [color]="store.autoProgress() ? 'primary' : ''"
             (click)="toggleAutoProgress()">
@@ -69,9 +70,8 @@
   <!-- Concepts + drawings column — gathered only -->
   @if (isGathered()) {
     <div class="right-column">
-
       <div class="concept-palette">
-        <span class="palette-title">Concepts</span>
+        <span class="palette-title">Animations</span>
         @if (overlayService.isSelectingSquares()) {
           <div class="selection-indicator">
             <span class="selection-dot"></span>
@@ -121,13 +121,15 @@
 
   <!-- Normal mode: exercise lists below board area -->
   @if (!isGathered()) {
-      <div class="teacher-controls">
-        <button mat-raised-button (click)="openPicker()">Load list</button>
+    <div class="row">
+      <button mat-raised-button (click)="openPicker()">Load exercises</button>
+    </div>
+    <div class="teacher-controls">
         @for (list of loadedLists(); track list.id) {
           <div class="list-header">
             <h3>{{ list.title }}</h3>
             <button mat-icon-button (click)="removeList(list)"><mat-icon>close</mat-icon></button>
-            <button mat-raised-button color="primary" (click)="loadListToAll(list)">Load to all</button>
+            <button mat-button color="primary" (click)="loadListToAll(list)">Load to all</button>
           </div>
           <app-exercise-list [list]="list" (selectExercise)="demoExercise.set($event)"></app-exercise-list>
         }

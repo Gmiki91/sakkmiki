@@ -49,9 +49,22 @@
           } @else if (student.awaitingStamp) {
             <button mat-raised-button class="stamp-btn" (click)="handleStamp(student.name)">Stamp</button>
           } @else {
+            <button mat-icon-button
+              [class.active-toggle]="effectiveAutoRedo()(student.name)"
+              [matTooltip]="'Auto redo: ' + (effectiveAutoRedo()(student.name) ? 'ON' : 'OFF')"
+              (click)="toggleStudentAutoRedo(student.name)">
+              <mat-icon fontSet="material-symbols-outlined">autopause</mat-icon>
+            </button>
             <button mat-icon-button (click)="handleLock(student.name)"
-              [matTooltip]="student.locked ? 'unlock board' : 'lock board'">
-              <mat-icon>{{ student.locked ? 'lock_open' : 'lock' }}</mat-icon>
+             [class.active-toggle]="!student.locked"
+              [matTooltip]="student.locked ? 'Board locked' : 'Board unlocked'">
+              <mat-icon>{{ student.locked ? 'lock' : 'lock_open' }}</mat-icon>
+            </button>
+            <button mat-icon-button
+              [class.active-toggle]="effectiveAutoProgress()(student.name)"
+              [matTooltip]="'Auto progress: ' + (effectiveAutoProgress()(student.name) ? 'ON' : 'OFF')"
+              (click)="toggleStudentAutoProgress(student.name)">
+              <mat-icon fontSet="material-symbols-outlined">autoplay</mat-icon>
             </button>
           }
         </mat-card-actions>

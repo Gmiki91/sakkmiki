@@ -26,6 +26,8 @@ export class ClassroomStore {
   readonly mode = signal<ClassroomMode>('normal');
   readonly autoRedo = signal(true);
   readonly autoProgress = signal(true);
+  readonly autoRedoOverrides = signal<Record<string, boolean>>({});
+  readonly autoProgressOverrides = signal<Record<string, boolean>>({});
   readonly challengePairs = signal<ChallengePair[]>([]);
   readonly challengeMove = signal<{
     white: string; black: string; fen: string; from: string; to: string; over?: boolean;
@@ -124,8 +126,24 @@ export class ClassroomStore {
   sendStamp(studentName: string): void { this.transport.send({ type: 'stamp', studentName }); }
   sendLock(studentName: string): void { this.transport.send({ type: 'lock', studentName }); }
   sendUnlock(studentName: string): void { this.transport.send({ type: 'unlock', studentName }); }
-  sendAutoRedo(value: boolean): void { this.autoRedo.set(value); this.transport.send({ type: 'set_auto_redo', value }); }
-  sendAutoProgress(value: boolean): void { this.autoProgress.set(value); this.transport.send({ type: 'set_auto_progress', value }); }
+  sendAutoRedo(value: boolean, studentName?: string): void {
+    if (studentName) {
+      this.autoRedoOverrides.update((o) => ({ ...o, [studentName]: value }));
+    } else {
+      this.autoRedo.set(value);
+      this.autoRedoOverrides.set({});
+    }
+    this.transport.send({ type: 'set_auto_redo', value, studentName });
+  }
+  sendAutoProgress(value: boolean, studentName?: string): void {
+    if (studentName) {
+      this.autoProgressOverrides.update((o) => ({ ...o, [studentName]: value }));
+    } else {
+      this.autoProgress.set(value);
+      this.autoProgressOverrides.set({});
+    }
+    this.transport.send({ type: 'set_auto_progress', value, studentName });
+  }
   sendTeachingOverlay(conceptId: string, squares: string[]): void {
     this.transport.send({ type: 'teaching_overlay_trigger', conceptId, squares });
   }
@@ -216,8 +234,12 @@ export class ClassroomStore {
         if (event.studentName === myName) this.resume.set(event.studentName); break;
       case 'stamp':
         if (event.studentName === myName) this.stamp.set(event.studentName); break;
-      case 'set_auto_redo': this.autoRedo.set(event.value); break;
-      case 'set_auto_progress': this.autoProgress.set(event.value); break;
+      case 'set_auto_redo':
+        if (!event.studentName || event.studentName === myName) this.autoRedo.set(event.value);
+        break;
+      case 'set_auto_progress':
+        if (!event.studentName || event.studentName === myName) this.autoProgress.set(event.value);
+        break;
       case 'lock':
         if (event.studentName === myName) this.lock.set(event.studentName); break;
       case 'unlock':

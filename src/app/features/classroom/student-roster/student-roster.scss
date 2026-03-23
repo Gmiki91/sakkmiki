@@ -22,6 +22,7 @@
   .resume-btn { color: white; background-color: var(--mat-sys-error); }
   .stamp-btn  { color: white; background-color: #4caf50; }
 
+  .active-toggle mat-icon, .active-toggle .mat-icon { color: var(--mat-sys-primary); }
   .mini-board {
     width: var(--mini-board-size);
     height: var(--mini-board-size);

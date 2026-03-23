@@ -28,6 +28,8 @@ export class StudentRoster implements AfterViewInit {
   drawingService = inject(DrawingService);
 
   isLoadingList = signal(false);
+  teacherLockedStudents = signal<Set<string>>(new Set());
+  pendingPair = signal<string | null>(null);
 
   exerciseTitles = computed(() => {
     const list = this.store.loadedList();
@@ -46,8 +48,19 @@ export class StudentRoster implements AfterViewInit {
     return result;
   });
 
-  teacherLockedStudents = signal<Set<string>>(new Set());
-  pendingPair = signal<string | null>(null);
+  // Effective per-student values — override from store if set, otherwise fall back to global.
+  // Recomputed automatically whenever overrides or global changes.
+  effectiveAutoRedo = computed(() => {
+    const overrides = this.store.autoRedoOverrides();
+    const global = this.store.autoRedo();
+    return (name: string) => overrides[name] ?? global;
+  });
+
+  effectiveAutoProgress = computed(() => {
+    const overrides = this.store.autoProgressOverrides();
+    const global = this.store.autoProgress();
+    return (name: string) => overrides[name] ?? global;
+  });
 
   private lastExIndex: Record<string, number> = {};
   private listenedElements = new Set<HTMLElement>();
@@ -58,8 +71,8 @@ export class StudentRoster implements AfterViewInit {
       if (!update) return;
       const index = this.store.students().findIndex((s) => s.name === update.name);
       if (index === -1) return;
-      if(this.studentBoards)
-      this.studentBoards.get(index)?.api?.set({ drawable: { shapes: update.shapes } });
+      if (this.studentBoards)
+        this.studentBoards.get(index)?.api?.set({ drawable: { shapes: update.shapes } });
     });
 
     // Reset timer when a student moves to a new exercise
@@ -123,6 +136,14 @@ export class StudentRoster implements AfterViewInit {
     }
   }
 
+  toggleStudentAutoRedo(name: string): void {
+    this.store.sendAutoRedo(!this.effectiveAutoRedo()(name), name);
+  }
+
+  toggleStudentAutoProgress(name: string): void {
+    this.store.sendAutoProgress(!this.effectiveAutoProgress()(name), name);
+  }
+
   onDrop(targetName: string, event: DragEvent): void {
     const type = event.dataTransfer?.getData('type');
     if (type === 'exercise') this.handleExerciseDrop(targetName, event);
@@ -131,7 +152,6 @@ export class StudentRoster implements AfterViewInit {
 
   handleExerciseDrop(targetName: string, event: DragEvent): void {
     const exercise = JSON.parse(event.dataTransfer?.getData('exercise') ?? '{}') as Exercise;
-    const listTitle = JSON.parse(event.dataTransfer?.getData('exercise-title') ?? '{}') as string;
     const pair = this.getPair(targetName);
     if (pair) {
       this.store.sendDroppedExercise(pair.white, exercise);
