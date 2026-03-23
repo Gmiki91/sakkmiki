@@ -46,6 +46,7 @@ export class StudentRoster implements OnInit, OnDestroy, AfterViewInit {
       if (!update) return;
       const index = this.store.students().findIndex((s) => s.name === update.name);
       if (index === -1) return;
+      if(this.studentBoards)
       this.studentBoards.get(index)?.api?.set({ drawable: { shapes: update.shapes } });
     });
   }

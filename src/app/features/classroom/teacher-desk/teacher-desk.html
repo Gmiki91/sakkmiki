@@ -21,7 +21,7 @@
       <app-chess-board
         #chessBoard
         [config]="boardConfig()"
-        [mushroomMode]="demoExercise()?.exerciseType === 'mushroom'"
+        [mushroomMode]="isGathered()&&demoExercise()?.exerciseType === 'mushroom'"
       ></app-chess-board>
 
       <app-drawing-canvas [strokes]="drawingService.allStrokes()" [active]="false"></app-drawing-canvas>
@@ -47,7 +47,7 @@
         <button mat-raised-button color="primary" (click)="gather()">Gather</button>
         <button mat-raised-button (click)="disperse()">Disperse</button>
       </div>
-      @if(store.mode()!=='gathered'){
+      @if(!isGathered()){
          <div class="row">
            <button mat-raised-button
             [color]="store.autoRedo() ? 'primary' : ''"

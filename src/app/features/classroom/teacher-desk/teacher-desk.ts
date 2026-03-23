@@ -113,12 +113,10 @@ export class TeacherDesk implements AfterViewInit {
     this.store.sendTeacherFen(this.chessBoard.api.getFen());
     this.drawingService.clearAllOnFenChange();
     this.store.gather();
-    this.store.mode.set('gathered');
   }
 
   disperse(): void {
     this.store.disperse();
-    this.store.mode.set('normal');
   }
 
   resetBoard(): void {

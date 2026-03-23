@@ -101,8 +101,15 @@ export class ClassroomStore {
   // Send methods (teacher)
   // ----------------------------------------------------------------
 
-  gather(): void { this.transport.send({ type: 'gather' }); }
-  disperse(): void { this.transport.send({ type: 'disperse' }); }
+  gather(): void {
+    this.mode.set('gathered');
+    this.transport.send({ type: 'gather' });
+  }
+  disperse(): void {
+    this.mode.set('normal');
+    this.sharedArrows.set([]);
+    this.transport.send({ type: 'disperse' });
+  }
   sendTeacherFen(fen: string): void { this.transport.send({ type: 'teacher_fen', fen }); }
   sendSharedArrows(shapes: DrawShape[], target: 'all' | string = 'all'): void {
     this.transport.send({ type: 'shared_arrows', shapes, target });
