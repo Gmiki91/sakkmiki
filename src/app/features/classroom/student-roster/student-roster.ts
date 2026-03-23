@@ -1,10 +1,6 @@
-import {
-  Component, inject, OnInit, OnDestroy, QueryList, ViewChildren,
-  AfterViewInit, signal, effect,
-} from '@angular/core';
-import { ClassroomStore, StudentPresence } from '../../../core/services/classroom-store.service';
+import { Component, inject, QueryList, ViewChildren, AfterViewInit, signal, computed, effect } from '@angular/core';
+import { ClassroomStore } from '../../../core/services/classroom-store.service';
 import { DrawingService } from '../../../core/services/drawing.service';
-import { ExerciseService } from '../../../core/services/exercise.service';
 import { ChessBoard } from '../../../shared/components/chess-board/chess-board';
 import { StudentTimer } from '../timer';
 import { MatCardModule } from '@angular/material/card';
@@ -17,7 +13,6 @@ import { Key } from '@lichess-org/chessground/types';
 import { ChallengePair } from '../../../shared/models/challenge-pair.model';
 import { Exercise } from '../../../shared/models/exercise.model';
 import { STARTING_FEN } from '../../../shared/utils/chess.utils';
-import { ExerciseList } from '../../../shared/models/exercise-list.model';
 
 @Component({
   selector: 'app-student-roster',
@@ -25,7 +20,7 @@ import { ExerciseList } from '../../../shared/models/exercise-list.model';
   templateUrl: './student-roster.html',
   styleUrl: './student-roster.scss',
 })
-export class StudentRoster implements OnInit, OnDestroy, AfterViewInit {
+export class StudentRoster implements AfterViewInit {
   @ViewChildren('studentBoard') studentBoards!: QueryList<ChessBoard>;
   @ViewChildren(StudentTimer) timers!: QueryList<StudentTimer>;
 
@@ -33,7 +28,24 @@ export class StudentRoster implements OnInit, OnDestroy, AfterViewInit {
   drawingService = inject(DrawingService);
 
   isLoadingList = signal(false);
-  exerciseTitles = signal<Record<string, string>>({});
+
+  exerciseTitles = computed(() => {
+    const list = this.store.loadedList();
+    const listTitle = this.store.loadedListTitle();
+    const dropped = this.store.droppedExercises();
+    const result: Record<string, string> = {};
+    for (const student of this.store.students()) {
+      const droppedEx = dropped[student.name];
+      if (droppedEx) {
+        result[student.name] = droppedEx.title;
+      } else {
+        const ex = list[student.exIndex];
+        result[student.name] = ex ? `${listTitle}/${ex.title}` : 'No exercise loaded';
+      }
+    }
+    return result;
+  });
+
   teacherLockedStudents = signal<Set<string>>(new Set());
   pendingPair = signal<string | null>(null);
 
@@ -49,14 +61,19 @@ export class StudentRoster implements OnInit, OnDestroy, AfterViewInit {
       if(this.studentBoards)
       this.studentBoards.get(index)?.api?.set({ drawable: { shapes: update.shapes } });
     });
-  }
 
-  ngOnInit(): void {
-    this.store.onStudentsUpdate = (students) => this.onPresenceSync(students);
-  }
-
-  ngOnDestroy(): void {
-    this.store.onStudentsUpdate = null;
+    // Reset timer when a student moves to a new exercise
+    effect(() => {
+      const students = this.store.students();
+      students.forEach((student) => {
+        const prev = this.lastExIndex[student.name];
+        if (prev === undefined) { this.lastExIndex[student.name] = student.exIndex; return; }
+        if (prev !== student.exIndex) {
+          this.lastExIndex[student.name] = student.exIndex;
+          this.resetTimer(student.name);
+        }
+      });
+    });
   }
 
   ngAfterViewInit(): void {
@@ -80,28 +97,6 @@ export class StudentRoster implements OnInit, OnDestroy, AfterViewInit {
       highlight: { lastMove: true, check: true },
       drawable: { enabled: true, visible: true },
     };
-  }
-
-  onPresenceSync(students: StudentPresence[]): void {
-    this.isLoadingList.set(false);
-    students.forEach((student) => {
-      const prev = this.lastExIndex[student.name];
-      if (prev === undefined) { this.lastExIndex[student.name] = student.exIndex; return; }
-      if (prev !== student.exIndex) {
-        this.lastExIndex[student.name] = student.exIndex;
-        this.resetTimer(student.name);
-        const ex = this.store.loadedList()[student.exIndex];
-        if (ex) this.exerciseTitles.update((t) => ({ ...t, [student.name]: ex.title }));
-      }
-    });
-  }
-
-  notifyListLoaded(list: ExerciseList): void {
-    this.isLoadingList.set(true);
-    const names = this.store.students().map((s) => s.name);
-    const title = list.exercises[0]?.title ?? '';
-    this.exerciseTitles.set(Object.fromEntries(names.map((n) => [n, `${list.title}/${title}`])));
-    this.store.students().forEach((s) => this.resetTimer(s.name));
   }
 
   handleResume(studentName: string): void {
@@ -144,7 +139,6 @@ export class StudentRoster implements OnInit, OnDestroy, AfterViewInit {
     } else {
       this.store.sendDroppedExercise(targetName, exercise);
       this.resetTimer(targetName);
-      this.exerciseTitles.update((t) => ({ ...t, [targetName]: `${listTitle}/${exercise.title}` }));
     }
   }
 

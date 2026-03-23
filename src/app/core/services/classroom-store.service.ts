@@ -31,6 +31,8 @@ export class ClassroomStore {
     white: string; black: string; fen: string; from: string; to: string; over?: boolean;
   } | null>(null);
   readonly loadedList = signal<Exercise[]>([]);
+  readonly loadedListTitle = signal<string>('');
+  readonly droppedExercises = signal<Record<string, Exercise>>({});
 
   // Teacher-side
   readonly students = signal<StudentPresence[]>([]);
@@ -115,6 +117,7 @@ export class ClassroomStore {
     this.transport.send({ type: 'shared_arrows', shapes, target });
   }
   sendDroppedExercise(studentName: string, exercise: Exercise): void {
+    this.droppedExercises.update((d) => ({ ...d, [studentName]: exercise }));
     this.transport.send({ type: 'dropped_exercise', studentName, exercise });
   }
   sendResume(studentName: string): void { this.transport.send({ type: 'resume', studentName }); }
@@ -130,6 +133,8 @@ export class ClassroomStore {
 
   loadListToAll(list: List): void {
     this.loadedList.set(list.exercises);
+    this.loadedListTitle.set(list.title);
+    this.droppedExercises.set({});
     this.transport.send({ type: 'list_loaded', exercises: list.exercises });
   }
   // ----------------------------------------------------------------
