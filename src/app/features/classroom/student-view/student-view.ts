@@ -309,7 +309,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
       this.updateStatus();
       
       this.moveHistory.set(newHistory);
-      const isSolved = ex.solutions?.some((line) => line.length === newHistory.length);
+      const isSolved = solution.length === newHistory.length;
       if (isSolved) {
         if (this.classroomStore.autoProgress()) this.progressAuto();
         else {
