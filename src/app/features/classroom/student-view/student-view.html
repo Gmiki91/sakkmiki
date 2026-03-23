@@ -3,12 +3,12 @@
   <mat-card>
     <mat-card-header>
       <mat-card-title>
-        @if (realtimeService.mode() === 'gathered') {
+        @if (classroomStore.mode() === 'gathered') {
           <span class="gathered-label">Közös tábla</span>
         } @else if (myPair()) {
           <span> {{ myPair()!.white }} vs {{ myPair()!.black }}</span>
         } @else {
-          <span> Szia {{ realtimeService.studentName() }}! {{ emoji() }}</span>
+          <span> Szia {{ classroomStore.studentName() }}! {{ emoji() }}</span>
         }
       </mat-card-title>
     </mat-card-header>
@@ -22,7 +22,7 @@
             [mushroomMode]="
               myPair()
                 ? false
-                : realtimeService.mode() === 'normal' &&
+                : classroomStore.mode() === 'normal' &&
                   currentExercise()?.exerciseType === 'mushroom'
             "
           ></app-chess-board>
@@ -30,16 +30,16 @@
           <app-piece-overlay #pieceOverlay [orientation]="'white'"> </app-piece-overlay>
           <app-stamp-overlay #stampOverlay></app-stamp-overlay>
           <!-- Teaching overlay: only in gathered mode when teacher has triggered a concept -->
-          @if (realtimeService.mode() === 'gathered' && realtimeService.incomingTeachingOverlay()) {
+          @if (classroomStore.mode() === 'gathered' && classroomStore.incomingTeachingOverlay()) {
             <app-teaching-overlay
-              [conceptId]="realtimeService.incomingTeachingOverlay()!.conceptId"
-              [squares]="realtimeService.incomingTeachingOverlay()!.squares"
+              [conceptId]="classroomStore.incomingTeachingOverlay()!.conceptId"
+              [squares]="classroomStore.incomingTeachingOverlay()!.squares"
               orientation="white"
             ></app-teaching-overlay>
           }
           <app-drawing-canvas 
             [strokes]="drawingService.localStrokes()" 
-            [active]="realtimeService.mode() === 'gathered'" 
+            [active]="classroomStore.mode() === 'gathered'" 
             (pointAdded)="onPointAdded($event)" 
             (strokeCommitted)="onStrokeCommitted($event)">
           </app-drawing-canvas>
@@ -74,12 +74,12 @@
       <!-- @if (!myPair()) {
         <div class="feedback">
           <span>{{ status() }}</span>
-          @if (realtimeService.mode() === 'normal') {
+          @if (classroomStore.mode() === 'normal') {
             <span>{{ feedback() }}</span>
           }
         </div>
       } -->
-      @if (realtimeService.mode() === 'gathered') {
+      @if (classroomStore.mode() === 'gathered') {
         <div class="drawing-toolbar">
           <app-brush-picker (colorSelected)="onColorSelected($event)"></app-brush-picker>
         </div>

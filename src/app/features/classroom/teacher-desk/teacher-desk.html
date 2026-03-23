@@ -1,0 +1,137 @@
+<div class="teacher-desk" [class.gathered]="isGathered()">
+
+  <!-- Exercise list column — gathered only -->
+  @if (isGathered()) {
+    <div class="exercises-column">
+      @if (loadedLists().length === 0) {
+        <p class="empty-label">No lists loaded</p>
+      }
+      @for (list of loadedLists(); track list.id) {
+        <div class="list-header">
+          <h3>{{ list.title }}</h3>
+        </div>
+        <app-exercise-list [list]="list" (selectExercise)="demoExercise.set($event)"></app-exercise-list>
+      }
+    </div>
+  }
+
+  <!-- Board column — always in DOM -->
+  <div class="board-column">
+    <div class="board-wrapper" [class.gathered]="isGathered()">
+      <app-chess-board
+        #chessBoard
+        [config]="boardConfig()"
+        [mushroomMode]="demoExercise()?.exerciseType === 'mushroom'"
+      ></app-chess-board>
+
+      <app-drawing-canvas [strokes]="drawingService.allStrokes()" [active]="false"></app-drawing-canvas>
+
+      @if (overlayService.activeConceptId()) {
+        <app-teaching-overlay
+          [conceptId]="overlayService.activeConceptId()!"
+          [squares]="overlayService.selectedSquares()"
+          orientation="white"
+        ></app-teaching-overlay>
+      }
+      @if (overlayService.isSelectingSquares()) {
+        <div class="square-interceptor" (click)="onInterceptorClick($event)"></div>
+      }
+    </div>
+
+    <div class="controls">
+      <div class="row">
+        <button mat-icon-button (click)="resetBoard()" matTooltip="Reset board"><mat-icon>refresh</mat-icon></button>
+        <button mat-icon-button (click)="clearBoard()" matTooltip="Clear board"><mat-icon>delete</mat-icon></button>
+      </div>
+      <div class="row">
+        <button mat-raised-button color="primary" (click)="gather()">Gather</button>
+        <button mat-raised-button (click)="disperse()">Disperse</button>
+      </div>
+      @if(store.mode()!=='gathered'){
+         <div class="row">
+           <button mat-raised-button
+            [color]="store.autoRedo() ? 'primary' : ''"
+            (click)="toggleAutoRedo()">
+            Auto Redo {{ store.autoRedo() ? 'ON' : 'OFF' }}
+          </button>
+          
+          <button mat-raised-button
+            [color]="store.autoProgress() ? 'primary' : ''"
+            (click)="toggleAutoProgress()">
+            Auto Progress {{ store.autoProgress() ? 'ON' : 'OFF' }}
+          </button>
+         </div>
+      }
+    </div>
+  </div>
+
+
+  <!-- Concepts + drawings column — gathered only -->
+  @if (isGathered()) {
+    <div class="right-column">
+
+      <div class="concept-palette">
+        <span class="palette-title">Concepts</span>
+        @if (overlayService.isSelectingSquares()) {
+          <div class="selection-indicator">
+            <span class="selection-dot"></span>
+            Click a square
+            ({{ overlayService.selectedSquares().length }}/{{ overlayService.pendingConcept()!.squaresNeeded }})
+          </div>
+          <button mat-button (click)="overlayService.clear()">Cancel</button>
+        } @else {
+          @for (concept of concepts; track concept.id) {
+            <button mat-raised-button
+              [class.concept-active]="overlayService.activeConceptId() === concept.id"
+              (click)="overlayService.startConcept(concept)">
+              {{ concept.label }}
+            </button>
+          }
+          @if (overlayService.activeConceptId()) {
+            <button mat-button (click)="overlayService.clear()">
+              <mat-icon>close</mat-icon> Clear
+            </button>
+          }
+        }
+      </div>
+
+      <div class="panel-divider"></div>
+
+      <span class="palette-title">Drawings</span>
+      @for (student of store.students(); track student.name) {
+        <div class="student-drawing-row">
+          <div class="color-swatch"
+            [style.background]="drawingService.studentColors()[student.name] ?? defaultBrush">
+          </div>
+          <span class="student-name">{{ student.name }}</span>
+          <button mat-icon-button matTooltip="Clear drawings"
+            (click)="drawingService.clearStudent(student.name)">
+            <mat-icon>cleaning_services</mat-icon>
+          </button>
+        </div>
+      } @empty {
+        <p class="empty-label">No students connected.</p>
+      }
+      <button mat-raised-button color="warn" (click)="drawingService.clearAll()">
+        Clear all drawings
+      </button>
+
+    </div>
+  }
+
+  <!-- Normal mode: exercise lists below board area -->
+  @if (!isGathered()) {
+      <div class="teacher-controls">
+        <button mat-raised-button (click)="openPicker()">Load list</button>
+        @for (list of loadedLists(); track list.id) {
+          <div class="list-header">
+            <h3>{{ list.title }}</h3>
+            <button mat-icon-button (click)="removeList(list)"><mat-icon>close</mat-icon></button>
+            <button mat-raised-button color="primary" (click)="loadListToAll(list)">Load to all</button>
+          </div>
+          <app-exercise-list [list]="list" (selectExercise)="demoExercise.set($event)"></app-exercise-list>
+        }
+    </div>
+  }
+
+</div>

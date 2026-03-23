@@ -4,6 +4,7 @@ import { DrawShape } from '@lichess-org/chessground/draw';
 import { RealtimeTransport, BroadcastEvent, StudentPresence } from './realtime-transport.service';
 import { ChallengePair } from '../../shared/models/challenge-pair.model';
 import { Exercise } from '../../shared/models/exercise.model';
+import { ExerciseList as List } from '../../shared/models/exercise-list.model';
 import { STARTING_FEN } from '../../shared/utils/chess.utils';
 import { Point } from '../../shared/models/drawing.model';
 
@@ -29,6 +30,7 @@ export class ClassroomStore {
   readonly challengeMove = signal<{
     white: string; black: string; fen: string; from: string; to: string; over?: boolean;
   } | null>(null);
+  readonly loadedList = signal<Exercise[]>([]);
 
   // Teacher-side
   readonly students = signal<StudentPresence[]>([]);
@@ -105,7 +107,6 @@ export class ClassroomStore {
   sendSharedArrows(shapes: DrawShape[], target: 'all' | string = 'all'): void {
     this.transport.send({ type: 'shared_arrows', shapes, target });
   }
-  sendListToAll(exercises: Exercise[]): void { this.transport.send({ type: 'list_loaded', exercises }); }
   sendDroppedExercise(studentName: string, exercise: Exercise): void {
     this.transport.send({ type: 'dropped_exercise', studentName, exercise });
   }
@@ -120,6 +121,10 @@ export class ClassroomStore {
   }
   clearTeachingOverlay(): void { this.transport.send({ type: 'teaching_overlay_clear' }); }
 
+  loadListToAll(list: List): void {
+    this.loadedList.set(list.exercises);
+    this.transport.send({ type: 'list_loaded', exercises: list.exercises });
+  }
   // ----------------------------------------------------------------
   // Send methods (student)
   // ----------------------------------------------------------------

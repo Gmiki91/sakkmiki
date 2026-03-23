@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { RealtimeService } from '../../../core/services/realtime.service';
+import { ClassroomStore } from '../../../core/services/classroom-store.service';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
@@ -16,7 +16,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 })
 export class JoinScreen implements OnInit {
   private router = inject(Router);
-  private realtimeService = inject(RealtimeService);
+  private store = inject(ClassroomStore);
   private snackbar = inject(MatSnackBar);
   private route = inject(ActivatedRoute)
   isLoading = signal(false);
@@ -36,7 +36,7 @@ export class JoinScreen implements OnInit {
       return;
     }
     this.isLoading.set(true);
-    this.realtimeService.joinAsStudent(
+    this.store.joinAsStudent(
       trimmed,
       () => this.router.navigate(['/student']), // onJoined
       () => {

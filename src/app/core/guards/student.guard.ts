@@ -1,12 +1,12 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { RealtimeService } from '../services/realtime.service';
+import { ClassroomStore } from '../services/classroom-store.service';
 
 export const studentGuard: CanActivateFn = () => {
   const router = inject(Router);
-  const realtimeService = inject(RealtimeService);
+  const classroomStore = inject(ClassroomStore);
 
-  if (!realtimeService.isJoined()) { // means they inserted /student in the url but didnt give themselves a name
+  if (!classroomStore.isJoined()) { // means they inserted /student in the url but didnt give themselves a name
     router.navigate(['/join']);
     return false;
   }

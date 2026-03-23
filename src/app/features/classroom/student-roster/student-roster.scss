@@ -1,0 +1,64 @@
+.student-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(calc(var(--mini-board-size) + 48px), 1fr));
+  gap: 16px;
+  padding: 16px;
+  overflow-y: auto;
+  align-content: start;
+  background: var(--mat-sys-surface);
+  height: 100%;
+}
+
+.student-card {
+  border-radius: 12px;
+  overflow: hidden;
+
+  mat-card-header { padding-bottom: 8px; }
+  mat-card-title { font-size: 1rem; }
+  mat-card-subtitle { font-size: 0.75rem; opacity: 0.8; }
+  mat-card-content { padding: 0 16px 12px; }
+  mat-card-actions { justify-content: center; min-height: 48px; padding: 4px 8px 8px; }
+
+  .resume-btn { color: white; background-color: var(--mat-sys-error); }
+  .stamp-btn  { color: white; background-color: #4caf50; }
+
+  .mini-board {
+    width: var(--mini-board-size);
+    height: var(--mini-board-size);
+    margin: 0 auto 10px;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+
+    .board-loading {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--mat-sys-surface-container);
+    }
+  }
+
+  .student-status {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    color: var(--mat-sys-on-surface-variant);
+    min-height: 20px;
+    padding-top: 4px;
+    border-top: 1px solid var(--mat-sys-outline-variant);
+    margin-top: 4px;
+
+    .feedback {
+      font-style: italic;
+      color: var(--mat-sys-primary);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+  }
+}
+
+.no-students {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+  padding: 48px 0;
+  font-size: 0.95rem;
+}
