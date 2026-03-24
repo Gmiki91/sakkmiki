@@ -1,7 +1,7 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ExerciseList, ExerciseListInput } from '../../shared/models/exercise-list.model';
-import { Exercise, ExerciseInput } from '../../shared/models/exercise.model';
+import { Exercise, ExerciseInput, LichessPuzzle } from '../../shared/models/exercise.model';
 import { SupabaseService } from './supabase.service';
 
 @Injectable({ providedIn: 'root' })
@@ -49,6 +49,23 @@ export class ExerciseService {
       return newEx;
     });
   }
+  async addLichessPuzzleToList(listId: string, puzzle: LichessPuzzle): Promise<Exercise | null> {
+    const primaryTheme = puzzle.themes[0] ?? 'puzzle';
+    const title = `${primaryTheme} (${puzzle.elo})`;
+    const exercise: ExerciseInput = {
+      title,
+      fen: puzzle.fen,
+      exerciseType: 'puzzle',
+      solutions: puzzle.solutions,
+      lastMove: puzzle.lastMove ?? undefined,
+      source: 'lichess',
+      themes: puzzle.themes,
+      elo: puzzle.elo,
+      lichessId: puzzle.id,
+    };
+    return this.addExercise(listId, exercise);
+  }
+
   async deleteExercise(exerciseId: string): Promise<void> {
   await this.withLoading(async () => {
     await this.supabase.deleteExercise(exerciseId);

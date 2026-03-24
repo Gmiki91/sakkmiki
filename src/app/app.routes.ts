@@ -41,6 +41,12 @@ export const routes: Routes = [
 
     children: [
       {
+        path: 'lichess/:listId',
+        loadComponent: () =>
+          import('./features/exercises/lichess-browser/lichess-browser').then(m => m.LichessBrowser),
+        canActivate: [validListGuard],
+      },
+      {
         path: 'create/:listId',
         loadComponent: () =>
           import('./features/exercises/board-creator/board-creator').then((m) => m.BoardCreator),

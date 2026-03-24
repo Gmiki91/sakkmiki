@@ -1,0 +1,130 @@
+<div class="browser-container">
+
+  <!-- ── Filter bar ── -->
+  <div class="filter-bar">
+    <div class="filter-section">
+      <span class="filter-label">Rating</span>
+      <div class="rating-row">
+        <div class="preset-buttons">
+          @for (preset of presets; track preset.label) {
+            <button mat-stroked-button (click)="applyPreset(preset)">
+              {{ preset.label }}
+            </button>
+          }
+        </div>
+        <mat-form-field appearance="outline" class="rating-field">
+          <mat-label>Min</mat-label>
+          <input matInput type="number" [ngModel]="minRating()" (ngModelChange)="minRating.set($event)" />
+        </mat-form-field>
+        <span class="rating-sep">–</span>
+        <mat-form-field appearance="outline" class="rating-field">
+          <mat-label>Max</mat-label>
+          <input matInput type="number" [ngModel]="maxRating() === 9999 ? '' : maxRating()"
+            (ngModelChange)="maxRating.set($event || 9999)" />
+        </mat-form-field>
+        <button mat-raised-button color="primary" (click)="search()">Search</button>
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <span class="filter-label">Themes</span>
+      <div class="theme-chips">
+        @for (theme of allThemes; track theme) {
+          <button class="theme-chip"
+            [class.active]="selectedThemes().includes(theme)"
+            (click)="toggleTheme(theme)">
+            {{ themeLabel(theme) }}
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Main area ── -->
+  <div class="main-area">
+
+    <!-- Results list -->
+    <div class="results-panel">
+      @if (isLoading()) {
+        <div class="centered"><mat-spinner diameter="32"></mat-spinner></div>
+      } @else if (results().length === 0) {
+        <div class="centered empty">No puzzles found.</div>
+      } @else {
+        <div class="results-list">
+          @for (puzzle of results(); track puzzle.id) {
+            <div class="result-row"
+              [class.selected]="selected()?.id === puzzle.id"
+              (click)="selectPuzzle(puzzle)">
+              <span class="elo-badge">{{ puzzle.elo }}</span>
+              <div class="row-themes">
+                @for (t of puzzle.themes.slice(0, 3); track t) {
+                  <span class="mini-chip">{{ themeLabel(t) }}</span>
+                }
+                @if (puzzle.themes.length > 3) {
+                  <span class="mini-chip muted">+{{ puzzle.themes.length - 3 }}</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="pagination">
+          <button mat-icon-button [disabled]="page() === 0" (click)="prevPage()">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <span>{{ page() + 1 }} / {{ totalPages() }}</span>
+          <button mat-icon-button [disabled]="page() >= totalPages() - 1" (click)="nextPage()">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        </div>
+      }
+    </div>
+
+    <!-- Preview panel -->
+    <div class="preview-panel">
+      @if (!selected()) {
+        <div class="centered empty">Select a puzzle to preview</div>
+      } @else {
+        <div class="preview-board-wrapper">
+          <app-chess-board #previewBoard [config]="boardConfig()"></app-chess-board>
+        </div>
+
+        <div class="solution-controls">
+          <button mat-icon-button [disabled]="!canStepBack()" (click)="stepBack()">
+            <mat-icon>arrow_back</mat-icon>
+          </button>
+          <span class="step-label">
+            {{ solutionStep() }} / {{ solutionMoves().length }}
+          </span>
+          <button mat-icon-button [disabled]="!canStepNext()" (click)="stepForward()">
+            <mat-icon>arrow_forward</mat-icon>
+          </button>
+          <button mat-icon-button matTooltip="Reset" (click)="resetPreview()">
+            <mat-icon>replay</mat-icon>
+          </button>
+        </div>
+
+        <div class="preview-themes">
+          @for (t of selected()!.themes; track $index) {
+            <span class="mini-chip">{{ themeLabel(t) }}</span>
+          }
+        </div>
+
+        <div class="preview-actions">
+          @if (isAdding()) {
+            <mat-spinner diameter="24"></mat-spinner>
+          } @else if (isAdded()) {
+            <button mat-raised-button disabled>
+              <mat-icon>check</mat-icon> Added
+            </button>
+          } @else {
+            <button mat-raised-button color="primary" (click)="addToList()">
+              <mat-icon>add</mat-icon> Add to list
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+  </div>
+</div>

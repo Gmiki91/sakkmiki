@@ -54,6 +54,10 @@ export class ExercisesLayout implements OnInit {
   addExercise(listId: string) {
     this.router.navigate([`/exercises/create/${listId}`]);
   }
+
+  importFromLichess(listId: string) {
+    this.router.navigate([`/exercises/lichess/${listId}`]);
+  }
   selectExercise(exercise: Exercise) {
     const type = exercise.exerciseType === 'challenge' ? 'challenge' : 'edit';
     this.router.navigate([`/exercises/${type}/${exercise.id}`]);
