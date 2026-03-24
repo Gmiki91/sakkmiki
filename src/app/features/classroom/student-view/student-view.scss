@@ -40,16 +40,19 @@ mat-card-header {
   margin-bottom: 12px;
   position: relative;
 
-  // .file-helper {
-  //   display: flex;
-  //   margin-top: 5px;
-  //   font-size: 30px;
-  //   justify-content: space-around;
-  //   width: 640px;
-  //   &.reversed {
-  //     flex-direction: row-reverse;
-  //   }
-  // }
+  .file-helper {
+    background-color: rgba(255, 255, 255, 0.95);
+    padding:10px; 
+    border-radius: 20px;
+    display: flex;
+    margin-top: 5px;
+    font-size: 30px;
+    justify-content: space-around;
+    width: var(--board-size);
+    &.reversed {
+      flex-direction: row-reverse;
+    }
+  }
   .overlay-wrapper {
     position: relative;
     width: var(--board-size);

@@ -648,7 +648,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
     setTimeout(() => {
       //leave droppedExercise set so currentExercise doesn't recompute and defaults to the loadedListExercise
       if (!this.classroomStore.droppedExercise()) this.nextExercise();
-    }, 3000);
+    }, 2000);
   }
 
   private pickEmoji(): string {
