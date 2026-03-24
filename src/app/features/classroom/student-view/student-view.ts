@@ -277,6 +277,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
       const move = this.exerciseChess.move({ from: orig, to: dest });
       if (move) {
         this.exerciseFen.set(this.exerciseChess.fen());
+        this.pieceOverlay.hide();
         this.analyze(move);
       }
     } catch (e) {
