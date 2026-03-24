@@ -27,7 +27,7 @@
             "
           ></app-chess-board>
 
-          <app-piece-overlay #pieceOverlay [orientation]="'white'"> </app-piece-overlay>
+          <app-piece-overlay #pieceOverlay [orientation]="boardOrientation()"> </app-piece-overlay>
           <app-stamp-overlay #stampOverlay></app-stamp-overlay>
           <!-- Teaching overlay: only in gathered mode when teacher has triggered a concept -->
           @if (classroomStore.mode() === 'gathered' && classroomStore.incomingTeachingOverlay()) {

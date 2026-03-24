@@ -138,6 +138,15 @@ export class StudentView implements AfterViewInit, OnDestroy {
   myColor = computed(() =>
     this.myPair()?.white === this.classroomStore.studentName() ? 'white' : 'black',
   );
+
+  boardOrientation = computed<'white' | 'black'>(() => {
+    if (this.classroomStore.mode() === 'gathered') return 'white';
+    if (this.myPair()) return this.myColor();
+    const ex = this.currentExercise();
+    if (!ex) return 'white';
+    return getPlayerOrientation(ex);
+  });
+
   pendingPromotion = signal<{ orig: Key; dest: Key; pair: ChallengePair } | null>(null);
   private challengeChess = new Chess();
   
@@ -355,7 +364,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
     } else if (this.exerciseChess.isDraw()) {
       this.status.set('Draw!');
     } else if (this.exerciseChess.isCheck()) {
-      this.soundService.play('gasp');
+      // this.soundService.play('gasp');
       this.status.set(
         'Check! ' + (this.exerciseChess.turn() === 'w' ? 'White' : 'Black') + ' to move',
       );
@@ -634,7 +643,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
 
   private progressAuto(){
     this.feedback.set('Solved! ✓');
-    this.soundService.play('won');
+    // this.soundService.play('won');
     setTimeout(() => {
       //leave droppedExercise set so currentExercise doesn't recompute and defaults to the loadedListExercise
       if (!this.classroomStore.droppedExercise()) this.nextExercise();
