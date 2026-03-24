@@ -24,6 +24,7 @@ export type BroadcastEvent =
   | { type: 'shared_arrows'; shapes: DrawShape[]; target: 'all' | string }
   | { type: 'miniboard_arrows'; shapes: DrawShape[]; studentName: string }
   | { type: 'list_loaded'; exercises: Exercise[] }
+  | { type: 'list_assigned'; studentName: string; exercises: Exercise[] }
   | { type: 'dropped_exercise'; studentName: string; exercise: Exercise }
   | { type: 'sync_challenge_pair'; pair: ChallengePair }
   | { type: 'challenge_remove'; pair: ChallengePair }

@@ -126,7 +126,8 @@
     </div>
     <div class="teacher-controls">
         @for (list of loadedLists(); track list.id) {
-          <div class="list-header">
+          <div class="list-header" draggable="true" (dragstart)="onListDragStart(list, $event)">
+            <mat-icon class="drag-handle">drag_indicator</mat-icon>
             <h3>{{ list.title }}</h3>
             <button mat-icon-button (click)="removeList(list)"><mat-icon>close</mat-icon></button>
             <button mat-button color="primary" (click)="loadListToAll(list)">Load to all</button>

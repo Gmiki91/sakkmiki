@@ -13,6 +13,7 @@ import { Key } from '@lichess-org/chessground/types';
 import { ChallengePair } from '../../../shared/models/challenge-pair.model';
 import { Exercise } from '../../../shared/models/exercise.model';
 import { STARTING_FEN } from '../../../shared/utils/chess.utils';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-student-roster',
@@ -26,23 +27,27 @@ export class StudentRoster implements AfterViewInit {
 
   store = inject(ClassroomStore);
   drawingService = inject(DrawingService);
+  snackBar = inject(MatSnackBar);
 
   isLoadingList = signal(false);
   teacherLockedStudents = signal<Set<string>>(new Set());
   pendingPair = signal<string | null>(null);
 
   exerciseTitles = computed(() => {
-    const list = this.store.loadedList();
+    const globalList = this.store.loadedList();
     const listTitle = this.store.loadedListTitle();
     const dropped = this.store.droppedExercises();
+    const assigned = this.store.assignedLists();
     const result: Record<string, string> = {};
     for (const student of this.store.students()) {
       const droppedEx = dropped[student.name];
       if (droppedEx) {
         result[student.name] = droppedEx.title;
       } else {
+        const assignedList = assigned[student.name];
+        const list = assignedList ?? globalList;
         const ex = list[student.exIndex];
-        result[student.name] = ex ? `${listTitle}/${ex.title}` : 'No exercise loaded';
+        result[student.name] = ex ? `${ex.title}` : 'No exercise loaded';
       }
     }
     return result;
@@ -147,7 +152,19 @@ export class StudentRoster implements AfterViewInit {
   onDrop(targetName: string, event: DragEvent): void {
     const type = event.dataTransfer?.getData('type');
     if (type === 'exercise') this.handleExerciseDrop(targetName, event);
+    else if (type === 'list') this.handleListDrop(targetName, event);
     else this.handleChallengeDrop(targetName);
+  }
+
+  handleListDrop(targetName: string, event: DragEvent): void {
+    const pair = this.getPair(targetName);
+    if (pair) {
+      this.snackBar.open("you can't assign a list to a two player game","",{duration:2000});
+    } else {
+      const exercises = JSON.parse(event.dataTransfer?.getData('exercises') ?? '[]');
+      this.store.sendAssignedList(targetName, exercises);
+      this.resetTimer(targetName);
+    }
   }
 
   handleExerciseDrop(targetName: string, event: DragEvent): void {

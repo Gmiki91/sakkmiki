@@ -160,4 +160,10 @@ export class TeacherDesk implements AfterViewInit {
   removeList(list: List): void {
     this.loadedLists.update((lists) => lists.filter((l) => l.id !== list.id));
   }
+
+  onListDragStart(list: List, event: DragEvent): void {
+    event.dataTransfer?.setData('type', 'list');
+    event.dataTransfer?.setData('exercises', JSON.stringify(list.exercises));
+    event.dataTransfer?.setData('list-title', list.title);
+  }
 }

@@ -38,6 +38,7 @@ export class ClassroomStore {
 
   // Teacher-side
   readonly students = signal<StudentPresence[]>([]);
+  readonly assignedLists = signal<Record<string, Exercise[]>>({});
   readonly sharedArrows = signal<DrawShape[]>([]);
   readonly miniboardArrows = signal<{ name: string; shapes: DrawShape[] } | null>(null);
   readonly incomingDrawingPoints = signal<{
@@ -51,6 +52,7 @@ export class ClassroomStore {
   // Student-side
   readonly teacherFen = signal('');
   readonly loadedExercises = signal<Exercise[]>([]);
+  readonly assignedExercises = signal<Exercise[]>([]);
   readonly droppedExercise = signal<Exercise | null>(null);
   readonly resume = signal<string | null>(null);
   readonly stamp = signal<string | null>(null);
@@ -149,10 +151,16 @@ export class ClassroomStore {
   }
   clearTeachingOverlay(): void { this.transport.send({ type: 'teaching_overlay_clear' }); }
 
+  sendAssignedList(studentName: string, exercises: Exercise[]): void {
+    this.assignedLists.update((a) => ({ ...a, [studentName]: exercises }));
+    this.transport.send({ type: 'list_assigned', studentName, exercises });
+  }
+
   loadListToAll(list: List): void {
     this.loadedList.set(list.exercises);
     this.loadedListTitle.set(list.title);
     this.droppedExercises.set({});
+    this.assignedLists.set({});
     this.transport.send({ type: 'list_loaded', exercises: list.exercises });
   }
   // ----------------------------------------------------------------
@@ -227,7 +235,16 @@ export class ClassroomStore {
       case 'shared_arrows':
         if (event.target === 'all' || event.target === myName) this.sharedArrows.set(event.shapes); break;
       case 'list_loaded':
-        this.loadedExercises.set(event.exercises); this.droppedExercise.set(null); break;
+        this.loadedExercises.set(event.exercises);
+        this.assignedExercises.set([]);
+        this.droppedExercise.set(null);
+        break;
+      case 'list_assigned':
+        if (event.studentName === myName) {
+          this.assignedExercises.set(event.exercises);
+          this.droppedExercise.set(null);
+        }
+        break;
       case 'dropped_exercise':
         if (event.studentName === myName) this.droppedExercise.set(event.exercise); break;
       case 'resume':

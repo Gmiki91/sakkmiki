@@ -73,7 +73,11 @@ export class StudentView implements AfterViewInit, OnDestroy {
   // --- Exercise state ---
   stampCollection = signal<StampType[]>([]);
   mushroomCollection = signal<number>(0);
-  loadedList = this.classroomStore.loadedExercises;
+  loadedList = computed(() =>
+    this.classroomStore.assignedExercises().length
+      ? this.classroomStore.assignedExercises()
+      : this.classroomStore.loadedExercises()
+  );
 
   exIndex = linkedSignal({
     source: () => this.loadedList(),
