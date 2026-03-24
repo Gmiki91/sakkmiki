@@ -76,6 +76,19 @@ export class ExerciseService {
     });
   }
 
+  async reorderExercises(listId: string, reorderedExercises: Exercise[]): Promise<void> {
+    // Optimistic update — UI responds instantly
+    this.exerciseLists.update((lists) =>
+      lists.map((list) => list.id === listId ? { ...list, exercises: reorderedExercises } : list)
+    );
+    // Persist in background — no loading spinner, failure shows snackbar
+    try {
+      await this.supabase.reorderExercises(listId, reorderedExercises.map((e) => e.id));
+    } catch (e) {
+      this.snackbar.open(e instanceof Error ? e.message : 'Reorder failed', '', { duration: 2000 });
+    }
+  }
+
   getListById(id: string): boolean {
     return !!this.exerciseLists().find((list) => list.id === id);
   }

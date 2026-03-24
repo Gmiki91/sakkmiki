@@ -61,6 +61,18 @@ export class SupabaseService {
     if (error) throw error;
   }
 
+  async reorderExercises(listId: string, orderedExerciseIds: string[]): Promise<void> {
+    const updates = orderedExerciseIds.map((exerciseId, index) => ({
+      list_id: listId,
+      exercise_id: exerciseId,
+      position: index + 1,
+    }));
+    const { error } = await this.client
+      .from('exercise_list_items')
+      .upsert(updates, { onConflict: 'list_id,exercise_id' });
+    if (error) throw error;
+  }
+
   async getExerciseLists() {
     const { data, error } = await this.client.from('exercise_lists').select(`
       *,

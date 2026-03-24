@@ -39,6 +39,10 @@ export class ExercisesLayout implements OnInit {
   router = inject(Router);
   selectedListId = signal<string | null>(null);
 
+  draggedExerciseId = signal<string | null>(null);
+  dropTargetId = signal<string | null>(null);
+  dropPosition = signal<'above' | 'below'>('below');
+
   selectedList = computed(
     () => this.exerciseService.exerciseLists().find((l) => l.id === this.selectedListId()) ?? null,
   );
@@ -84,5 +88,50 @@ export class ExercisesLayout implements OnInit {
   backToPanel1(): void {
     this.selectedListId.set(null);
     this.router.navigate(['/exercises']);
+  }
+
+  // --- Exercise reordering ---
+  onExerciseDragStart(exercise: Exercise, event: DragEvent): void {
+    this.draggedExerciseId.set(exercise.id);
+    event.dataTransfer?.setData('text/plain', exercise.id); // required for Firefox
+  }
+
+  onExerciseDragOver(exercise: Exercise, event: DragEvent): void {
+    event.preventDefault();
+    this.dropTargetId.set(exercise.id);
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    this.dropPosition.set(event.clientY < rect.top + rect.height / 2 ? 'above' : 'below');
+  }
+
+  onExerciseDragLeave(): void {
+    this.dropTargetId.set(null);
+  }
+
+  onExerciseDrop(targetExercise: Exercise, event: DragEvent): void {
+    event.preventDefault();
+    const draggedId = this.draggedExerciseId();
+    this.dropTargetId.set(null);
+    this.draggedExerciseId.set(null);
+
+    const list = this.selectedList();
+    if (!list || !draggedId || draggedId === targetExercise.id) return;
+
+    const exercises = [...list.exercises];
+    const fromIndex = exercises.findIndex((e) => e.id === draggedId);
+    const toIndex = exercises.findIndex((e) => e.id === targetExercise.id);
+    if (fromIndex === -1 || toIndex === -1) return;
+
+    exercises.splice(fromIndex, 1);
+    const insertAt = this.dropPosition() === 'above' ? toIndex : toIndex + 1;
+    // splice index shifts by -1 if we removed from before the target
+    const adjustedIndex = fromIndex < toIndex ? insertAt - 1 : insertAt;
+    exercises.splice(adjustedIndex, 0, list.exercises[fromIndex]);
+
+    this.exerciseService.reorderExercises(list.id, exercises);
+  }
+
+  onExerciseDragEnd(): void {
+    this.draggedExerciseId.set(null);
+    this.dropTargetId.set(null);
   }
 }

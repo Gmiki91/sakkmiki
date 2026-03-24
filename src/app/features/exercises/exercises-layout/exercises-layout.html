@@ -32,9 +32,19 @@
       <mat-icon>arrow_back</mat-icon> {{ selectedList()!.title }}
     </button>
     @for (exercise of selectedList()!.exercises; track exercise.id) {
-      <div style="display:flex;justify-content: center;">
-        <span class="list-item"  (click)="selectExercise(exercise)">{{ exercise.title }}</span>
-        <button matIconButton  (click)="deleteExercise(exercise.id)"><mat-icon class="trash-icon">delete</mat-icon></button>
+      <div class="exercise-row"
+        draggable="true"
+        [class.dragging]="draggedExerciseId() === exercise.id"
+        [class.drop-above]="dropTargetId() === exercise.id && dropPosition() === 'above'"
+        [class.drop-below]="dropTargetId() === exercise.id && dropPosition() === 'below'"
+        (dragstart)="onExerciseDragStart(exercise, $event)"
+        (dragover)="onExerciseDragOver(exercise, $event)"
+        (dragleave)="onExerciseDragLeave()"
+        (drop)="onExerciseDrop(exercise, $event)"
+        (dragend)="onExerciseDragEnd()">
+        <mat-icon class="drag-handle">drag_indicator</mat-icon>
+        <span class="list-item" (click)="selectExercise(exercise)">{{ exercise.title }}</span>
+        <button matIconButton (click)="deleteExercise(exercise.id)"><mat-icon class="trash-icon">delete</mat-icon></button>
       </div>
     }
     <button mat-button (click)="addExercise(selectedList()!.id)">

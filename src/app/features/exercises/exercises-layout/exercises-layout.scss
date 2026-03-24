@@ -32,15 +32,56 @@
 
   .list-item {
     cursor: pointer;
+    flex: 1;
     display: flex;
     align-self: center;
     gap: 8px;
-    padding: 10px 12px;
+    padding: 6px 4px;
     border-radius: 6px;
     transition: background 0.15s;
 
     &:hover {
       background: var(--mat-sys-surface-container-high);
+    }
+  }
+
+  .exercise-row {
+    display: flex;
+    align-items: center;
+    border-radius: 6px;
+    cursor: grab;
+    position: relative;
+    transition: opacity 0.15s;
+
+    &:active { cursor: grabbing; }
+
+    &.dragging { opacity: 0.4; }
+
+    &.drop-above::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0; right: 0;
+      height: 2px;
+      background: var(--mat-sys-primary);
+      border-radius: 1px;
+    }
+
+    &.drop-below::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0; right: 0;
+      height: 2px;
+      background: var(--mat-sys-primary);
+      border-radius: 1px;
+    }
+
+    .drag-handle {
+      font-size: 18px;
+      color: var(--mat-sys-on-surface-variant);
+      opacity: 0.4;
+      flex-shrink: 0;
     }
   }
   .delete-btn{
