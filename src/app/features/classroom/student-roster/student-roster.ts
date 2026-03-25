@@ -35,7 +35,6 @@ export class StudentRoster implements AfterViewInit {
 
   exerciseTitles = computed(() => {
     const globalList = this.store.loadedList();
-    const listTitle = this.store.loadedListTitle();
     const dropped = this.store.droppedExercises();
     const assigned = this.store.assignedLists();
     const result: Record<string, string> = {};

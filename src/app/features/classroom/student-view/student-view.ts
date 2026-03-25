@@ -213,7 +213,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
 
 
   constructor() {
-     this.setupStateEffects();
+    this.setupStateEffects();
     this.setupEventHandlers();
 
   }
@@ -421,13 +421,15 @@ export class StudentView implements AfterViewInit, OnDestroy {
         loadChess(this.exerciseChess, exercise.fen);
         this.exerciseFen.set(this.exerciseChess.fen());
         if(exercise.lastMove){
-          setTimeout(() => {
             const { from, to } = exercise.lastMove!;
-            this.exerciseLastMove.set([from, to] );
             this.exerciseChess.move({ from, to });
             this.exerciseFen.set(this.exerciseChess.fen())
             this.exerciseLastMove.set([from as Key, to as Key]);
-          }, 250);
+            setTimeout(() => {
+              // purely visual
+              this.chessBoard.api?.set({ fen: exercise.fen });
+              this.chessBoard.api?.move(from, to);
+            }, 250);
         }
       }
       this.updateStatus();
