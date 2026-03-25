@@ -100,7 +100,6 @@ export class SupabaseService {
     offset?: number;
   }): Promise<{ puzzles: LichessPuzzle[]; count: number }> {
     let query = this.client.from('lichess_puzzles').select('*', { count: 'exact' });
-    console.log(query)
 
     if (opts.themes?.length)
       query = query.overlaps('themes', opts.themes);
@@ -114,7 +113,6 @@ export class SupabaseService {
       .range(opts.offset ?? 0, (opts.offset ?? 0) + (opts.limit ?? 20) - 1);
 
     const { data, error, count } = await query;
-    console.log(data,error,count)
     if (error) throw error;
     return { puzzles: (data ?? []).map(this.fromDbLichess), count: count ?? 0 };
   }

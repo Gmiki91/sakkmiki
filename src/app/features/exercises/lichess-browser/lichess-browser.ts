@@ -123,10 +123,9 @@ export class LichessBrowser implements OnInit {
     this.isAdded.set(false);
     this.solutionStep.set(0);
     loadChess(this.previewChess, puzzle.fen);
-    if (puzzle.lastMove) {
-      // position is already after lastMove (our FEN is post-setup)
-    }
-    this.refreshBoard(false);
+    const {from,to} = this.selected()!.lastMove!;
+    this.previewChess.move({from,to})
+    this.refreshBoard(true);
   }
 
   stepForward(): void {
