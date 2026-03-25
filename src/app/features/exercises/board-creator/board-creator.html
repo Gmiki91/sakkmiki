@@ -39,10 +39,17 @@
   </div>
 
   <div class="controls-column">
-    <div class="control-section">
+    <div class="control-section"  style="width: 370px">
       <span class="section-label">Title</span>
       <mat-form-field appearance="outline">
         <input type="text" [(ngModel)]="title" matInput placeholder="Exercise title" />
+      </mat-form-field>
+    </div>
+
+    <div class="control-section" style="width: 370px">
+      <span class="section-label">Fen</span>
+      <mat-form-field appearance="outline">
+        <input type="text" style="font-size: small;" [value]="currentFen()" (input)="setFen($any($event.target).value)" matInput placeholder="Fen" />
       </mat-form-field>
     </div>
 

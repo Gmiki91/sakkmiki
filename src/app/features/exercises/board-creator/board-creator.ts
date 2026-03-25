@@ -5,7 +5,7 @@ import {
   model,
   signal,
   computed,
-  ViewChild,
+  ViewChild
 } from '@angular/core';
 import { Color, Key, Role } from '@lichess-org/chessground/types';
 import { Config } from '@lichess-org/chessground/config';
@@ -48,7 +48,7 @@ export class BoardCreator implements AfterViewInit {
   blackCastlingKingSide = model(true);
   blackCastlingQueenSide = model(true);
   turnOrder = model<'w' | 'b'>('w');
-  currentFen = signal<string>(BARE_STARTING_FEN);
+  currentFen = model<string>(BARE_STARTING_FEN);
   exerciseType = computed<ExerciseType>(() => {
     //inferred from the exerciseList
     const listId = this.activatedRoute.snapshot.paramMap.get('listId');
@@ -94,6 +94,10 @@ export class BoardCreator implements AfterViewInit {
         },
       },
     });
+  }
+
+  setFen(value: string) {
+    this.currentFen.set(value.split(' ')[0] ?? '');
   }
 
   onDragStart(event: DragEvent, role: Role, color: Color) {
