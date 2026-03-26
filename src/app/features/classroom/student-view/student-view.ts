@@ -29,7 +29,6 @@ import { ChessBoard } from '../../../shared/components/chess-board/chess-board';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ClassroomStore } from '../../../core/services/classroom-store.service';
 import { ChallengePair } from '../../../shared/models/challenge-pair.model';
-import { BrushPicker } from '../../../shared/components/brush-picker/brush-picker';
 import { PieceOverlay } from '../../../shared/components/piece-overlay/piece-overlay';
 import { SoundService } from '../../../core/services/sound.service';
 import { StampOverlay } from '../../../shared/components/stamp-overlay/stamp-overlay';
@@ -38,10 +37,11 @@ import { StampSvg } from '../../../shared/components/stamp-svg/stamp-svg';
 import { StampType } from '../../../shared/models/stamp.model';
 import { DrawingService } from '../../../core/services/drawing.service';
 import { DrawingCanvas } from '../../../shared/components/drawing-canvas/drawing-canvas';
-import { Point } from '../../../shared/models/drawing.model';
+import { StampIcon, DrawingTool, Point } from '../../../shared/models/drawing.model';
 import { DEFAULT_BRUSH_COLOR } from '../../../shared/utils/brushes';
 import { TeachingOverlay } from '../../../shared/components/teaching-overlay/teaching-overlay';
 import { TEACHING_CONCEPTS } from '../../../shared/models/teaching-concept.model';
+import { DrawingToolbar } from '../../../shared/components/drawing-toolbar/drawing-toolbar';
 @Component({
   selector: 'app-student-view',
   templateUrl: './student-view.html',
@@ -53,7 +53,7 @@ import { TEACHING_CONCEPTS } from '../../../shared/models/teaching-concept.model
     MatIconModule,
     MatTooltipModule,
     ChessBoard,
-    BrushPicker,
+    DrawingToolbar,
     PieceOverlay,
     StampOverlay,
     StampSvg,
@@ -65,7 +65,6 @@ export class StudentView implements AfterViewInit, OnDestroy {
   @ViewChild('chessBoard') chessBoard!: ChessBoard;
   @ViewChild('pieceOverlay') pieceOverlay!: PieceOverlay;
   @ViewChild('stampOverlay') stampOverlay!: StampOverlay;
-  @ViewChild('brushPicker') brushPicker!: BrushPicker;
   classroomStore = inject(ClassroomStore);
   soundService = inject(SoundService);
   drawingService = inject(DrawingService);
@@ -118,8 +117,11 @@ export class StudentView implements AfterViewInit, OnDestroy {
   exerciseLastMove = signal<[Key, Key] | undefined>(undefined);
   challengeLastMove = signal<[Key, Key] | undefined>(undefined);
 
+  //drawing
   selectedColor = signal(DEFAULT_BRUSH_COLOR);
-
+  activeTool = signal<DrawingTool>('pen');
+  activeStampIcon = signal<StampIcon>('star');
+  
   private exerciseChess = new Chess();
 
   // --- Gather/disperse: snapshot of exercise state ---
@@ -403,6 +405,21 @@ export class StudentView implements AfterViewInit, OnDestroy {
   onColorSelected(color: string): void {
     this.selectedColor.set(color);
     this.drawingService.broadcastColor(color);
+  }
+
+  onBoardClick(event: MouseEvent): void {
+    if (this.classroomStore.mode() !== 'gathered') return;
+    if (this.activeTool() !== 'stamp') return;
+    const wrapper = (event.currentTarget as HTMLElement);
+    const rect = wrapper.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    this.drawingService.addLocalAnnotation(
+      this.activeStampIcon(),
+      x,
+      y,
+      this.selectedColor(),
+    );
   }
 
   // --- Effect groups ---

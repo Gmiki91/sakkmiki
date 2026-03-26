@@ -15,7 +15,10 @@
 
     <mat-card-content>
       <div class="board-wrapper" #boardWrapper>
-        <div class="overlay-wrapper" [class.locked]="isLocked()">
+        <div class="overlay-wrapper" 
+        [class.locked]="isLocked()" 
+          [class.stamp-mode]="classroomStore.mode() === 'gathered' && activeTool() === 'stamp'"
+        (click)="onBoardClick($event)">
           <app-chess-board
             #chessBoard
             [config]="boardConfig()!"
@@ -39,11 +42,32 @@
           }
           <app-drawing-canvas 
             [strokes]="drawingService.localStrokes()" 
-            [active]="classroomStore.mode() === 'gathered'" 
+            [annotations]="drawingService.localAnnotations()"
+            [active]="classroomStore.mode() === 'gathered' && activeTool() === 'pen'" 
             (pointAdded)="onPointAdded($event)" 
             (strokeCommitted)="onStrokeCommitted($event)">
           </app-drawing-canvas>
+
         </div>
+         <div class="file-helper"  [class.reversed]="boardOrientation() === 'black'">
+          <span>🍎</span>
+          <span>🍌</span>
+          <span>😺</span>
+          <span>🥁</span>
+          <span>🐭</span>
+          <span>🪥</span>
+          <span>🍄</span>
+          <span>☃️</span>
+        </div>
+        @if (classroomStore.mode() === 'gathered') {
+          <div class="drawing-toolbar-wrapper">
+            <app-drawing-toolbar
+              [(activeTool)]="activeTool"
+              [(activeStampIcon)]="activeStampIcon"
+              (colorSelected)="onColorSelected($event)"
+            ></app-drawing-toolbar>
+          </div>
+        }
         
         @if (pendingPromotion()) {
           <div class="promotion-overlay">
@@ -60,16 +84,7 @@
             }
           </div>
         }
-        <div class="file-helper"  [class.reversed]="boardOrientation() === 'black'">
-          <span>🍎</span>
-          <span>🍌</span>
-          <span>😺</span>
-          <span>🥁</span>
-          <span>🐭</span>
-          <span>🪥</span>
-          <span>🍄</span>
-          <span>☃️</span>
-        </div>
+       
       </div>
       <!-- @if (!myPair()) {
         <div class="feedback">
@@ -79,11 +94,6 @@
           }
         </div>
       } -->
-      @if (classroomStore.mode() === 'gathered') {
-        <div class="drawing-toolbar">
-          <app-brush-picker (colorSelected)="onColorSelected($event)"></app-brush-picker>
-        </div>
-      }
       @if (stampCollection().length > 0) {
         <div class="collection">
           @for (stamp of stampCollection(); track $index) {

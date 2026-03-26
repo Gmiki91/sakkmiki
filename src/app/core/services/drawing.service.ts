@@ -1,6 +1,6 @@
 import { Injectable, inject, signal, effect } from '@angular/core';
 import { ClassroomStore } from './classroom-store.service';
-import { DrawingStroke, Point } from '../../shared/models/drawing.model';
+import { StampIcon, DrawingStroke, Point, StampAnnotation } from '../../shared/models/drawing.model';
 
 const THROTTLE_MS = 50;
 
@@ -8,11 +8,14 @@ const THROTTLE_MS = 50;
 export class DrawingService {
   private classroomStore = inject(ClassroomStore);
 
-  // Teacher sees all students' strokes
+  // Teacher sees all students' strokes & stamps
   allStrokes = signal<DrawingStroke[]>([]);
+  allAnnotations = signal<StampAnnotation[]>([]);
 
-  // Student sees only their own strokes
+
+  // Student sees only their own strokes & stamps
   localStrokes = signal<DrawingStroke[]>([]);
+  localAnnotations = signal<StampAnnotation[]>([]);
 
   // studentName → chosen color, for teacher's side panel
   studentColors = signal<Record<string, string>>({});
@@ -56,6 +59,19 @@ export class DrawingService {
     }
   }
 
+  addLocalAnnotation(type: StampIcon, x: number, y: number, color: string): void {
+    const annotation: StampAnnotation = {
+      id: crypto.randomUUID(),
+      studentName: this.classroomStore.studentName(),
+      color,
+      type,
+      x,
+      y,
+    };
+    this.localAnnotations.update(a => [...a, annotation]);
+    this.classroomStore.sendStampAnnotation(annotation);
+  }
+
   commitLocalStroke(strokeId: string): void {
     // Flush any remaining pending points before committing
     this.flushPoints();
@@ -79,12 +95,18 @@ export class DrawingService {
     this.allStrokes.update(strokes =>
       strokes.filter(s => s.studentName !== studentName)
     );
+    this.allAnnotations.update(annotations =>
+      annotations.filter(a => a.studentName !== studentName)
+    );
     this.classroomStore.sendDrawingClear(studentName);
+    this.classroomStore.sendStampAnnotationClear(studentName);
   }
 
   clearAll(): void {
     this.allStrokes.set([]);
+    this.allAnnotations.set([]);
     this.classroomStore.sendDrawingClearAll();
+    this.classroomStore.sendStampAnnotationClearAll();
   }
 
   // Named explicitly so call sites are self-documenting
@@ -98,6 +120,7 @@ export class DrawingService {
 
   clearLocal(): void {
     this.localStrokes.set([]);
+    this.localAnnotations.set([]);
     this.cancelPending();
   }
 
@@ -140,8 +163,25 @@ export class DrawingService {
         [event.studentName]: event.color,
       }));
     });
+    
+    // Incoming stamp annotation from a student
+    effect(() => {
+      const annotation = this.classroomStore.incomingStampAnnotation();
+      if (!annotation) return;
+        this.allAnnotations.update(a => [...a, annotation]);
+    });
 
-    // Incoming clear from teacher
+    // Incoming stamp annotation clear from teacher
+    effect(() => {
+      const event = this.classroomStore.incomingStampAnnotationClear();
+      if (!event) return;
+      const myName = this.classroomStore.studentName();
+      if (event.studentName === myName || event.studentName === 'all') {
+        this.localAnnotations.set([]);
+      }
+    });
+
+    // Incoming drawing clear from teacher
     effect(() => {
       const event = this.classroomStore.incomingDrawingClear();
       if (!event) return;

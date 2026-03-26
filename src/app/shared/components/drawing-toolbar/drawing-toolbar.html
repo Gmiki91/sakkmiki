@@ -1,0 +1,26 @@
+<div class="drawing-toolbar">
+  <div class="tool-row">
+    <!-- Pen tool -->
+    <button
+      mat-icon-button
+      [class.active-tool]="activeTool() === 'pen'"
+      (click)="selectTool('pen')"
+    >
+      <mat-icon [style.color]="selectedColor()">edit</mat-icon>
+    </button>
+
+    <!-- Stamp tools -->
+    @for (stamp of stampIconOptions; track stamp) {
+      <button
+        class="stamp-btn"
+        [class.active-tool]="activeTool() === 'stamp' && activeStampIcon() === stamp"
+        (click)="selectStamp(stamp)"
+      >
+        <mat-icon [style.color]="selectedColor()">{{stamp}}</mat-icon>
+      </button>
+    }
+  </div>
+
+  <!-- Color picker — applies to both pen and stamp -->
+  <app-brush-picker (colorSelected)="onColorSelected($event)"></app-brush-picker>
+</div>

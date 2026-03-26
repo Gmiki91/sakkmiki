@@ -24,7 +24,7 @@
         [mushroomMode]="isGathered()&&demoExercise()?.exerciseType === 'mushroom'"
       ></app-chess-board>
 
-      <app-drawing-canvas [strokes]="drawingService.allStrokes()" [active]="false"></app-drawing-canvas>
+      <app-drawing-canvas [strokes]="drawingService.allStrokes()"  [annotations]="drawingService.allAnnotations()" [active]="false"></app-drawing-canvas>
 
       @if (overlayService.activeConceptId()) {
         <app-teaching-overlay

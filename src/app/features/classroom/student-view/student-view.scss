@@ -45,10 +45,11 @@ mat-card-header {
     padding:10px; 
     border-radius: 20px;
     display: flex;
-    margin-top: 5px;
+    margin-top:0px;
     font-size: 30px;
     justify-content: space-around;
     width: var(--board-size);
+    z-index:1; // above board shadow
     &.reversed {
       flex-direction: row-reverse;
     }
@@ -79,6 +80,9 @@ mat-card-header {
       z-index: 5;
       pointer-events: none;
       opacity: 0.6;
+    }
+    &.stamp-mode {
+      cursor: crosshair;
     }
   }
   .promotion-overlay {

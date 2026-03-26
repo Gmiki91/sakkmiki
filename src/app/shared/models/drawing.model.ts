@@ -1,3 +1,5 @@
+export type DrawingTool = 'pen' | 'stamp';
+export type StampIcon = 'star' | 'close_small' | 'check' | 'favorite';
 export type Point = {
   x: number;
   y: number;
@@ -10,4 +12,13 @@ export type DrawingStroke = {
   color: string;
   points: Point[];
   committed: boolean;
+};
+
+export type StampAnnotation = {
+  id: string;
+  studentName: string;
+  color: string;
+  type: StampIcon;
+  x: number;
+  y: number;
 };

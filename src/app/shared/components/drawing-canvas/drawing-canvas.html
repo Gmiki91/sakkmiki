@@ -8,10 +8,61 @@
   (pointercancel)="onPointerUp()"
 >
   @for (stroke of renderedStrokes(); track stroke.id) {
-    <path
-      [attr.d]="stroke.path"
-      [attr.fill]="stroke.color"
-      style="pointer-events: none"
-    />
+    <path [attr.d]="stroke.path" [attr.fill]="stroke.color" style="pointer-events: none" />
+  }
+  @for (annotation of renderedAnnotations(); track annotation.id) {
+    <g
+      [attr.transform]="'translate(' + (annotation.x - 16) + ',' + (annotation.y - 16) + ') scale(1.5) translate(-16,-16)'"
+      style="pointer-events: none" 
+    >
+      @if (annotation.type === 'star') {
+        <polygon
+          points="16,2 19.5,11 29,11 22,17 24.5,26 16,21 7.5,26 10,17 3,11 12.5,11"
+          [attr.fill]="annotation.color"
+          stroke="white"
+          stroke-width="1"
+        />
+      }
+      @if (annotation.type === 'check') {
+        <polyline
+          points="4,16 12,24 28,8"
+          fill="none"
+          [attr.stroke]="annotation.color"
+          stroke-width="4"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      }
+      <!-- x -->
+      @if (annotation.type === 'close_small') { 
+        <line
+          x1="4"
+          y1="4"
+          x2="28"
+          y2="28"
+          [attr.stroke]="annotation.color"
+          stroke-width="4"
+          stroke-linecap="round"
+        />
+        <line
+          x1="28"
+          y1="4"
+          x2="4"
+          y2="28"
+          [attr.stroke]="annotation.color"
+          stroke-width="4"
+          stroke-linecap="round"
+        />
+      }
+      <!-- heart -->
+      @if (annotation.type === 'favorite') {
+        <path
+          d="M16 28C16 28 3 19 3 11a7 7 0 0 1 13-3.5A7 7 0 0 1 29 11c0 8-13 17-13 17z"
+          [attr.fill]="annotation.color"
+          stroke="white"
+          stroke-width="1"
+        />
+      }
+    </g>
   }
 </svg>

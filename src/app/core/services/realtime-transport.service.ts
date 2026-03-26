@@ -5,7 +5,7 @@ import { DrawShape } from '@lichess-org/chessground/draw';
 import { SupabaseService } from './supabase.service';
 import { ChallengePair } from '../../shared/models/challenge-pair.model';
 import { Exercise } from '../../shared/models/exercise.model';
-import { Point } from '../../shared/models/drawing.model';
+import { Point, StampAnnotation } from '../../shared/models/drawing.model';
 
 export type StudentPresence = {
   name: string;
@@ -43,7 +43,10 @@ export type BroadcastEvent =
   | { type: 'drawing_clear'; studentName: string }
   | { type: 'drawing_clear_all' }
   | { type: 'teaching_overlay_trigger'; conceptId: string; squares: string[] }
-  | { type: 'teaching_overlay_clear' };
+  | { type: 'teaching_overlay_clear' }
+  | { type: 'stamp_annotation'; studentName: string; annotation: StampAnnotation }
+  | { type: 'stamp_annotation_clear'; studentName: string }
+  | { type: 'stamp_annotation_clear_all' }
 
 @Injectable({ providedIn: 'root' })
 export class RealtimeTransport implements OnDestroy {

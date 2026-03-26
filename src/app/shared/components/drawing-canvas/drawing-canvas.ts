@@ -1,5 +1,5 @@
 import { Component, input, output, ViewChild, ElementRef, computed } from '@angular/core';
-import { DrawingStroke, Point } from '../../models/drawing.model';
+import { DrawingStroke, Point, StampAnnotation } from '../../models/drawing.model';
 import getStroke from 'perfect-freehand';
 
 @Component({
@@ -16,6 +16,9 @@ export class DrawingCanvas {
   pointAdded = output<{ strokeId: string; point: Point }>();
   strokeCommitted = output<string>(); // emits strokeId
 
+  annotations = input<StampAnnotation[]>([]);
+  stampClicked = output<{ x: number; y: number }>();
+
   private currentStrokeId: string | null = null;
 
   // Derived SVG paths — recomputed when strokes signal changes
@@ -26,6 +29,8 @@ export class DrawingCanvas {
       path: this.toSvgPath(stroke.points),
     }))
   );
+
+  renderedAnnotations = computed(() => this.annotations());
 
   onPointerDown(event: PointerEvent): void {
     if (!this.active()) return;

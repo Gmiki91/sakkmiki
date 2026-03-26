@@ -6,7 +6,7 @@ import { ChallengePair } from '../../shared/models/challenge-pair.model';
 import { Exercise } from '../../shared/models/exercise.model';
 import { ExerciseList as List } from '../../shared/models/exercise-list.model';
 import { STARTING_FEN } from '../../shared/utils/chess.utils';
-import { Point } from '../../shared/models/drawing.model';
+import { Point, StampAnnotation } from '../../shared/models/drawing.model';
 
 export type { StudentPresence };
 export type ClassroomMode = 'normal' | 'gathered';
@@ -48,6 +48,8 @@ export class ClassroomStore {
   readonly incomingDrawingColor = signal<{ studentName: string; color: string } | null>(null);
   readonly incomingDrawingClear = signal<{ studentName: string } | null>(null);
   readonly incomingTeachingOverlay = signal<{ conceptId: string; squares: string[] } | null>(null);
+  readonly incomingStampAnnotation = signal<StampAnnotation | null>(null);
+  readonly incomingStampAnnotationClear = signal<{ studentName: string } | null>(null);
 
   // Student-side
   readonly teacherFen = signal('');
@@ -163,6 +165,22 @@ export class ClassroomStore {
     this.assignedLists.set({});
     this.transport.send({ type: 'list_loaded', exercises: list.exercises });
   }
+
+  sendStampAnnotation(annotation: StampAnnotation): void {
+    this.transport.send({
+      type: 'stamp_annotation',
+      studentName: this.studentName(),
+      annotation,
+    });
+  }
+
+  sendStampAnnotationClear(studentName: string): void {
+    this.transport.send({ type: 'stamp_annotation_clear', studentName });
+  }
+
+  sendStampAnnotationClearAll(): void {
+    this.transport.send({ type: 'stamp_annotation_clear_all' });
+  }
   // ----------------------------------------------------------------
   // Send methods (student)
   // ----------------------------------------------------------------
@@ -221,6 +239,7 @@ export class ClassroomStore {
       case 'drawing_commit': this.incomingDrawingCommit.set({ strokeId: event.strokeId }); break;
       case 'drawing_color':
         this.incomingDrawingColor.set({ studentName: event.studentName, color: event.color }); break;
+      case 'stamp_annotation':this.incomingStampAnnotation.set(event.annotation);break;
     }
   }
 
@@ -275,6 +294,12 @@ export class ClassroomStore {
       case 'teaching_overlay_trigger':
         this.incomingTeachingOverlay.set({ conceptId: event.conceptId, squares: event.squares }); break;
       case 'teaching_overlay_clear': this.incomingTeachingOverlay.set(null); break;
+      case 'stamp_annotation_clear':
+        this.incomingStampAnnotationClear.set({ studentName: event.studentName });
+        break;
+      case 'stamp_annotation_clear_all':
+        this.incomingStampAnnotationClear.set({ studentName: 'all' });
+        break;
     }
   }
 
