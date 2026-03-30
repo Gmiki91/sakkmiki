@@ -14,6 +14,10 @@ export class TeachingOverlayService {
   pendingConcept = signal<TeachingConcept | null>(null);
 
   startConcept(concept: TeachingConcept): void {
+    if(concept.id===this.activeConceptId()){
+      this.clear();
+      return;
+    }
     if (concept.squaresNeeded === 0) {
       this.trigger(concept, []);
     } else {

@@ -87,11 +87,6 @@
               {{ concept.label }}
             </button>
           }
-          @if (overlayService.activeConceptId()) {
-            <button mat-button (click)="overlayService.clear()">
-              <mat-icon>close</mat-icon> Clear
-            </button>
-          }
         }
       </div>
 
