@@ -47,6 +47,10 @@ export type BroadcastEvent =
   | { type: 'stamp_annotation'; studentName: string; annotation: StampAnnotation }
   | { type: 'stamp_annotation_clear'; studentName: string }
   | { type: 'stamp_annotation_clear_all' }
+  | { type: 'simul_start' }
+  | { type: 'simul_end' }
+  | { type: 'simul_teacher_move'; studentName: string; fen: string; from: string; to: string }
+  | { type: 'simul_student_move'; studentName: string; fen: string; from: string; to: string }
 
 @Injectable({ providedIn: 'root' })
 export class RealtimeTransport implements OnDestroy {

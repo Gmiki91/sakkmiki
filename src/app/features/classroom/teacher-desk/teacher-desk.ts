@@ -140,6 +140,9 @@ export class TeacherDesk implements AfterViewInit {
     this.store.sendAutoProgress(!this.store.autoProgress());
   }
 
+  startSimul(): void { this.store.startSimul(); }
+  stopSimul(): void { this.store.stopSimul(); }
+
 
   loadListToAll(list: List): void {
     this.store.loadListToAll(list);

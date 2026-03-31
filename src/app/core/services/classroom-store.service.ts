@@ -9,7 +9,7 @@ import { STARTING_FEN } from '../../shared/utils/chess.utils';
 import { Point, StampAnnotation } from '../../shared/models/drawing.model';
 
 export type { StudentPresence };
-export type ClassroomMode = 'normal' | 'gathered';
+export type ClassroomMode = 'normal' | 'gathered'|'simul';
 
 @Injectable({ providedIn: 'root' })
 export class ClassroomStore {
@@ -50,6 +50,10 @@ export class ClassroomStore {
   readonly incomingTeachingOverlay = signal<{ conceptId: string; squares: string[] } | null>(null);
   readonly incomingStampAnnotation = signal<StampAnnotation | null>(null);
   readonly incomingStampAnnotationClear = signal<{ studentName: string } | null>(null);
+
+  // Simul
+  readonly incomingSimulTeacherMove = signal<{ studentName: string; fen: string; from: string; to: string } | null>(null);
+  readonly incomingSimulStudentMove = signal<{ studentName: string; fen: string; from: string; to: string } | null>(null);
 
   // Student-side
   readonly teacherFen = signal('');
@@ -181,6 +185,28 @@ export class ClassroomStore {
   sendStampAnnotationClearAll(): void {
     this.transport.send({ type: 'stamp_annotation_clear_all' });
   }
+
+  // ----------------------------------------------------------------
+  // Simul
+  // ----------------------------------------------------------------
+
+  startSimul(): void {
+    this.mode.set('simul');
+    this.transport.send({ type: 'simul_start' });
+  }
+
+  stopSimul(): void {
+    this.mode.set('normal');
+    this.transport.send({ type: 'simul_end' });
+  }
+
+  sendSimulTeacherMove(studentName: string, fen: string, from: string, to: string): void {
+    this.transport.send({ type: 'simul_teacher_move', studentName, fen, from, to });
+  }
+
+  sendSimulStudentMove(fen: string, from: string, to: string): void {
+    this.transport.send({ type: 'simul_student_move', studentName: this.studentName(), fen, from, to });
+  }
   // ----------------------------------------------------------------
   // Send methods (student)
   // ----------------------------------------------------------------
@@ -240,6 +266,7 @@ export class ClassroomStore {
       case 'drawing_color':
         this.incomingDrawingColor.set({ studentName: event.studentName, color: event.color }); break;
       case 'stamp_annotation':this.incomingStampAnnotation.set(event.annotation);break;
+      case 'simul_student_move': this.incomingSimulStudentMove.set(event); break;
     }
   }
 
@@ -299,6 +326,11 @@ export class ClassroomStore {
         break;
       case 'stamp_annotation_clear_all':
         this.incomingStampAnnotationClear.set({ studentName: 'all' });
+        break;
+      case 'simul_start': this.mode.set('simul'); break;
+      case 'simul_end': this.mode.set('normal'); break;
+      case 'simul_teacher_move':
+          this.incomingSimulTeacherMove.set({studentName:event.studentName, fen: event.fen, from: event.from, to: event.to });
         break;
     }
   }

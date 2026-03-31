@@ -42,6 +42,11 @@ import { DEFAULT_BRUSH_COLOR } from '../../../shared/utils/brushes';
 import { TeachingOverlay } from '../../../shared/components/teaching-overlay/teaching-overlay';
 import { TEACHING_CONCEPTS } from '../../../shared/models/teaching-concept.model';
 import { DrawingToolbar } from '../../../shared/components/drawing-toolbar/drawing-toolbar';
+
+type SimulPeerBoard = {
+  name: string;
+  config: Config;
+}
 @Component({
   selector: 'app-student-view',
   templateUrl: './student-view.html',
@@ -122,6 +127,14 @@ export class StudentView implements AfterViewInit, OnDestroy {
   activeTool = signal<DrawingTool>('pen');
   activeStampIcon = signal<StampIcon>('star');
   
+  // --- Simul state ---
+  private simulChess = new Chess();
+  simulFen = signal<string>(STARTING_FEN);
+  simulLastMove = signal<[Key, Key] | undefined>(undefined);
+ 
+  /** Live miniboards for classmates during simul */
+  simulPeerBoards = signal<SimulPeerBoard[]>([]);
+
   private exerciseChess = new Chess();
 
   // --- Gather/disperse: snapshot of exercise state ---
@@ -147,6 +160,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
 
   boardOrientation = computed<'white' | 'black'>(() => {
     if (this.classroomStore.mode() === 'gathered') return 'white';
+    if (this.classroomStore.mode()==='simul') return 'black';
     if (this.myPair()) return this.myColor();
     const ex = this.currentExercise();
     if (!ex) return 'white';
@@ -205,9 +219,31 @@ export class StudentView implements AfterViewInit, OnDestroy {
     drawable: { enabled: true, visible: true },
   }));
 
+  private simulConfig = computed<Config>(() => {
+    const isBlackTurn = this.simulChess.turn() === 'b';
+    return {
+      fen: this.simulFen(),
+      orientation: 'black',
+      turnColor: this.simulChess.turn() === 'w' ? 'white' : 'black',
+      movable: {
+        free: false,
+        color: isBlackTurn ? 'black' : undefined,
+        dests: isBlackTurn ? getValidMoves(this.simulChess) : new Map(),
+        events: { after: (orig: Key, dest: Key) => this.handleSimulMove(orig, dest) },
+        showDests: true,
+      },
+      check: this.simulChess.isCheck(),
+      draggable: { enabled: isBlackTurn, showGhost: true },
+      highlight: { lastMove: true, check: true },
+      lastMove: this.simulLastMove(),
+      drawable: { enabled: true, visible: true },
+    };
+  });
+
   boardConfig = computed<Config | null>(() => {
     if (this.classroomStore.mode() === 'gathered') return this.gatheredConfig();
     if (this.myPair()) return this.challengeConfig();
+    if (this.classroomStore.mode()==='simul') return this.simulConfig();
     return this.currentExercise() ? this.exerciseConfig() : null;
   });
 
@@ -262,6 +298,20 @@ export class StudentView implements AfterViewInit, OnDestroy {
       }
     } else {
       this.executeMove(orig, dest, pair);
+    }
+  }
+
+   handleSimulMove(orig: Key, dest: Key): void {
+    if (this.simulChess.turn() !== 'b') return;
+    try {
+      const move = this.simulChess.move({ from: orig, to: dest });
+      if (!move) return;
+      this.simulFen.set(this.simulChess.fen());
+      this.simulLastMove.set([orig, dest]);
+      this.playSound(move);
+      this.classroomStore.sendSimulStudentMove(this.simulChess.fen(), orig, dest);
+    } catch {
+      this.simulFen.set(this.simulChess.fen());
     }
   }
 
@@ -453,6 +503,47 @@ export class StudentView implements AfterViewInit, OnDestroy {
       this.chessBoard?.api?.set({ lastMove: [] });
     });
 
+        // Simul: start/stop
+    effect(() => {
+      this.boardOrientation
+      if (this.classroomStore.mode()==='simul') {
+        this.simulChess.reset();
+        this.simulFen.set(this.simulChess.fen());
+        this.simulLastMove.set(undefined);
+        this.simulPeerBoards.set([]);
+      }
+    });
+ 
+    // Simul: receive teacher's move
+    effect(() => {
+      const move = this.classroomStore.incomingSimulTeacherMove();
+      if (!move) return;
+      this.classroomStore.incomingSimulTeacherMove.set(null);
+      const myName = this.classroomStore.studentName();
+      if (move.studentName !== myName){
+        this.updatePeerBoard(move.studentName,move.fen,move.from,move.to);
+        return;
+      }
+      
+      
+      try {
+        loadChess(this.simulChess, move.fen);
+        this.simulFen.set(this.simulChess.fen());
+        this.simulLastMove.set([move.from as Key, move.to as Key]);
+        this.soundService.play('move');
+      } catch { /* ignore */ }
+  });
+ 
+    // Simul: receive a peer student's move to update sidebar
+    effect(() => {
+      const move = this.classroomStore.incomingSimulStudentMove();
+      if (!move) return;
+      this.classroomStore.incomingSimulStudentMove.set(null);
+      const myName = this.classroomStore.studentName();
+      if (move.studentName === myName) return; // that's my own board
+      this.updatePeerBoard(move.studentName, move.fen, move.from, move.to);
+    });
+
     // Presence sync — fires whenever any relevant state changes
     effect(() => {
       const exercise = this.currentExercise();
@@ -594,6 +685,25 @@ export class StudentView implements AfterViewInit, OnDestroy {
         drawable: { enabled: true, shapes: [] },
       });
     }, 0);
+  }
+    private updatePeerBoard(name: string, fen: string, from: string, to: string): void {
+    const chess = new Chess();
+    try { loadChess(chess, fen); } catch { return; }
+    const config: Config = {
+      fen,
+      orientation: 'black',
+      coordinates: false,
+      movable: { free: false, color: undefined },
+      draggable: { enabled: false },
+      lastMove: [from as Key, to as Key],
+      highlight: { lastMove: true, check: chess.isCheck() },
+    };
+    this.simulPeerBoards.update(boards => {
+      const existing = boards.find(b => b.name === name);
+      const entry: SimulPeerBoard = { name, config};
+      if (existing) return boards.map(b => b.name === name ? entry : b);
+      return [...boards, entry];
+    });
   }
 
 

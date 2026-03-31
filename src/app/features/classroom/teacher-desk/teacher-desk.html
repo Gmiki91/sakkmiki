@@ -62,6 +62,13 @@
             Auto Progress {{ store.autoProgress() ? 'ON' : 'OFF' }}
           </button>
          </div>
+         <div class="row">
+           @if (store.mode()==='simul') {
+             <button mat-raised-button color="warn" (click)="stopSimul()">End Simul</button>
+           } @else {
+             <button mat-raised-button (click)="startSimul()">Start Simul</button>
+           }
+         </div>
       }
     </div>
   </div>

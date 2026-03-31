@@ -1,13 +1,37 @@
 .background {
-  width: 100vw;
-  height: 100vh;
-  position: absolute;
+  position: fixed;
+  inset: 0;
   background-image: url('../../../../../public/77770.jpg');
   background-size: cover;
+  background-position: center;
+  z-index: 0;
 }
 .chess-container {
+  position: relative;
+  z-index: 1;
   padding: 12px;
   margin: 0 auto;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: center;
+  max-width: 100vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
+
+  &.simul {
+    flex-direction: row;
+    justify-content: flex-start;
+  }
+}
+ 
+.main-card {
+  border-radius: 12px;
+  border-color: none;
+  background-color: transparent;
+  box-shadow: none;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 mat-card {
@@ -161,26 +185,48 @@ mat-card-header {
   display: flex;
   justify-content: center;
 }
+// ── Simul sidebar ────────────────────────────────────────────────
+ 
+.simul-sidebar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
 
-@keyframes stamp-pop {
-  0% {
-    transform: scale(0);
-  }
-  60% {
-    transform: scale(1.3);
-  }
-  80% {
-    transform: scale(0.9);
-  }
-  100% {
-    transform: scale(1);
+}
+ 
+.peer-board-wrapper {
+  width: var(--mini-board-size);
+  height: var(--mini-board-size);
+  border-radius: 4px;
+  overflow: hidden;
+ 
+  app-chess-board {
+    display: block;
+    width: 100%;
+    height: 100%;
   }
 }
+
+ 
+@keyframes stamp-pop {
+  0%   { transform: scale(0); }
+  60%  { transform: scale(1.3); }
+  80%  { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+ 
 @media (max-width: 600px) {
   .chess-container {
     padding: 4px;
+    flex-direction: column;
   }
-
+ 
+  .simul-sidebar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    max-height: none;
+  }
+ 
   .board-wrapper app-chess-board {
     width: 300px;
     height: 300px;

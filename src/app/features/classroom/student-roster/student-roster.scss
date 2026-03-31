@@ -30,7 +30,12 @@
     border-radius: 4px;
     overflow: hidden;
     box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    transition: box-shadow 0.3s ease;
 
+    &.awaiting-teacher {
+      box-shadow: 0 0 0 3px #f5a623, 0 0 12px rgba(245, 166, 35, 0.6);
+      animation: pulse-gold 1.5s ease-in-out infinite;
+    }
     .board-loading {
       width: 100%; height: 100%;
       display: flex; align-items: center; justify-content: center;
@@ -62,4 +67,8 @@
   color: var(--mat-sys-on-surface-variant);
   padding: 48px 0;
   font-size: 0.95rem;
+}
+@keyframes pulse-gold {
+  0%, 100% { box-shadow: 0 0 0 3px #f5a623, 0 0 12px rgba(245, 166, 35, 0.6); }
+  50%       { box-shadow: 0 0 0 3px #f5a623, 0 0 20px rgba(245, 166, 35, 0.9); }
 }

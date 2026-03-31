@@ -1,4 +1,4 @@
-import { Component, inject, QueryList, ViewChildren, AfterViewInit, signal, computed, effect } from '@angular/core';
+import { Component, inject, QueryList, ViewChildren, AfterViewInit, signal, computed, effect, untracked } from '@angular/core';
 import { ClassroomStore } from '../../../core/services/classroom-store.service';
 import { DrawingService } from '../../../core/services/drawing.service';
 import { ChessBoard } from '../../../shared/components/chess-board/chess-board';
@@ -12,8 +12,9 @@ import { Config } from '@lichess-org/chessground/config';
 import { Key } from '@lichess-org/chessground/types';
 import { ChallengePair } from '../../../shared/models/challenge-pair.model';
 import { Exercise } from '../../../shared/models/exercise.model';
-import { STARTING_FEN } from '../../../shared/utils/chess.utils';
+import { STARTING_FEN, getValidMoves, loadChess } from '../../../shared/utils/chess.utils';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Chess } from 'chess.js';
 
 @Component({
   selector: 'app-student-roster',
@@ -32,6 +33,10 @@ export class StudentRoster implements AfterViewInit {
   isLoadingList = signal(false);
   teacherLockedStudents = signal<Set<string>>(new Set());
   pendingPair = signal<string | null>(null);
+
+  // Simul
+  private simulChessMap = new Map<string, Chess>();
+  simulConfigs = signal<Record<string, Config>>({});
 
   exerciseTitles = computed(() => {
     const globalList = this.store.loadedList();
@@ -90,6 +95,58 @@ export class StudentRoster implements AfterViewInit {
           this.resetTimer(student.name);
         }
       });
+    });
+
+    // Simul: init/update chess instances when simul state or student list changes
+    effect(() => {
+      const students = this.store.students();
+
+      if (this.store.mode()!=='simul') {
+        if (this.simulChessMap.size > 0) {
+          this.simulChessMap.clear();
+          this.simulConfigs.set({});
+        }
+        return;
+      }
+
+      const currentNames = new Set(students.map(s => s.name));
+      let changed = false;
+      const newConfigs = untracked(() => ({ ...this.simulConfigs() }));
+
+      // Add new students
+      students.forEach(student => {
+        if (!this.simulChessMap.has(student.name)) {
+          const chess = new Chess();
+          this.simulChessMap.set(student.name, chess);
+          newConfigs[student.name] = this.buildSimulConfig(student.name, chess);
+          changed = true;
+        }
+      });
+
+      // Remove departed students
+      for (const name of this.simulChessMap.keys()) {
+        if (!currentNames.has(name)) {
+          this.simulChessMap.delete(name);
+          delete newConfigs[name];
+          changed = true;
+        }
+      }
+
+      if (changed) this.simulConfigs.set(newConfigs);
+    });
+
+    // Simul: receive student's move and update teacher's miniboard
+    effect(() => {
+      const move = this.store.incomingSimulStudentMove();
+      if (!move) return;
+      this.store.incomingSimulStudentMove.set(null);
+      const chess = this.simulChessMap.get(move.studentName);
+      if (!chess) return;
+      loadChess(chess, move.fen);
+      this.simulConfigs.update(c => ({
+        ...c,
+        [move.studentName]: this.buildSimulConfig(move.studentName, chess, move.from,move.to),
+      }));
     });
   }
 
@@ -217,6 +274,64 @@ export class StudentRoster implements AfterViewInit {
 
   freezeTimers(): void { this.timers.forEach((t) => t.stop()); }
   resumeTimers(): void { this.timers.forEach((t) => t.start()); }
+
+  // ----------------------------------------------------------------
+  // Simul helpers
+  // ----------------------------------------------------------------
+
+  simulBoardConfigFor(studentName: string): Config {
+    return this.simulConfigs()[studentName] ?? { fen: STARTING_FEN, orientation: 'white', movable: { free: false } };
+  }
+
+  isAwaitingTeacher(studentName: string): boolean {
+    const cfg = this.simulConfigs()[studentName];
+    if (!cfg) return false;
+    // White to move = teacher's turn
+    return cfg.turnColor === 'white';
+  }
+
+  private buildSimulConfig(studentName: string, chess: Chess, orig?:string,dest?:string): Config {
+    const isWhiteTurn = chess.turn() === 'w';
+    const lastMove = (orig && dest) ? [orig as Key, dest as Key] : undefined;
+    return {
+      fen: chess.fen(),
+      orientation: 'white',
+      coordinates: false,
+      turnColor: isWhiteTurn ? 'white' : 'black',
+      movable: {
+        free: false,
+        color: isWhiteTurn ? 'white' : undefined,
+        dests: isWhiteTurn ? getValidMoves(chess) : new Map(),
+        events: {
+          after: (orig: Key, dest: Key) => this.onSimulTeacherMove(studentName, orig, dest),
+        },
+      },
+      draggable: { enabled: isWhiteTurn, showGhost: true },
+      highlight: { lastMove: true, check: true },
+      drawable: { enabled: false },
+      lastMove:lastMove
+    };
+  }
+
+  private onSimulTeacherMove(studentName: string, orig: Key, dest: Key): void {
+    const chess = this.simulChessMap.get(studentName);
+    if (!chess || chess.turn() !== 'w') return;
+    try {
+      const move = chess.move({ from: orig, to: dest });
+      if (!move) return;
+      this.simulConfigs.update(c => ({
+        ...c,
+        [studentName]: this.buildSimulConfig(studentName, chess),
+      }));
+      this.store.sendSimulTeacherMove(studentName, chess.fen(), orig, dest);
+    } catch {
+      // Invalid move — reset board to current chess state
+      this.simulConfigs.update(c => ({
+        ...c,
+        [studentName]: this.buildSimulConfig(studentName, chess),
+      }));
+    }
+  }
 
   private resetTimer(name: string): void {
     this.timers.find((t) => t.name() === name)?.reset();

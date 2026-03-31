@@ -1,12 +1,14 @@
 <div class="background"></div>
-<div class="chess-container">
-  <mat-card>
+<div class="chess-container" [class.simul]="classroomStore.mode()==='simul'">
+  <mat-card class="main-card">
     <mat-card-header>
       <mat-card-title>
         @if (classroomStore.mode() === 'gathered') {
           <span class="gathered-label">Közös tábla</span>
         } @else if (myPair()) {
           <span> {{ myPair()!.white }} vs {{ myPair()!.black }}</span>
+            } @else if (classroomStore.mode()==='simul') {
+          <span>Szimultán a tanár ellen 😱</span>
         } @else {
           <span> Szia {{ classroomStore.studentName() }}! {{ emoji() }}</span>
         }
@@ -17,7 +19,7 @@
       <div class="board-wrapper" #boardWrapper>
         <div class="overlay-wrapper" 
         [class.locked]="isLocked()" 
-          [class.stamp-mode]="classroomStore.mode() === 'gathered' && activeTool() === 'stamp'"
+        [class.stamp-mode]="classroomStore.mode() === 'gathered' && activeTool() === 'stamp'"
         (click)="onBoardClick($event)">
           <app-chess-board
             #chessBoard
@@ -108,4 +110,17 @@
       }
     </mat-card-content>
   </mat-card>
+   <!-- Simul sidebar: classmates' boards -->
+  @if (classroomStore.mode()==='simul') {
+    <div class="simul-sidebar">
+      @for (board of simulPeerBoards(); track board.name) {
+        <div class="peer-board-card">
+          <span>{{ board.name }}</span>
+          <div class="peer-board-wrapper">
+            <app-chess-board [config]="board.config"></app-chess-board>
+          </div>
+        </div>
+      }
+    </div>
+  }
 </div>
