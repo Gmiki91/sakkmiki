@@ -1,14 +1,7 @@
-.login-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-}
-
 .login-card {
-  width: 100%;
   max-width: 360px;
   padding: 8px;
+  background-color:var(--mat-sys-surface) ;
 }
 
 .full-width {

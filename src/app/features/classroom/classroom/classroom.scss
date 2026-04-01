@@ -1,9 +1,8 @@
 .classroom-container {
   display: grid;
   grid-template-columns: auto 1fr;
-  height: calc(100vh - 65px);
   overflow: hidden;
-
+  width: 100%;
   &.gathered {
     grid-template-columns: 1fr;
     justify-items: center;

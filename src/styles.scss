@@ -41,9 +41,18 @@ body {
 
 :root {
   --board-size: 640px;
-  --mini-board-size: 250px;
+  --mini-board-size: 280px;
 }
-
+router-outlet + * {
+  display: flex;
+  flex: 1;
+}
+.page-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 // Board overwrites
 .mushroom-mode piece.black.pawn {
   background-image: none !important;
