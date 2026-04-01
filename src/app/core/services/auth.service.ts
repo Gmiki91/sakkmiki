@@ -1,5 +1,7 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
+import { Router } from '@angular/router';
 import { User } from '@supabase/supabase-js';
+import { environment } from '../../environments/environment';
 import { SupabaseService } from './supabase.service';
 import { ExerciseService } from './exercise.service';
 
@@ -9,6 +11,7 @@ export type UserRole = 'teacher' | 'admin';
 export class AuthService {
   private supabase = inject(SupabaseService);
   private exerciseService = inject(ExerciseService);
+  private router = inject(Router);
   readonly currentUser = signal<User | null>(null);
   readonly userRole = signal<UserRole | null>(null);
   readonly isLoading = signal(true);
@@ -30,9 +33,15 @@ export class AuthService {
     return error?.message ?? null;
   }
 
-  async signOut(): Promise<void> {
-    await this.supabase.client.auth.signOut();
-    this.currentUser.set(null)
+  //https://github.com/supabase/supabase-js/issues/936
+  signOut(): void {
+    const projectRef = environment.supabaseUrl.split('//')[1].split('.')[0];
+    localStorage.removeItem(`sb-${projectRef}-auth-token`);
+    this.supabase.client.auth.signOut().catch(() => {}); // best-effort server invalidation
+    this.currentUser.set(null);
+    this.userRole.set(null);
+    this.exerciseService.exerciseLists.set([]);
+    this.router.navigate(['/']);
   }
 
   private async init(): Promise<void> {

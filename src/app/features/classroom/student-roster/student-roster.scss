@@ -2,10 +2,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(calc(var(--mini-board-size) + 48px), 1fr));
   gap: 16px;
-  overflow-y: auto;
   align-content: start;
   background: var(--mat-sys-surface);
-  width:  100%;
 }
 
 .student-card {

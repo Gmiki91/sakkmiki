@@ -9,7 +9,11 @@ export class SupabaseService {
   readonly client: SupabaseClient;
 
   constructor() {
-    this.client = createClient(environment.supabaseUrl, environment.supabaseKey);
+    this.client = createClient(environment.supabaseUrl, environment.supabaseKey, {
+      auth: {
+        lock: (_name, _acquireTimeout, fn) => fn(),
+      },
+    });
   }
 
   async saveExerciseList(list: ExerciseListInput) {

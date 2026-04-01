@@ -9,7 +9,7 @@
 .chess-container {
   margin: 0 auto;
   &.simul {
-    flex-direction: row;
+    display:flex;
     justify-content: flex-start;
   }
 }
@@ -180,7 +180,11 @@ mat-card-header {
   display: flex;
   flex-wrap: wrap;
   gap: 15px;
+  position: relative;
 
+  h2{
+    text-align: center;
+  }
 }
  
 .peer-board-wrapper {

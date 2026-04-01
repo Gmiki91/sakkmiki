@@ -1,5 +1,19 @@
 <div class="background"></div>
 <div class="chess-container" [class.simul]="classroomStore.mode()==='simul'">
+    @if (classroomStore.mode()==='simul') {
+    <div class="simul-sidebar">
+      @for (board of simulPeerBoards(); track board.name;) {
+        @if($odd){
+          <div class="peer-board-card">
+            <h2>{{ board.name }}</h2>
+            <div class="peer-board-wrapper">
+              <app-chess-board [config]="board.config"></app-chess-board>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  }
   <mat-card class="main-card">
     <mat-card-header>
       <mat-card-title>
@@ -118,13 +132,15 @@
    <!-- Simul sidebar: classmates' boards -->
   @if (classroomStore.mode()==='simul') {
     <div class="simul-sidebar">
-      @for (board of simulPeerBoards(); track board.name) {
-        <div class="peer-board-card">
-          <span>{{ board.name }}</span>
-          <div class="peer-board-wrapper">
-            <app-chess-board [config]="board.config"></app-chess-board>
+      @for (board of simulPeerBoards(); track board.name;) {
+        @if($even){
+          <div class="peer-board-card">
+            <h2>{{ board.name }}</h2>
+            <div class="peer-board-wrapper">
+              <app-chess-board [config]="board.config"></app-chess-board>
+            </div>
           </div>
-        </div>
+        }
       }
     </div>
   }
