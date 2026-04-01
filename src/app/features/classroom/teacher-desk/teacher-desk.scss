@@ -1,6 +1,5 @@
 .teacher-desk {
   display: flex;
-  flex-direction: column;
   align-items: flex-start;
   gap: 16px;
   padding: 16px;
@@ -18,7 +17,11 @@
   align-items: center;
   gap: 12px;
 }
-
+.exercise-column{
+  height:90vh;
+  overflow-y: auto;
+    overflow-x: hidden;
+}
 .board-wrapper {
   width: var(--mini-board-size);
   height: var(--mini-board-size);
@@ -49,8 +52,11 @@
   gap: 8px;
   width: 100%;
 }
-mat-button{width:100%}
-.row { display: flex; gap: 8px;width: 100%;justify-content: space-evenly; }
+
+.row { 
+  display: flex; gap: 8px;width: 100%;justify-content: space-evenly;
+
+}
 
 // ── Exercises column (gathered) ──────────────────────────────────
 
@@ -184,16 +190,7 @@ mat-button{width:100%}
   overflow-y: auto;
 }
 
-.teacher-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding-bottom: 16px;
-  width: 100%;
-}
+
 
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; transform: scale(1); }

@@ -26,12 +26,13 @@ export const routes: Routes = [
     path: 'classroom',
     loadComponent: () =>
       import('./features/classroom/classroom/classroom').then((m) => m.Classroom),
+    canActivate:[authGuard],
   },
   {
     path: 'student',
     loadComponent: () =>
       import('./features/classroom/student-view/student-view').then((m) => m.StudentView),
-    canActivate: [studentGuard],
+    canActivate: [studentGuard]
   },
   {
     path: 'puzzle-rush',

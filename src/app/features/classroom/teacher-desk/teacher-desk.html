@@ -44,12 +44,16 @@
         <button mat-icon-button (click)="clearBoard()" matTooltip="Clear board"><mat-icon>delete</mat-icon></button>
       </div>
       <div class="row">
-        <button mat-raised-button color="primary" (click)="gather()">Gather</button>
-        <button mat-raised-button (click)="disperse()">Disperse</button>
+         @if(!isGathered()){
+        <button style="width: 100%" mat-raised-button color="primary" (click)="gather()">Gather</button>
+         }@else {
+           <button style="width: 100%" mat-raised-button (click)="disperse()">Disperse</button>
+         }
       </div>
       @if(!isGathered()){
          <div class="row">
            <button mat-raised-button
+            style="width: 100%"
             [color]="store.autoRedo() ? 'primary' : ''"
             (click)="toggleAutoRedo()">
             Auto Redo {{ store.autoRedo() ? 'ON' : 'OFF' }}
@@ -57,6 +61,7 @@
          </div>
           <div class="row">
           <button mat-raised-button
+            style="width: 100%"
             [color]="store.autoProgress() ? 'primary' : ''"
             (click)="toggleAutoProgress()">
             Auto Progress {{ store.autoProgress() ? 'ON' : 'OFF' }}
@@ -64,10 +69,13 @@
          </div>
          <div class="row">
            @if (store.mode()==='simul') {
-             <button mat-raised-button color="warn" (click)="stopSimul()">End Simul</button>
+             <button style="width: 100%" mat-raised-button color="warn" (click)="stopSimul()">End Simul</button>
            } @else {
-             <button mat-raised-button (click)="startSimul()">Start Simul</button>
+             <button style="width: 100%" mat-raised-button (click)="startSimul()">Start Simul</button>
            }
+         </div>
+         <div class="row">
+           <button style="width: 100%" mat-raised-button (click)="openPicker()">Load exercises</button>
          </div>
       }
     </div>
@@ -123,16 +131,16 @@
 
   <!-- Normal mode: exercise lists below board area -->
   @if (!isGathered()) {
-    <div class="row">
-      <button mat-raised-button (click)="openPicker()">Load exercises</button>
-    </div>
-    <div class="teacher-controls">
+    <div class="exercise-column">
+     
         @for (list of loadedLists(); track list.id) {
           <div class="list-header" draggable="true" (dragstart)="onListDragStart(list, $event)">
             <mat-icon class="drag-handle">drag_indicator</mat-icon>
             <h3>{{ list.title }}</h3>
             <button mat-icon-button (click)="removeList(list)"><mat-icon>close</mat-icon></button>
-            <button mat-button color="primary" (click)="loadListToAll(list)">Load to all</button>
+            <button mat-icon-button (click)="loadListToAll(list)" matTooltip="Load list to all students">
+              <mat-icon >arrow_forward</mat-icon>    
+            </button>
           </div>
           <app-exercise-list [list]="list" (selectExercise)="demoExercise.set($event)"></app-exercise-list>
         }
