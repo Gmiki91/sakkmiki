@@ -3,14 +3,20 @@ import { validListGuard } from './core/guards/valid-list.guard';
 import { validExerciseGuard } from './core/guards/valid-exercise.guard';
 import { studentGuard } from './core/guards/student.guard';
 import { unsavedChangesGuard } from './core/guards/unsaved-change.guard';
+import { authGuard, redirectIfAuthenticatedGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   { path: '', loadComponent: () => import('./features/lobby/lobby').then((m) => m.Lobby) },
-  { 
-  path: 'join/:name', 
-  loadComponent: () =>
-    import('./features/classroom/join-screen/join-screen').then((m) => m.JoinScreen),
-},
+  {
+    path: 'login',
+    loadComponent: () => import('./features/auth/login/login').then((m) => m.Login),
+    canActivate: [redirectIfAuthenticatedGuard],
+  },
+  {
+    path: 'join/:name',
+    loadComponent: () =>
+      import('./features/classroom/join-screen/join-screen').then((m) => m.JoinScreen),
+  },
   {
     path: 'join',
     loadComponent: () =>
@@ -28,22 +34,22 @@ export const routes: Routes = [
     canActivate: [studentGuard],
   },
   {
-  path: 'puzzle-rush',
-  loadComponent: () =>
-    import('./features/puzzle-rush/puzzle-rush').then(m => m.PuzzleRush),
-},
+    path: 'puzzle-rush',
+    loadComponent: () => import('./features/puzzle-rush/puzzle-rush').then((m) => m.PuzzleRush),
+  },
   {
     path: 'exercises',
     loadComponent: () =>
-      import('./features/exercises/exercises-layout/exercises-layout').then(
-        (m) => m.ExercisesLayout,
-      ),
+      import('./features/exercises/exercises-layout/exercises-layout').then((m) => m.ExercisesLayout),
+    canActivate:[authGuard],
 
     children: [
       {
         path: 'lichess/:listId',
         loadComponent: () =>
-          import('./features/exercises/lichess-browser/lichess-browser').then(m => m.LichessBrowser),
+          import('./features/exercises/lichess-browser/lichess-browser').then(
+            (m) => m.LichessBrowser,
+          ),
         canActivate: [validListGuard],
       },
       {
@@ -63,8 +69,10 @@ export const routes: Routes = [
       },
       {
         path: 'challenge/:exerciseId',
-        loadComponent:()=>
-          import('./features/exercises/challenge-creator/challenge-creator').then(m=>m.ChallengeCreator),
+        loadComponent: () =>
+          import('./features/exercises/challenge-creator/challenge-creator').then(
+            (m) => m.ChallengeCreator,
+          ),
         canActivate: [validExerciseGuard],
         canDeactivate: [unsavedChangesGuard]
       },

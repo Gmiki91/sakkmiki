@@ -13,6 +13,7 @@ export class ExerciseService {
   private snackbar = inject(MatSnackBar);
 
   async loadExerciseLists() {
+    if (this.exerciseLists().length > 0) return;
     await this.withLoading(async () => {
       const lists = await this.supabase.getExerciseLists();
       this.exerciseLists.set(lists);
@@ -115,6 +116,10 @@ export class ExerciseService {
     try {
       return await fn();
     } catch (e) {
+       if (e instanceof Error && e.name === 'NavigatorLockAcquireTimeoutError') {
+        console.warn('Supabase lock timeout:', e.message);
+        return null;
+      }
       this.snackbar.open(e instanceof Error ? e.message : 'Something went wrong', 'Dismiss', {
         duration: 4000,
       });

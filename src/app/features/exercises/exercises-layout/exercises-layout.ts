@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal, model, OnInit } from '@angular/core';
+import { Component, computed, inject, signal, model } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import {
   ExerciseListInput,
@@ -31,7 +31,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
   templateUrl: './exercises-layout.html',
   styleUrl: './exercises-layout.scss',
 })
-export class ExercisesLayout implements OnInit {
+export class ExercisesLayout {
   exerciseService = inject(ExerciseService);
   isListCreationActive = signal<boolean>(false);
   title = model<string>('');
@@ -46,10 +46,6 @@ export class ExercisesLayout implements OnInit {
   selectedList = computed(
     () => this.exerciseService.exerciseLists().find((l) => l.id === this.selectedListId()) ?? null,
   );
-
-  ngOnInit(): void {
-    this.exerciseService.loadExerciseLists();
-  }
 
   addExercise(listId: string) {
     this.router.navigate([`/exercises/create/${listId}`]);

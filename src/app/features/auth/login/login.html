@@ -1,0 +1,43 @@
+<div class="login-wrapper">
+  <mat-card class="login-card">
+    <mat-card-header>
+      <mat-card-title>Teacher Login</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Email</mat-label>
+        <input
+          matInput
+          type="email"
+          [ngModel]="email()"
+          (ngModelChange)="email.set($event)"
+          (keydown)="onKeydown($event)"
+          placeholder="teacher@school.com"
+          autofocus
+        />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Password</mat-label>
+        <input
+          matInput
+          type="password"
+          [ngModel]="password()"
+          (ngModelChange)="password.set($event)"
+          (keydown)="onKeydown($event)"
+        />
+      </mat-form-field>
+      @if (error()) {
+        <p class="error">{{ error() }}</p>
+      }
+    </mat-card-content>
+    <mat-card-actions>
+      @if (isLoading()) {
+        <mat-spinner diameter="32"></mat-spinner>
+      } @else {
+        <button mat-raised-button color="primary" class="full-width" (click)="login()">
+          Login
+        </button>
+      }
+    </mat-card-actions>
+  </mat-card>
+</div>

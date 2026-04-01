@@ -1,0 +1,21 @@
+<nav class="nav">
+  <div class="nav-left">
+    <a class="nav-brand" routerLink="/">
+      <img src="/logo.svg" alt="Sakkmiki logo" />
+    </a>
+    <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
+    <a class="nav-link" routerLink="/puzzle-rush" routerLinkActive="active">Puzzle Rush</a>
+    @if (auth.isTeacher()) {
+      <a class="nav-link" routerLink="/exercises" routerLinkActive="active">Exercises</a>
+    }
+  </div>
+
+  <div class="nav-right">
+    @if (auth.isTeacher()) {
+      <span class="nav-user">{{ auth.currentUser()?.email }}</span>
+    }
+    <button class="nav-auth-btn" (click)="onLoginLogout()">
+      {{ auth.isAuthenticated() ? 'Logout' : 'Teacher login' }}
+    </button>
+  </div>
+</nav>

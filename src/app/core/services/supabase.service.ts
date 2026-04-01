@@ -108,9 +108,7 @@ export class SupabaseService {
     if (opts.maxRating !== undefined)
       query = query.lte('rating', opts.maxRating);
 
-    query = query
-      .order('rating', { ascending: true })
-      .range(opts.offset ?? 0, (opts.offset ?? 0) + (opts.limit ?? 20) - 1);
+    query = query.range(opts.offset ?? 0, (opts.offset ?? 0) + (opts.limit ?? 20) - 1);
 
     const { data, error, count } = await query;
     if (error) throw error;
