@@ -74,9 +74,10 @@ export class StudentView implements AfterViewInit, OnDestroy {
   soundService = inject(SoundService);
   drawingService = inject(DrawingService);
 
-  // --- Exercise state ---
   stampCollection = signal<StampType[]>([]);
-  mushroomCollection = signal<number>(0);
+  mushroomCollection = signal<Record<string, number>>({'🍄': 0,'🍫': 0,'🍬': 0,'🍦': 0,'🍔': 0,'🥤': 0,'🍩': 0,'🎃': 0,'♥️': 0,'🎁': 0,'🎈': 0,'⭐': 0});
+  mushroomCollectionValues = computed(()=>Object.values(this.mushroomCollection()).some(c => c > 0))
+  mushroomCollectionKeys =  computed(()=>Object.keys(this.mushroomCollection()));
   loadedList = computed(() =>
     this.classroomStore.assignedExercises().length
       ? this.classroomStore.assignedExercises()
@@ -367,8 +368,11 @@ export class StudentView implements AfterViewInit, OnDestroy {
     if (solution) {
       this.isLocked.set(false);
       if(ex.exerciseType==='mushroom'){
-        this.soundService.playRandomBite();
-        this.mushroomCollection.update(n=>n+1);
+        this.soundService.play('success');
+        const type = ex.mushroomType as string;
+        this.mushroomCollection.update(current => ({
+          ...current,[type]: (current[type] ?? 0) + 1
+        }));
       }else{
         this.playSound(move);
       }

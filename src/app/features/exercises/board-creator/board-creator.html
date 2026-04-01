@@ -16,6 +16,7 @@
     </div>
 
     <app-chess-board
+      [style.--mushroom-emoji]='"\"" + mushroomType() + "\""'
       [mushroomMode]="exerciseType() === 'mushroom'"
       [config]="boardConfig()"
       #chessBoard
@@ -57,6 +58,17 @@
       <span class="section-label">Type</span>
       <span class="type-badge">{{ exerciseType() }}</span>
     </div>
+
+    @if(exerciseType()==='mushroom'){
+       <div class="control-section">
+        <span class="section-label">Collectible type</span>
+        <mat-radio-group class="radio-group" [(ngModel)]="mushroomType">
+           @for(type of mushroomTypes; track $index){
+             <mat-radio-button [value]="type">{{type}}</mat-radio-button>
+          }
+        </mat-radio-group>
+      </div>
+    }
 
     @if (exerciseType() !== 'mushroom') {
       <div class="control-section">

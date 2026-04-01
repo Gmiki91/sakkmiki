@@ -29,6 +29,7 @@ export type ExerciseInput = {
   themes?: string[];    // raw Lichess theme strings e.g. 'fork', 'mateIn1'
   elo?: number;         // teacher-set for custom; Lichess rating for imported
   lichessId?: string;   // only when source === 'lichess'
+  mushroomType?:string;
 }
 
 export type Exercise = ExerciseInput & {

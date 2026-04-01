@@ -24,6 +24,7 @@
           <app-chess-board
             #chessBoard
             [config]="boardConfig()!"
+            [style.--mushroom-emoji]='"\"" + currentExercise()?.mushroomType + "\""'
             [mushroomMode]="
               myPair()
                 ? false
@@ -103,9 +104,13 @@
           }
         </div>
       }
-      @if (mushroomCollection() > 0) {
+      @if (this.mushroomCollectionValues()) {
         <div class="collection">
-          <span class="collection-item">{{mushroomCollection()}}x🍄</span>
+          @for(emoji of mushroomCollectionKeys(); track emoji){
+            @if(mushroomCollection()[emoji] > 0){
+              <span class="collection-item">  {{ mushroomCollection()[emoji] }}x{{ emoji }}</span>
+            }
+          }
         </div>
       }
     </mat-card-content>

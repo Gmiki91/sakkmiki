@@ -60,6 +60,9 @@ export class BoardCreator implements AfterViewInit {
   lastMove = signal<LastMove | null>(null);
   isRecordingLastMove = signal(false);
 
+  mushroomType = model<string>('🍄');
+  mushroomTypes = ['🍄','🍫','🍬','🍦', '🍔', '🥤', '🍩' ,'🎃', '♥️', '🎁', '🎈', '⭐', '🌼','🍀','🌻','⚽'];
+
   private chess = new Chess();
   private router = inject(Router);
   private snackbar = inject(MatSnackBar);
@@ -131,6 +134,7 @@ export class BoardCreator implements AfterViewInit {
         fen: fen,
         exerciseType: type,
         lastMove: this.lastMove() ?? undefined,
+        mushroomType:this.mushroomType()
       };
       const listId = this.activatedRoute.snapshot.paramMap.get('listId');
       if (!listId) return;

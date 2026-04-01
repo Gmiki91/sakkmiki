@@ -3,6 +3,7 @@
   <app-chess-board 
     [config]="boardConfig()" 
     [mushroomMode]="exercise().exerciseType === 'mushroom'" 
+    [style.--mushroom-emoji]='"\"" + exercise().mushroomType + "\""'
     #chessBoard>
   </app-chess-board>
 
