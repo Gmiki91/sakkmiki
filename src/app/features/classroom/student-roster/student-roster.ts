@@ -308,7 +308,7 @@ export class StudentRoster implements AfterViewInit {
       },
       draggable: { enabled: isWhiteTurn, showGhost: true },
       highlight: { lastMove: true, check: true },
-      drawable: { enabled: false },
+      drawable: { enabled: true,  visible:true },
       lastMove:lastMove
     };
   }

@@ -2,6 +2,7 @@
   @for (student of store.students(); track student.name) {
     @if (getPair(student.name); as pair) {
       @if (pair.white === student.name) {
+        @let chFen = getChallengeFen(pair);
         <mat-card class="student-card challenge-card"
           (dragover)="$event.preventDefault()" (drop)="onDrop(student.name, $event)">
           <mat-card-header>
@@ -9,7 +10,7 @@
           </mat-card-header>
           <mat-card-content>
             <div class="mini-board">
-              <app-chess-board [config]="boardConfigFor(getChallengeFen(pair).fen, getChallengeFen(pair).from, getChallengeFen(pair).to)" #studentBoard></app-chess-board>
+              <app-chess-board [config]="boardConfigFor(chFen.fen, chFen.from, chFen.to)" #studentBoard></app-chess-board>
             </div>
           </mat-card-content>
           <mat-card-actions>
