@@ -1,26 +1,30 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DrawShape } from '@lichess-org/chessground/draw';
-import { RealtimeTransport, BroadcastEvent, StudentPresence } from './realtime-transport.service';
+import { RealtimeTransport, BroadcastEvent, StudentPresence, SpectatorPresence } from './realtime-transport.service';
+import { SupabaseService } from './supabase.service';
 import { ChallengePair } from '../../shared/models/challenge-pair.model';
 import { Exercise } from '../../shared/models/exercise.model';
 import { ExerciseList as List } from '../../shared/models/exercise-list.model';
 import { STARTING_FEN } from '../../shared/utils/chess.utils';
 import { Point, StampAnnotation } from '../../shared/models/drawing.model';
 
-export type { StudentPresence };
+export type { StudentPresence, SpectatorPresence };
 export type ClassroomMode = 'normal' | 'gathered'|'simul';
 
 @Injectable({ providedIn: 'root' })
 export class ClassroomStore {
   private transport = inject(RealtimeTransport);
+  private supabase = inject(SupabaseService);
 
   // ----------------------------------------------------------------
   // State signals
   // ----------------------------------------------------------------
 
+  readonly classroomId = signal('');
   readonly studentName = signal('');
   readonly isJoined = signal(false);
+  readonly isSpectator = signal(false);
 
   // Shared
   readonly mode = signal<ClassroomMode>('normal');
@@ -38,6 +42,7 @@ export class ClassroomStore {
 
   // Teacher-side
   readonly students = signal<StudentPresence[]>([]);
+  readonly spectators = signal<SpectatorPresence[]>([]);
   readonly assignedLists = signal<Record<string, Exercise[]>>({});
   readonly sharedArrows = signal<DrawShape[]>([]);
   readonly miniboardArrows = signal<{ name: string; shapes: DrawShape[] } | null>(null);
@@ -56,7 +61,7 @@ export class ClassroomStore {
   readonly incomingSimulStudentMove = signal<{ studentName: string; fen: string; from: string; to: string } | null>(null);
 
   // Student-side
-  readonly teacherFen = signal('');
+  readonly teacherFen = signal(STARTING_FEN);
   readonly loadedExercises = signal<Exercise[]>([]);
   readonly assignedExercises = signal<Exercise[]>([]);
   readonly droppedExercise = signal<Exercise | null>(null);
@@ -79,34 +84,54 @@ export class ClassroomStore {
         this.students.set(students);
         this.onStudentsUpdate?.(students);
       });
+
+    this.transport.spectatorSync$
+      .pipe(takeUntilDestroyed())
+      .subscribe((spectators) => this.spectators.set(spectators));
   }
 
   // ----------------------------------------------------------------
   // Connection
   // ----------------------------------------------------------------
 
-  joinAsTeacher(): void {
-    this.transport.joinAsTeacher();
+  joinAsTeacher(classroomId: string): void {
+    this.classroomId.set(classroomId);
+    this.isSpectator.set(false);
+    this.transport.joinAsTeacher(classroomId);
   }
 
-  joinAsStudent(name: string, onJoined: () => void, onError: () => void): void {
+  joinAsSpectator(classroomId: string, displayName: string): void {
+    this.classroomId.set(classroomId);
+    this.isSpectator.set(true);
+    this.transport.joinAsSpectator(classroomId, displayName);
+  }
+
+  joinAsStudent(name: string, classroomId: string, onJoined: () => void, onError: () => void): void {
+    this.classroomId.set(classroomId);
     this.studentName.set(name);
     this.isJoined.set(false);
+    this.isSpectator.set(false);
     this.transport.joinAsStudent(
       name,
-      { name, fen: STARTING_FEN, status: '', feedback: '', exIndex: 0, locked: false, awaitingStamp: false },
-      () => { this.isJoined.set(true); onJoined(); },
+      classroomId,
+      { role: 'student', name, fen: STARTING_FEN, status: '', feedback: '', exIndex: 0, locked: false, awaitingStamp: false },
+      () => {
+        this.isJoined.set(true);
+        this.supabase.touchClassroom(classroomId).catch(() => {});
+        onJoined();
+      },
       onError,
     );
   }
 
-  async updatePresence(state: Omit<StudentPresence, 'name'>): Promise<void> {
-    await this.transport.updatePresence({ name: this.studentName(), ...state });
+  async updatePresence(state: Omit<StudentPresence, 'name' | 'role'>): Promise<void> {
+    await this.transport.updatePresence({ role: 'student', name: this.studentName(), ...state });
   }
 
   leave(): void {
-    this.transport.leave();
+    this.transport.cleanup();
     this.isJoined.set(false);
+    this.isSpectator.set(false);
   }
 
   // ----------------------------------------------------------------

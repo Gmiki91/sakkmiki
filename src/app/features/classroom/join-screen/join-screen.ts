@@ -18,32 +18,40 @@ export class JoinScreen implements OnInit {
   private router = inject(Router);
   private store = inject(ClassroomStore);
   private snackbar = inject(MatSnackBar);
-  private route = inject(ActivatedRoute)
+  private route = inject(ActivatedRoute);
+
   isLoading = signal(false);
   name = signal('');
+  private classroomId = '';
 
   ngOnInit(): void {
+    this.classroomId = this.route.snapshot.paramMap.get('classroomId') ?? '';
     const nameParam = this.route.snapshot.paramMap.get('name');
     if (nameParam) {
       this.name.set(decodeURIComponent(nameParam));
       this.join();
     }
   }
+
   join(): void {
     const trimmed = this.name().trim();
     if (!trimmed) {
       this.snackbar.open('Please enter your name', '', { duration: 2500 });
       return;
     }
+    if (!this.classroomId) {
+      this.snackbar.open('Invalid classroom link', '', { duration: 2500 });
+      return;
+    }
     this.isLoading.set(true);
     this.store.joinAsStudent(
       trimmed,
-      () => this.router.navigate(['/student']), // onJoined
+      this.classroomId,
+      () => this.router.navigate(['/student']),
       () => {
-        // onError
-        this.isLoading.set(false);
-        // this.snackbar.open('Nem sikerült a csatlakozás','', { duration: 2500 });
-      },
+      this.isLoading.set(false);
+      this.snackbar.open('Nem sikerült a csatlakozás','', { duration: 2500 });
+      }
     );
   }
 

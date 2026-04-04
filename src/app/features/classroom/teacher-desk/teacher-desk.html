@@ -1,7 +1,7 @@
 <div class="teacher-desk" [class.gathered]="isGathered()">
 
-  <!-- Exercise list column — gathered only -->
-  @if (isGathered()) {
+  <!-- Exercise list column — gathered + owner only -->
+  @if (isGathered() && !readonly()) {
     <div class="exercises-column">
       @if (loadedLists().length === 0) {
         <p class="empty-label">No lists loaded</p>
@@ -21,10 +21,14 @@
       <app-chess-board
         #chessBoard
         [config]="boardConfig()"
-        [mushroomMode]="isGathered()&&demoExercise()?.exerciseType === 'mushroom'"
+        [mushroomMode]="!readonly() && isGathered() && demoExercise()?.exerciseType === 'mushroom'"
       ></app-chess-board>
 
-      <app-drawing-canvas [strokes]="drawingService.allStrokes()"  [annotations]="drawingService.allAnnotations()" [active]="false"></app-drawing-canvas>
+      <app-drawing-canvas
+        [strokes]="drawingService.allStrokes()"
+        [annotations]="drawingService.allAnnotations()"
+        [active]="false">
+      </app-drawing-canvas>
 
       @if (overlayService.activeConceptId()) {
         <app-teaching-overlay
@@ -33,41 +37,45 @@
           orientation="white"
         ></app-teaching-overlay>
       }
-      @if (overlayService.isSelectingSquares()) {
+      @if (!readonly() && overlayService.isSelectingSquares()) {
         <div class="square-interceptor" (click)="onInterceptorClick($event)"></div>
       }
     </div>
 
-    <div class="controls">
-      <div class="row">
-        <button mat-icon-button (click)="resetBoard()" matTooltip="Reset board"><mat-icon>refresh</mat-icon></button>
-        <button mat-icon-button (click)="clearBoard()" matTooltip="Clear board"><mat-icon>delete</mat-icon></button>
-      </div>
-      <div class="row">
-         @if(!isGathered()){
-        <button style="width: 100%" mat-raised-button color="primary" (click)="gather()">Gather</button>
-         }@else {
-           <button style="width: 100%" mat-raised-button (click)="disperse()">Disperse</button>
-         }
-      </div>
-      @if(!isGathered()){
-         <div class="row">
-           <button mat-raised-button
-            style="width: 100%"
-            [color]="store.autoRedo() ? 'primary' : ''"
-            (click)="toggleAutoRedo()">
-            Auto Redo {{ store.autoRedo() ? 'ON' : 'OFF' }}
+    <!-- Owner controls only -->
+    @if (!readonly()) {
+      <div class="controls">
+        <div class="row">
+          <button mat-icon-button (click)="resetBoard()" matTooltip="Reset board"><mat-icon>refresh</mat-icon></button>
+          <button mat-icon-button (click)="clearBoard()" matTooltip="Clear board"><mat-icon>delete</mat-icon></button>
+        </div>
+        <div class="row">
+          <button style="width: 100%" mat-raised-button color="primary" (click)="gather()">Gather</button>
+          <button style="width: 100%" mat-raised-button (click)="disperse()">Disperse</button>
+        </div>
+        <div class="row">
+          <button mat-raised-button style="width: 100%" (click)="openInviteDialog()">
+            Invite student
           </button>
-         </div>
+        </div>
+        @if (!isGathered()) {
           <div class="row">
-          <button mat-raised-button
-            style="width: 100%"
-            [color]="store.autoProgress() ? 'primary' : ''"
-            (click)="toggleAutoProgress()">
-            Auto Progress {{ store.autoProgress() ? 'ON' : 'OFF' }}
-          </button>
-         </div>
-         <div class="row">
+            <button mat-raised-button
+              style="width: 100%"
+              [color]="store.autoRedo() ? 'primary' : ''"
+              (click)="toggleAutoRedo()">
+              Auto Redo {{ store.autoRedo() ? 'ON' : 'OFF' }}
+            </button>
+          </div>
+          <div class="row">
+            <button mat-raised-button
+              style="width: 100%"
+              [color]="store.autoProgress() ? 'primary' : ''"
+              (click)="toggleAutoProgress()">
+              Auto Progress {{ store.autoProgress() ? 'ON' : 'OFF' }}
+            </button>
+          </div>
+          <div class="row">
            @if (store.mode()==='simul') {
              <button style="width: 100%" mat-raised-button color="warn" (click)="stopSimul()">End Simul</button>
            } @else {
@@ -76,14 +84,24 @@
          </div>
          <div class="row">
            <button style="width: 100%" mat-raised-button (click)="openPicker()">Load exercises</button>
-         </div>
-      }
-    </div>
+      </div>
+    }
+      </div>
+  }
+
+    <!-- Spectators — always visible when anyone is watching -->
+    @if (store.spectators().length > 0) {
+      <div class="spectators-bar">
+        <mat-icon class="eye-icon">visibility</mat-icon>
+        <span class="spectator-count">{{ store.spectators().length }}</span>
+        <span class="spectator-names">{{ spectatorNames() }}</span>
+      </div>
+    }
   </div>
 
 
-  <!-- Concepts + drawings column — gathered only -->
-  @if (isGathered()) {
+  <!-- Concepts + drawings column — gathered + owner only -->
+  @if (isGathered() && !readonly()) {
     <div class="right-column">
       <div class="concept-palette">
         <span class="palette-title">Animations</span>
@@ -125,25 +143,23 @@
       <button mat-raised-button color="warn" (click)="drawingService.clearAll()">
         Clear all drawings
       </button>
-
     </div>
   }
 
-  <!-- Normal mode: exercise lists below board area -->
-  @if (!isGathered()) {
+  <!-- Normal mode: exercise lists below board — owner only -->
+  @if (!isGathered() && !readonly()) {
     <div class="exercise-column">
-     
-        @for (list of loadedLists(); track list.id) {
-          <div class="list-header" draggable="true" (dragstart)="onListDragStart(list, $event)">
-            <mat-icon class="drag-handle">drag_indicator</mat-icon>
-            <h3>{{ list.title }}</h3>
-            <button mat-icon-button (click)="removeList(list)"><mat-icon>close</mat-icon></button>
-            <button mat-icon-button (click)="loadListToAll(list)" matTooltip="Load list to all students">
+      @for (list of loadedLists(); track list.id) {
+        <div class="list-header" draggable="true" (dragstart)="onListDragStart(list, $event)">
+          <mat-icon class="drag-handle">drag_indicator</mat-icon>
+          <h3>{{ list.title }}</h3>
+          <button mat-icon-button (click)="removeList(list)"><mat-icon>close</mat-icon></button>
+          <button mat-icon-button (click)="loadListToAll(list)" matTooltip="Load list to all students">
               <mat-icon >arrow_forward</mat-icon>    
             </button>
-          </div>
-          <app-exercise-list [list]="list" (selectExercise)="demoExercise.set($event)"></app-exercise-list>
-        }
+        </div>
+        <app-exercise-list [list]="list" (selectExercise)="demoExercise.set($event)"></app-exercise-list>
+      }
     </div>
   }
 

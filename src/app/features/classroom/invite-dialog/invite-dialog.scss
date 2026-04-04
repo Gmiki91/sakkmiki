@@ -1,0 +1,17 @@
+.full-width { width: 100%; }
+
+.link-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--mat-sys-surface-container);
+  margin-top: 4px;
+
+  .link-text {
+    flex: 1;
+    font-size: 0.8rem;
+    word-break: break-all;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}

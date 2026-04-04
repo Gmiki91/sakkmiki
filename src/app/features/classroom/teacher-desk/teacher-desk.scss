@@ -52,9 +52,37 @@
   width: 100%;
 }
 
-.row { 
-  display: flex; gap: 8px;width: 100%;justify-content: space-evenly;
+.row { display: flex; gap: 8px; width: 100%; justify-content: space-evenly; }
 
+// ── Spectators bar ───────────────────────────────────────────────
+
+.spectators-bar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
+  color: var(--mat-sys-on-surface-variant);
+  margin-top: auto; // push to bottom of column
+  padding-top: 8px;
+
+  .eye-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    opacity: 0.7;
+  }
+
+  .spectator-count {
+    font-weight: 600;
+  }
+
+  .spectator-names {
+    opacity: 0.8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+  }
 }
 
 // ── Exercises column (gathered) ──────────────────────────────────

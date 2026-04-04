@@ -1,0 +1,25 @@
+<mat-dialog-content>
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Student name</mat-label>
+    <input
+      matInput
+      [ngModel]="studentName()"
+      (ngModelChange)="studentName.set($event)"
+      placeholder="e.g. Ádám"
+      autofocus
+    />
+  </mat-form-field>
+
+  @if (link()) {
+    <div class="link-row">
+      <span class="link-text">{{ link() }}</span>
+      <button mat-icon-button (click)="copy()" [matTooltip]="copied() ? 'Copied!' : 'Copy link'">
+        <mat-icon>{{ copied() ? 'check' : 'content_copy' }}</mat-icon>
+      </button>
+    </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="close()">Close</button>
+</mat-dialog-actions>

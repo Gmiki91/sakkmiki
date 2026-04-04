@@ -1,3 +1,9 @@
+.classroom-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .classroom-container {
   display: grid;
   grid-template-columns: auto 1fr;

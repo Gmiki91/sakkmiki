@@ -1,0 +1,49 @@
+.lobby {
+  padding: 32px 24px;
+}
+
+.create-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+
+  .name-field {
+    width: 260px;
+    // collapse bottom margin that mat-form-field adds by default
+    margin-bottom: -1.25em;
+  }
+}
+
+.spinner-row {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.classrooms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.classroom-card {
+  mat-card-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 16px 16px;
+  }
+
+  .delete-btn {
+    margin-left: auto;
+    color: var(--mat-sys-error);
+  }
+}
+
+.empty {
+  grid-column: 1 / -1;
+  color: var(--mat-sys-on-surface-variant);
+  padding: 48px 0;
+  text-align: center;
+}

@@ -8,6 +8,7 @@ import { Exercise } from '../../shared/models/exercise.model';
 import { Point, StampAnnotation } from '../../shared/models/drawing.model';
 
 export type StudentPresence = {
+  role: 'student';
   name: string;
   fen: string;
   status: string;
@@ -15,6 +16,11 @@ export type StudentPresence = {
   exIndex: number;
   locked: boolean;
   awaitingStamp: boolean;
+};
+
+export type SpectatorPresence = {
+  role: 'spectator';
+  displayName: string;
 };
 
 export type BroadcastEvent =
@@ -58,44 +64,58 @@ export class RealtimeTransport implements OnDestroy {
   private channel!: RealtimeChannel;
   private lastPresence: StudentPresence | null = null;
   private presenceHeartbeat?: ReturnType<typeof setInterval>;
+  private cleaningUp = false;
 
   readonly events$ = new Subject<BroadcastEvent>();
   readonly presenceSync$ = new Subject<StudentPresence[]>();
+  readonly spectatorSync$ = new Subject<SpectatorPresence[]>();
 
   // ----------------------------------------------------------------
   // Connection
   // ----------------------------------------------------------------
 
-  joinAsTeacher(): void {
+  joinAsTeacher(channelId: string): void {
+    this.cleanup();
     this.channel = this.supabase.client
-      .channel('classroom')
+      .channel(channelId)
       .on('broadcast', { event: 'classroom' }, ({ payload }: { payload: BroadcastEvent }) => {
         this.events$.next(payload);
       })
-      .on('presence', { event: 'sync' }, () => {
-        const state = this.channel.presenceState<StudentPresence>();
-        const list = Object.values(state).flat().map((p) => ({
-          name: p.name, fen: p.fen, status: p.status, feedback: p.feedback,
-          exIndex: p.exIndex, locked: p.locked, awaitingStamp: p.awaitingStamp,
-        }));
-        this.presenceSync$.next(list);
-      })
+      .on('presence', { event: 'sync' }, () => this.handlePresence())
       .subscribe();
+  }
+
+  joinAsSpectator(channelId: string, displayName: string): void {
+    this.cleanup();
+    this.channel = this.supabase.client
+      .channel(channelId)
+      .on('broadcast', { event: 'classroom' }, ({ payload }: { payload: BroadcastEvent }) => {
+        this.events$.next(payload);
+      })
+      .on('presence', { event: 'sync' }, () => this.handlePresence())
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await this.channel.track({ role: 'spectator', displayName });
+        }
+      });
   }
 
   joinAsStudent(
     name: string,
+    channelId: string,
     initialPresence: StudentPresence,
     onJoined: () => void,
     onError: () => void,
     retries = 0,
   ): void {
+    this.cleanup();
     this.channel = this.supabase.client
-      .channel('classroom')
+      .channel(channelId)
       .on('broadcast', { event: 'classroom' }, ({ payload }: { payload: BroadcastEvent }) => {
         this.events$.next(payload);
       })
       .subscribe(async (status) => {
+        if (this.cleaningUp) return;
         if (status === 'SUBSCRIBED') {
           if (!this.lastPresence) {
             await this.channel.track(initialPresence);
@@ -109,7 +129,7 @@ export class RealtimeTransport implements OnDestroy {
           if (this.lastPresence && retries < 3) {
             setTimeout(() => {
               this.supabase.client.removeChannel(this.channel);
-              this.joinAsStudent(name, initialPresence, onJoined, onError, retries + 1);
+              this.joinAsStudent(name, channelId, initialPresence, onJoined, onError, retries + 1);
             }, 2000);
           } else {
             onError();
@@ -127,16 +147,19 @@ export class RealtimeTransport implements OnDestroy {
     this.channel.send({ type: 'broadcast', event: 'classroom', payload: event });
   }
 
-  leave(): void {
+ cleanup(): void {
+    this.cleaningUp = true;
     this.stopHeartbeat();
     this.lastPresence = null;
     if (this.channel) this.supabase.client.removeChannel(this.channel);
+    this.cleaningUp = false
   }
 
   ngOnDestroy(): void {
-    this.leave();
+    this.cleanup();
     this.events$.complete();
     this.presenceSync$.complete();
+    this.spectatorSync$.complete();
   }
 
   // ----------------------------------------------------------------
@@ -155,5 +178,22 @@ export class RealtimeTransport implements OnDestroy {
       clearInterval(this.presenceHeartbeat);
       this.presenceHeartbeat = undefined;
     }
+  }
+
+  private handlePresence(){
+    const state = this.channel.presenceState<any>();
+    const all = Object.values(state).flat() as any[];
+    const students: StudentPresence[] = all
+      .filter(p => p.role === 'student')
+      .map(p => ({
+        role: 'student' as const,
+        name: p.name, fen: p.fen, status: p.status, feedback: p.feedback,
+        exIndex: p.exIndex, locked: p.locked, awaitingStamp: p.awaitingStamp,
+      }));
+    const spectators: SpectatorPresence[] = all
+      .filter(p => p.role === 'spectator')
+      .map(p => ({ role: 'spectator' as const, displayName: p.displayName }));
+    this.spectatorSync$.next(spectators);
+    this.presenceSync$.next(students); 
   }
 }

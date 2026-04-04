@@ -20,14 +20,6 @@ export class AuthService {
   readonly isTeacher = computed(() => this.userRole() === 'teacher' || this.userRole() === 'admin');
   readonly isAdmin = computed(() => this.userRole() === 'admin');
 
-  // Guards await this before making routing decisions,
-  // preventing redirect-to-login on page refresh before session is restored.
-  readonly initPromise: Promise<void>;
-
-  constructor() {
-    this.initPromise = this.init();
-  }
-
   async signIn(email: string, password: string): Promise<string | null> {
     const { error } = await this.supabase.client.auth.signInWithPassword({ email, password });
     return error?.message ?? null;
@@ -44,7 +36,7 @@ export class AuthService {
     this.router.navigate(['/']);
   }
 
-  private async init(): Promise<void> {
+  async initialize(): Promise<void> {
     const { data: { session } } = await this.supabase.client.auth.getSession();
     if (session?.user) {
       this.currentUser.set(session.user);
@@ -52,12 +44,19 @@ export class AuthService {
     }
     this.isLoading.set(false);
 
+    // Handle subsequent auth changes (sign in, sign out, token refresh)
+    // Guard against double-call: onAuthStateChange fires INITIAL_SESSION
+    // shortly after getSession(), skip loadProfile if it's the same user
     this.supabase.client.auth.onAuthStateChange(async (_event, session) => {
-      this.currentUser.set(session?.user ?? null);
-      if (session?.user) {
-        await this.loadProfile(session.user.id);
-      } else {
+      const newUser = session?.user ?? null;
+      const previousUser = this.currentUser();
+      this.currentUser.set(newUser);
+
+      if (newUser && newUser.id !== previousUser?.id) {
+        await this.loadProfile(newUser.id);
+      } else if (!newUser) {
         this.userRole.set(null);
+        this.exerciseService.exerciseLists.set([]);
       }
     });
   }

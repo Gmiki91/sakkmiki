@@ -4,25 +4,32 @@
       @if (pair.white === student.name) {
         @let chFen = getChallengeFen(pair);
         <mat-card class="student-card challenge-card"
-          (dragover)="$event.preventDefault()" (drop)="onDrop(student.name, $event)">
+          (dragover)="!readonly() && $event.preventDefault()"
+          (drop)="onDrop(student.name, $event)">
           <mat-card-header>
             <mat-card-title>{{ pair.white }} vs {{ pair.black }}</mat-card-title>
           </mat-card-header>
           <mat-card-content>
             <div class="mini-board">
-              <app-chess-board [config]="boardConfigFor(chFen.fen, chFen.from, chFen.to)" #studentBoard></app-chess-board>
+              <app-chess-board
+                [config]="boardConfigFor(chFen.fen, chFen.from, chFen.to)"
+                #studentBoard>
+              </app-chess-board>
             </div>
           </mat-card-content>
-          <mat-card-actions>
-            <button mat-icon-button (click)="removePair(pair)"><mat-icon>close</mat-icon></button>
-            <button mat-icon-button (click)="triggerRematch(pair)"><mat-icon>swap_horiz</mat-icon></button>
-          </mat-card-actions>
+          @if (!readonly()) {
+            <mat-card-actions>
+              <button mat-icon-button (click)="removePair(pair)"><mat-icon>close</mat-icon></button>
+              <button mat-icon-button (click)="triggerRematch(pair)"><mat-icon>swap_horiz</mat-icon></button>
+            </mat-card-actions>
+          }
         </mat-card>
       }
     } @else {
-      <mat-card class="student-card" draggable="true"
+      <mat-card class="student-card"
+        [attr.draggable]="!readonly() || null"
         (dragstart)="onDragStart(student.name)"
-        (dragover)="$event.preventDefault()"
+        (dragover)="!readonly() && $event.preventDefault()"
         (drop)="onDrop(student.name, $event)">
         <mat-card-header>
           <mat-card-title>{{ student.name }}</mat-card-title>
@@ -32,14 +39,11 @@
           </mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-          <div class="mini-board" [class.awaiting-teacher]="store.mode()==='simul' && isAwaitingTeacher(student.name)">
+          <div class="mini-board">
             @if (isLoadingList()) {
               <div class="board-loading"><mat-spinner diameter="32"></mat-spinner></div>
             } @else {
-              <app-chess-board
-                [config]="store.mode()==='simul' ? simulBoardConfigFor(student.name) : boardConfigFor(student.fen)"
-                #studentBoard>
-              </app-chess-board>
+              <app-chess-board [config]="boardConfigFor(student.fen)" #studentBoard></app-chess-board>
             }
           </div>
           <div class="student-status">
@@ -47,31 +51,33 @@
             <span class="feedback">{{ student.feedback }}</span>
           </div>
         </mat-card-content>
-        <mat-card-actions style="justify-content: center">
-          @if (student.locked && !student.awaitingStamp && !teacherLockedStudents().has(student.name)) {
-            <button mat-raised-button class="resume-btn" (click)="handleResume(student.name)">Redo</button>
-          } @else if (student.awaitingStamp) {
-            <button mat-raised-button class="stamp-btn" (click)="handleStamp(student.name)">Stamp</button>
-          } @else {
-            <button mat-icon-button
-              [class.active-toggle]="effectiveAutoRedo()(student.name)"
-              [matTooltip]="'Auto redo: ' + (effectiveAutoRedo()(student.name) ? 'ON' : 'OFF')"
-              (click)="toggleStudentAutoRedo(student.name)">
-              <mat-icon fontSet="material-symbols-outlined">autopause</mat-icon>
-            </button>
-            <button mat-icon-button (click)="handleLock(student.name)"
-             [class.active-toggle]="!student.locked"
-              [matTooltip]="student.locked ? 'Board locked' : 'Board unlocked'">
-              <mat-icon>{{ student.locked ? 'lock' : 'lock_open' }}</mat-icon>
-            </button>
-            <button mat-icon-button
-              [class.active-toggle]="effectiveAutoProgress()(student.name)"
-              [matTooltip]="'Auto progress: ' + (effectiveAutoProgress()(student.name) ? 'ON' : 'OFF')"
-              (click)="toggleStudentAutoProgress(student.name)">
-              <mat-icon fontSet="material-symbols-outlined">autoplay</mat-icon>
-            </button>
-          }
-        </mat-card-actions>
+        @if (!readonly()) {
+          <mat-card-actions style="justify-content: center">
+            @if (student.locked && !student.awaitingStamp && !teacherLockedStudents().has(student.name)) {
+              <button mat-raised-button class="resume-btn" (click)="handleResume(student.name)">Redo</button>
+            } @else if (student.awaitingStamp) {
+              <button mat-raised-button class="stamp-btn" (click)="handleStamp(student.name)">Stamp</button>
+            } @else {
+              <button mat-icon-button
+                [class.active-toggle]="effectiveAutoRedo()(student.name)"
+                [matTooltip]="'Auto redo: ' + (effectiveAutoRedo()(student.name) ? 'ON' : 'OFF')"
+                (click)="toggleStudentAutoRedo(student.name)">
+                <mat-icon fontSet="material-symbols-outlined">autopause</mat-icon>
+              </button>
+              <button mat-icon-button (click)="handleLock(student.name)"
+                [class.active-toggle]="!student.locked"
+                [matTooltip]="student.locked ? 'Board locked' : 'Board unlocked'">
+                <mat-icon>{{ student.locked ? 'lock' : 'lock_open' }}</mat-icon>
+              </button>
+              <button mat-icon-button
+                [class.active-toggle]="effectiveAutoProgress()(student.name)"
+                [matTooltip]="'Auto progress: ' + (effectiveAutoProgress()(student.name) ? 'ON' : 'OFF')"
+                (click)="toggleStudentAutoProgress(student.name)">
+                <mat-icon fontSet="material-symbols-outlined">autoplay</mat-icon>
+              </button>
+            }
+          </mat-card-actions>
+        }
       </mat-card>
     }
   } @empty {

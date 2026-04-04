@@ -1,4 +1,4 @@
-import { Component, inject, QueryList, ViewChildren, AfterViewInit, signal, computed, effect, untracked } from '@angular/core';
+import { Component, inject, input, QueryList, ViewChildren, AfterViewInit, signal, computed, effect,untracked } from '@angular/core';
 import { ClassroomStore } from '../../../core/services/classroom-store.service';
 import { DrawingService } from '../../../core/services/drawing.service';
 import { ChessBoard } from '../../../shared/components/chess-board/chess-board';
@@ -12,7 +12,7 @@ import { Config } from '@lichess-org/chessground/config';
 import { Key } from '@lichess-org/chessground/types';
 import { ChallengePair } from '../../../shared/models/challenge-pair.model';
 import { Exercise } from '../../../shared/models/exercise.model';
-import { STARTING_FEN, getValidMoves, loadChess } from '../../../shared/utils/chess.utils';
+import { STARTING_FEN,getValidMoves, loadChess } from '../../../shared/utils/chess.utils';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Chess } from 'chess.js';
 
@@ -25,6 +25,9 @@ import { Chess } from 'chess.js';
 export class StudentRoster implements AfterViewInit {
   @ViewChildren('studentBoard') studentBoards!: QueryList<ChessBoard>;
   @ViewChildren(StudentTimer) timers!: QueryList<StudentTimer>;
+
+  // When true, hide all interactive controls (spectator mode)
+  readonly = input(false);
 
   store = inject(ClassroomStore);
   drawingService = inject(DrawingService);
@@ -169,7 +172,7 @@ export class StudentRoster implements AfterViewInit {
       draggable: { enabled: false },
       lastMove: from && to ? ([from, to] as Key[]) : [],
       highlight: { lastMove: true, check: true },
-      drawable: { enabled: true, visible: true },
+      drawable: { enabled: !this.readonly(), visible: true },
     };
   }
 
@@ -206,6 +209,7 @@ export class StudentRoster implements AfterViewInit {
   }
 
   onDrop(targetName: string, event: DragEvent): void {
+    if (this.readonly()) return;
     const type = event.dataTransfer?.getData('type');
     if (type === 'exercise') this.handleExerciseDrop(targetName, event);
     else if (type === 'list') this.handleListDrop(targetName, event);
@@ -215,7 +219,7 @@ export class StudentRoster implements AfterViewInit {
   handleListDrop(targetName: string, event: DragEvent): void {
     const pair = this.getPair(targetName);
     if (pair) {
-      this.snackBar.open("you can't assign a list to a two player game","",{duration:2000});
+      this.snackBar.open("Can't assign a list to a two player game", '', { duration: 2000 });
     } else {
       const exercises = JSON.parse(event.dataTransfer?.getData('exercises') ?? '[]');
       this.store.sendAssignedList(targetName, exercises);
@@ -244,7 +248,10 @@ export class StudentRoster implements AfterViewInit {
     this.pendingPair.set(null);
   }
 
-  onDragStart(studentName: string): void { this.pendingPair.set(studentName); }
+  onDragStart(studentName: string): void {
+    if (this.readonly()) return;
+    this.pendingPair.set(studentName);
+  }
 
   getPair(studentName: string): ChallengePair | null {
     return this.store.challengePairs().find(
@@ -338,6 +345,7 @@ export class StudentRoster implements AfterViewInit {
   }
 
   private attachBoardListeners(): void {
+    if (this.readonly()) return; // spectators don't send arrows
     this.studentBoards.forEach((board, index) => {
       const el = board.boardElement?.nativeElement as HTMLElement;
       if (!el || this.listenedElements.has(el)) return;

@@ -1,6 +1,12 @@
-<div class="classroom-container" [class.gathered]="store.mode() === 'gathered'">
-  <app-teacher-desk></app-teacher-desk>
-  @if(store.mode() !== 'gathered'){
-    <app-student-roster></app-student-roster>
-  }
-</div>
+@if (isLoading()) {
+  <div class="classroom-loading">
+    <mat-spinner diameter="48"></mat-spinner>
+  </div>
+} @else {
+  <div class="classroom-container" [class.gathered]="store.mode() === 'gathered'">
+    <app-teacher-desk [readonly]="!isOwner()"></app-teacher-desk>
+    @if (store.mode() !== 'gathered') {
+      <app-student-roster [readonly]="!isOwner()"></app-student-roster>
+    }
+  </div>
+}

@@ -3,18 +3,65 @@ import { environment } from '../../environments/environment';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Exercise, ExerciseInput, LichessPuzzle } from '../../shared/models/exercise.model';
 import { ExerciseListInput } from '../../shared/models/exercise-list.model';
+import { Classroom } from '../../shared/models/classroom.model';
 
 @Injectable({ providedIn: 'root' })
 export class SupabaseService {
   readonly client: SupabaseClient;
 
   constructor() {
-    this.client = createClient(environment.supabaseUrl, environment.supabaseKey, {
-      auth: {
-        lock: (_name, _acquireTimeout, fn) => fn(),
-      },
-    });
+    this.client = createClient(environment.supabaseUrl, environment.supabaseKey);
   }
+
+  // ----------------------------------------------------------------
+  // Classrooms
+  // ----------------------------------------------------------------
+
+  async getClassrooms(): Promise<Classroom[]> {
+    const { data, error } = await this.client
+      .from('classrooms')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(r => this.fromDbClassroom(r));
+  }
+
+  async getClassroomById(id: string): Promise<Classroom | null> {
+    const { data, error } = await this.client
+      .from('classrooms')
+      .select('*')
+      .eq('id', id)
+      .single();
+    if (error) return null;
+    return this.fromDbClassroom(data);
+  }
+
+  async createClassroom(name: string, teacherId:string): Promise<Classroom> {
+    const { data, error } = await this.client
+      .from('classrooms')
+      .insert({ name, teacher_id: teacherId })
+      .select()
+      .single();
+    if (error) throw error;
+    return this.fromDbClassroom(data);
+  }
+
+  async deleteClassroom(id: string): Promise<void> {
+    const { error } = await this.client.from('classrooms').delete().eq('id', id);
+    if (error) throw error;
+  }
+
+  async touchClassroom(id: string): Promise<void> {
+    const { error } = await this.client
+      .from('classrooms')
+      .update({ last_active_at: new Date().toISOString() })
+      .eq('id', id);
+    if (error) throw error;
+  }
+
+  // ----------------------------------------------------------------
+  // Exercise lists
+  // ----------------------------------------------------------------
 
   async saveExerciseList(list: ExerciseListInput) {
     const { data, error } = await this.client
@@ -112,7 +159,9 @@ export class SupabaseService {
     if (opts.maxRating !== undefined)
       query = query.lte('rating', opts.maxRating);
 
-    query = query.range(opts.offset ?? 0, (opts.offset ?? 0) + (opts.limit ?? 20) - 1);
+    query = query
+      .order('rating', { ascending: true })
+      .range(opts.offset ?? 0, (opts.offset ?? 0) + (opts.limit ?? 20) - 1);
 
     const { data, error, count } = await query;
     if (error) throw error;
@@ -122,6 +171,16 @@ export class SupabaseService {
   // ----------------------------------------------------------------
   // Private mappers
   // ----------------------------------------------------------------
+
+  private fromDbClassroom(raw: any): Classroom {
+    return {
+      id: raw.id,
+      name: raw.name,
+      teacherId: raw.teacher_id,
+      lastActiveAt: raw.last_active_at,
+      createdAt: raw.created_at,
+    };
+  }
 
   private fromDbExercise(raw: any): Exercise {
     return {
@@ -139,7 +198,6 @@ export class SupabaseService {
       themes: raw.themes ?? [],
       elo: raw.elo ?? undefined,
       lichessId: raw.lichess_id ?? undefined,
-      mushroomType:raw.mushroom_type
     };
   }
 
@@ -158,7 +216,6 @@ export class SupabaseService {
       themes: exercise.themes ?? [],
       elo: exercise.elo ?? null,
       lichess_id: exercise.lichessId ?? null,
-      mushroom_type:exercise.mushroomType
     };
   }
 

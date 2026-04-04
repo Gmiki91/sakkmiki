@@ -6,8 +6,6 @@ export const authGuard: CanActivateFn = async () => {
   const router = inject(Router);
   const auth = inject(AuthService);
 
-  await auth.initPromise;
-
   if (!auth.isTeacher()) {
     router.navigate(['/login']);
     return false;
@@ -18,8 +16,6 @@ export const authGuard: CanActivateFn = async () => {
 export const redirectIfAuthenticatedGuard: CanActivateFn = async () => {
   const router = inject(Router);
   const auth = inject(AuthService);
-
-  await auth.initPromise;
 
   if (auth.isTeacher()) {
     router.navigate(['/']);

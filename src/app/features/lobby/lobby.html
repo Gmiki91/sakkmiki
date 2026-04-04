@@ -1,3 +1,56 @@
 <div class="lobby">
-  <h1>Mizu?</h1>
+  @if (isAuthenticated()) {
+    <div class="create-row">
+      @if (isCreating()) {
+        <mat-form-field appearance="outline" class="name-field">
+          <mat-label>Classroom name</mat-label>
+          <input matInput [ngModel]="newName()" (ngModelChange)="newName.set($event)"
+            (keydown.enter)="createClassroom()" autofocus />
+        </mat-form-field>
+        <button mat-raised-button color="primary" [disabled]="!newName().trim()" (click)="createClassroom()">
+          Create
+        </button>
+        <button mat-button (click)="isCreating.set(false)">Cancel</button>
+      } @else {
+        <button mat-raised-button color="primary" (click)="isCreating.set(true)">
+          <mat-icon>add</mat-icon> New Classroom
+        </button>
+      }
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="spinner-row"><mat-spinner diameter="32"></mat-spinner></div>
+  } @else {
+    <div class="classrooms-grid">
+      @for (classroom of classrooms(); track classroom.id) {
+        <mat-card class="classroom-card">
+          <mat-card-header>
+            <mat-card-title>{{ classroom.name }}</mat-card-title>
+          </mat-card-header>
+          <mat-card-actions>
+            @if (isOwner(classroom)) {
+              <button mat-raised-button color="primary" (click)="openClassroom(classroom.id)">
+                <mat-icon>open_in_new</mat-icon> Enter
+              </button>
+              <button mat-icon-button (click)="deleteClassroom(classroom.id)" class="delete-btn">
+                <mat-icon>delete</mat-icon>
+              </button>
+            } @else if (isAuthenticated()) {
+              <button mat-raised-button (click)="openClassroom(classroom.id)">
+                <mat-icon>visibility</mat-icon> Spectate
+              </button>
+            } @else {
+              <button mat-raised-button (click)="joinClassroom(classroom.id)">
+                <mat-icon>login</mat-icon> Join
+              </button>
+            }
+          </mat-card-actions>
+        </mat-card>
+      } @empty {
+        <p class="empty">No classrooms yet.
+        </p>
+      }
+    </div>
+  }
 </div>
