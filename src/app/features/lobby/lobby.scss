@@ -1,5 +1,6 @@
 .lobby {
   padding: 32px 24px;
+  max-width: 960px;
 }
 
 .create-row {
@@ -23,21 +24,74 @@
 
 .classrooms-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 16px;
 }
 
 .classroom-card {
+  cursor: pointer;
+  transition: box-shadow 0.15s, transform 0.15s;
+  min-width: 250px;
+
+  &:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+  }
+
+  &.own-card {
+    border: 2px solid var(--mat-sys-primary);
+  }
+
   mat-card-actions {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    padding: 8px 16px 16px;
+    padding: 4px 8px 8px;
   }
 
   .delete-btn {
-    margin-left: auto;
     color: var(--mat-sys-error);
+  }
+}
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.participants {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.role-badge {
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: auto;
+  font-weight: 500;
+
+  &.owner {
+    background: var(--mat-sys-primary-container);
+    color: var(--mat-sys-on-primary-container);
+  }
+
+  &.spectator {
+    background: var(--mat-sys-surface-container-high);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &.join {
+    background: var(--mat-sys-secondary-container);
+    color: var(--mat-sys-on-secondary-container);
   }
 }
 

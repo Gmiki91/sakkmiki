@@ -1,5 +1,5 @@
 <div class="lobby">
-  @if (isAuthenticated()) {
+  @if (auth.isTeacher()) {
     <div class="create-row">
       @if (isCreating()) {
         <mat-form-field appearance="outline" class="name-field">
@@ -24,32 +24,43 @@
   } @else {
     <div class="classrooms-grid">
       @for (classroom of classrooms(); track classroom.id) {
-        <mat-card class="classroom-card">
+        <mat-card
+          class="classroom-card"
+          [class.own-card]="isOwner(classroom)"
+          (click)="onCardClick(classroom)">
           <mat-card-header>
             <mat-card-title>{{ classroom.name }}</mat-card-title>
+            <mat-card-subtitle>{{ classroom.teacherName }}</mat-card-subtitle>
           </mat-card-header>
-          <mat-card-actions>
-            @if (isOwner(classroom)) {
-              <button mat-raised-button color="primary" (click)="openClassroom(classroom.id)">
-                <mat-icon>open_in_new</mat-icon> Enter
-              </button>
-              <button mat-icon-button (click)="deleteClassroom(classroom.id)" class="delete-btn">
+          <mat-card-content>
+            <div class="card-meta">
+              @if (participantCount(classroom.id) > 0) {
+                <span class="participants">
+                  <mat-icon>people</mat-icon>
+                  {{ participantCount(classroom.id) }}
+                </span>
+              }
+              @if (isOwner(classroom)) {
+                <span class="role-badge owner">Your class</span>
+              } @else if (auth.isAuthenticated()) {
+                <span class="role-badge spectator">Spectate</span>
+              } @else {
+                <span class="role-badge join">Join</span>
+              }
+            </div>
+          </mat-card-content>
+          @if (isOwner(classroom)) {
+            <mat-card-actions>
+              <button mat-icon-button class="delete-btn"
+                (click)="deleteClassroom(classroom, $event)"
+                matTooltip="Delete classroom">
                 <mat-icon>delete</mat-icon>
               </button>
-            } @else if (isAuthenticated()) {
-              <button mat-raised-button (click)="openClassroom(classroom.id)">
-                <mat-icon>visibility</mat-icon> Spectate
-              </button>
-            } @else {
-              <button mat-raised-button (click)="joinClassroom(classroom.id)">
-                <mat-icon>login</mat-icon> Join
-              </button>
-            }
-          </mat-card-actions>
+            </mat-card-actions>
+          }
         </mat-card>
       } @empty {
-        <p class="empty">No classrooms yet.
-        </p>
+        <p class="empty">No classrooms yet.</p>
       }
     </div>
   }

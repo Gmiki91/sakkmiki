@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
 import { Exercise, ExerciseInput, LichessPuzzle } from '../../shared/models/exercise.model';
 import { ExerciseListInput } from '../../shared/models/exercise-list.model';
 import { Classroom } from '../../shared/models/classroom.model';
@@ -8,9 +8,14 @@ import { Classroom } from '../../shared/models/classroom.model';
 @Injectable({ providedIn: 'root' })
 export class SupabaseService {
   readonly client: SupabaseClient;
+  readonly realtimeClient: SupabaseClient;
 
   constructor() {
     this.client = createClient(environment.supabaseUrl, environment.supabaseKey);
+    // Separate client for realtime — WebSocket teardown cannot block HTTP queries
+    this.realtimeClient = createClient(environment.supabaseUrl, environment.supabaseKey, {
+      auth: { persistSession: false },
+    });
   }
 
   // ----------------------------------------------------------------
@@ -20,7 +25,7 @@ export class SupabaseService {
   async getClassrooms(): Promise<Classroom[]> {
     const { data, error } = await this.client
       .from('classrooms')
-      .select('*')
+      .select('*, profiles(display_name)')
       .order('created_at', { ascending: false });
     if (error) throw error;
     return (data ?? []).map(r => this.fromDbClassroom(r));
@@ -29,18 +34,18 @@ export class SupabaseService {
   async getClassroomById(id: string): Promise<Classroom | null> {
     const { data, error } = await this.client
       .from('classrooms')
-      .select('*')
+      .select('*, profiles(display_name)')
       .eq('id', id)
       .single();
     if (error) return null;
     return this.fromDbClassroom(data);
   }
 
-  async createClassroom(name: string, teacherId:string): Promise<Classroom> {
+  async createClassroom(name: string, teacherId: string): Promise<Classroom> {
     const { data, error } = await this.client
       .from('classrooms')
       .insert({ name, teacher_id: teacherId })
-      .select()
+      .select('*, profiles(display_name)')
       .single();
     if (error) throw error;
     return this.fromDbClassroom(data);
@@ -57,6 +62,14 @@ export class SupabaseService {
       .update({ last_active_at: new Date().toISOString() })
       .eq('id', id);
     if (error) throw error;
+  }
+
+  // ----------------------------------------------------------------
+  // Lobby presence channel
+  // ----------------------------------------------------------------
+
+  createLobbyChannel(): RealtimeChannel {
+    return this.realtimeClient.channel('lobby');
   }
 
   // ----------------------------------------------------------------
@@ -177,6 +190,7 @@ export class SupabaseService {
       id: raw.id,
       name: raw.name,
       teacherId: raw.teacher_id,
+      teacherName: raw.profiles?.display_name ?? raw.teacher_id,
       lastActiveAt: raw.last_active_at,
       createdAt: raw.created_at,
     };

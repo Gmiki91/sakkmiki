@@ -1,6 +1,7 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DrawShape } from '@lichess-org/chessground/draw';
+import { RealtimeChannel } from '@supabase/supabase-js';
 import { RealtimeTransport, BroadcastEvent, StudentPresence, SpectatorPresence } from './realtime-transport.service';
 import { SupabaseService } from './supabase.service';
 import { ChallengePair } from '../../shared/models/challenge-pair.model';
@@ -10,7 +11,7 @@ import { STARTING_FEN } from '../../shared/utils/chess.utils';
 import { Point, StampAnnotation } from '../../shared/models/drawing.model';
 
 export type { StudentPresence, SpectatorPresence };
-export type ClassroomMode = 'normal' | 'gathered'|'simul';
+export type ClassroomMode = 'normal' | 'gathered' | 'simul';
 
 @Injectable({ providedIn: 'root' })
 export class ClassroomStore {
@@ -73,6 +74,9 @@ export class ClassroomStore {
   // Callback for classroom component to react to presence sync
   onStudentsUpdate: ((students: StudentPresence[]) => void) | null = null;
 
+  // Lobby presence channel — tracks this user as a participant for the lobby's counts
+  private lobbyChannel: RealtimeChannel | null = null;
+
   constructor() {
     this.transport.events$
       .pipe(takeUntilDestroyed())
@@ -98,6 +102,7 @@ export class ClassroomStore {
     this.classroomId.set(classroomId);
     this.isSpectator.set(false);
     this.transport.joinAsTeacher(classroomId);
+    this.trackLobbyPresence(classroomId);
   }
 
   joinAsSpectator(classroomId: string, displayName: string): void {
@@ -118,6 +123,7 @@ export class ClassroomStore {
       () => {
         this.isJoined.set(true);
         this.supabase.touchClassroom(classroomId).catch(() => {});
+        this.trackLobbyPresence(classroomId);
         onJoined();
       },
       onError,
@@ -130,6 +136,7 @@ export class ClassroomStore {
 
   leave(): void {
     this.transport.cleanup();
+    this.untrackLobbyPresence();
     this.isJoined.set(false);
     this.isSpectator.set(false);
   }
@@ -196,17 +203,11 @@ export class ClassroomStore {
   }
 
   sendStampAnnotation(annotation: StampAnnotation): void {
-    this.transport.send({
-      type: 'stamp_annotation',
-      studentName: this.studentName(),
-      annotation,
-    });
+    this.transport.send({ type: 'stamp_annotation', studentName: this.studentName(), annotation });
   }
-
   sendStampAnnotationClear(studentName: string): void {
     this.transport.send({ type: 'stamp_annotation_clear', studentName });
   }
-
   sendStampAnnotationClearAll(): void {
     this.transport.send({ type: 'stamp_annotation_clear_all' });
   }
@@ -219,19 +220,17 @@ export class ClassroomStore {
     this.mode.set('simul');
     this.transport.send({ type: 'simul_start' });
   }
-
   stopSimul(): void {
     this.mode.set('normal');
     this.transport.send({ type: 'simul_end' });
   }
-
   sendSimulTeacherMove(studentName: string, fen: string, from: string, to: string): void {
     this.transport.send({ type: 'simul_teacher_move', studentName, fen, from, to });
   }
-
   sendSimulStudentMove(fen: string, from: string, to: string): void {
     this.transport.send({ type: 'simul_student_move', studentName: this.studentName(), fen, from, to });
   }
+
   // ----------------------------------------------------------------
   // Send methods (student)
   // ----------------------------------------------------------------
@@ -264,6 +263,31 @@ export class ClassroomStore {
   sendChallengeRematch(pair: ChallengePair): void { this.transport.send({ type: 'challenge_rematch', pair }); }
 
   // ----------------------------------------------------------------
+  // Lobby presence
+  // ----------------------------------------------------------------
+
+  private trackLobbyPresence(classroomId: string): void {
+    // Reuse existing lobby channel if already subscribed, just re-track
+    if (!this.lobbyChannel) {
+      this.lobbyChannel = this.supabase.createLobbyChannel()
+        .subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            await this.lobbyChannel!.track({ classroomId });
+          }
+        });
+    } else {
+      this.lobbyChannel.track({ classroomId }).catch(() => {});
+    }
+  }
+
+  private untrackLobbyPresence(): void {
+    if (this.lobbyChannel) {
+      this.supabase.realtimeClient.removeChannel(this.lobbyChannel).catch(() => {});
+      this.lobbyChannel = null;
+    }
+  }
+
+  // ----------------------------------------------------------------
   // Event handling
   // ----------------------------------------------------------------
 
@@ -290,7 +314,7 @@ export class ClassroomStore {
       case 'drawing_commit': this.incomingDrawingCommit.set({ strokeId: event.strokeId }); break;
       case 'drawing_color':
         this.incomingDrawingColor.set({ studentName: event.studentName, color: event.color }); break;
-      case 'stamp_annotation':this.incomingStampAnnotation.set(event.annotation);break;
+      case 'stamp_annotation': this.incomingStampAnnotation.set(event.annotation); break;
       case 'simul_student_move': this.incomingSimulStudentMove.set(event); break;
     }
   }
@@ -347,15 +371,13 @@ export class ClassroomStore {
         this.incomingTeachingOverlay.set({ conceptId: event.conceptId, squares: event.squares }); break;
       case 'teaching_overlay_clear': this.incomingTeachingOverlay.set(null); break;
       case 'stamp_annotation_clear':
-        this.incomingStampAnnotationClear.set({ studentName: event.studentName });
-        break;
+        this.incomingStampAnnotationClear.set({ studentName: event.studentName }); break;
       case 'stamp_annotation_clear_all':
-        this.incomingStampAnnotationClear.set({ studentName: 'all' });
-        break;
+        this.incomingStampAnnotationClear.set({ studentName: 'all' }); break;
       case 'simul_start': this.mode.set('simul'); break;
       case 'simul_end': this.mode.set('normal'); break;
       case 'simul_teacher_move':
-          this.incomingSimulTeacherMove.set({studentName:event.studentName, fen: event.fen, from: event.from, to: event.to });
+        this.incomingSimulTeacherMove.set({ studentName: event.studentName, fen: event.fen, from: event.from, to: event.to });
         break;
     }
   }

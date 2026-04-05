@@ -76,7 +76,7 @@ export class RealtimeTransport implements OnDestroy {
 
   joinAsTeacher(channelId: string): void {
     this.cleanup();
-    this.channel = this.supabase.client
+    this.channel = this.supabase.realtimeClient
       .channel(channelId)
       .on('broadcast', { event: 'classroom' }, ({ payload }: { payload: BroadcastEvent }) => {
         this.events$.next(payload);
@@ -87,7 +87,7 @@ export class RealtimeTransport implements OnDestroy {
 
   joinAsSpectator(channelId: string, displayName: string): void {
     this.cleanup();
-    this.channel = this.supabase.client
+    this.channel = this.supabase.realtimeClient
       .channel(channelId)
       .on('broadcast', { event: 'classroom' }, ({ payload }: { payload: BroadcastEvent }) => {
         this.events$.next(payload);
@@ -109,7 +109,7 @@ export class RealtimeTransport implements OnDestroy {
     retries = 0,
   ): void {
     this.cleanup();
-    this.channel = this.supabase.client
+    this.channel = this.supabase.realtimeClient
       .channel(channelId)
       .on('broadcast', { event: 'classroom' }, ({ payload }: { payload: BroadcastEvent }) => {
         this.events$.next(payload);
@@ -128,7 +128,7 @@ export class RealtimeTransport implements OnDestroy {
         } else if (status === 'TIMED_OUT' || status === 'CLOSED' || status === 'CHANNEL_ERROR') {
           if (this.lastPresence && retries < 3) {
             setTimeout(() => {
-              this.supabase.client.removeChannel(this.channel);
+              this.supabase.realtimeClient.removeChannel(this.channel);
               this.joinAsStudent(name, channelId, initialPresence, onJoined, onError, retries + 1);
             }, 2000);
           } else {
@@ -151,7 +151,7 @@ export class RealtimeTransport implements OnDestroy {
     this.cleaningUp = true;
     this.stopHeartbeat();
     this.lastPresence = null;
-    if (this.channel) this.supabase.client.removeChannel(this.channel);
+    if (this.channel) this.supabase.realtimeClient.removeChannel(this.channel);
     this.cleaningUp = false
   }
 

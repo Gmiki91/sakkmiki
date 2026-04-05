@@ -33,7 +33,7 @@ export const routes: Routes = [
       import('./features/classroom/join-screen/join-screen').then((m) => m.JoinScreen),
   },
   {
-    path: 'student',
+    path: 'student/:classroomId',
     loadComponent: () =>
       import('./features/classroom/student-view/student-view').then((m) => m.StudentView),
     canActivate: [studentGuard]
@@ -44,9 +44,10 @@ export const routes: Routes = [
   },
   {
     path: 'exercises',
-    loadComponent: () => import('./features/exercises/exercises-layout/exercises-layout').then((m) => m.ExercisesLayout),
-    canActivate:[authGuard],
-     children: [
+    loadComponent: () =>
+      import('./features/exercises/exercises-layout/exercises-layout').then((m) => m.ExercisesLayout),
+    canActivate: [authGuard],
+    children: [
       {
         path: 'lichess/:listId',
         loadComponent: () =>
@@ -62,9 +63,7 @@ export const routes: Routes = [
       {
         path: 'edit/:exerciseId',
         loadComponent: () =>
-          import('./features/exercises/exercise-creator/exercise-creator').then(
-            (m) => m.ExerciseCreator,
-          ),
+          import('./features/exercises/exercise-creator/exercise-creator').then((m) => m.ExerciseCreator),
         canActivate: [validExerciseGuard],
         canDeactivate: [unsavedChangesGuard]
       },

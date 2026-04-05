@@ -14,6 +14,7 @@ export class AuthService {
   private router = inject(Router);
   readonly currentUser = signal<User | null>(null);
   readonly userRole = signal<UserRole | null>(null);
+  readonly displayName = signal<string | null>(null);
   readonly isLoading = signal(true);
 
   readonly isAuthenticated = computed(() => !!this.currentUser());
@@ -32,6 +33,7 @@ export class AuthService {
     this.supabase.client.auth.signOut().catch(() => {}); // best-effort server invalidation
     this.currentUser.set(null);
     this.userRole.set(null);
+    this.displayName.set(null);
     this.exerciseService.exerciseLists.set([]);
     this.router.navigate(['/']);
   }
@@ -56,6 +58,7 @@ export class AuthService {
         await this.loadProfile(newUser.id);
       } else if (!newUser) {
         this.userRole.set(null);
+        this.displayName.set(null);
         this.exerciseService.exerciseLists.set([]);
       }
     });
@@ -64,10 +67,11 @@ export class AuthService {
   private async loadProfile(userId: string): Promise<void> {
     const { data } = await this.supabase.client
       .from('profiles')
-      .select('role')
+      .select('role, display_name')
       .eq('id', userId)
       .single();
     this.userRole.set(data?.role ?? null);
+    this.displayName.set(data?.display_name ?? null);
     if (data?.role) this.exerciseService.loadExerciseLists();
   }
 }
