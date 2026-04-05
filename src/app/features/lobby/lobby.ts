@@ -11,6 +11,7 @@ import { RealtimeChannel } from '@supabase/supabase-js';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { Classroom } from '../../shared/models/classroom.model';
 import { AuthService } from '../../core/services/auth.service';
+import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-lobby',
@@ -21,6 +22,7 @@ import { AuthService } from '../../core/services/auth.service';
     MatIconModule,
     MatInputModule,
     MatProgressSpinnerModule,
+    MatTooltip
   ],
   templateUrl: './lobby.html',
   styleUrl: './lobby.scss',

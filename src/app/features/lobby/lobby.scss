@@ -42,13 +42,6 @@
     border: 2px solid var(--mat-sys-primary);
   }
 
-  mat-card-actions {
-    padding: 4px 8px 8px;
-  }
-
-  .delete-btn {
-    color: var(--mat-sys-error);
-  }
 }
 
 .card-meta {
@@ -87,11 +80,6 @@
   &.spectator {
     background: var(--mat-sys-surface-container-high);
     color: var(--mat-sys-on-surface-variant);
-  }
-
-  &.join {
-    background: var(--mat-sys-secondary-container);
-    color: var(--mat-sys-on-secondary-container);
   }
 }
 

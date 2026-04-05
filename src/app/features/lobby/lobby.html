@@ -41,23 +41,18 @@
                 </span>
               }
               @if (isOwner(classroom)) {
+                <button mat-icon-button class="delete-btn"
+                  (click)="deleteClassroom(classroom, $event)"
+                  matTooltip="Delete classroom"
+                  matTooltipShowDelay="1000">
+                <mat-icon>delete</mat-icon>
+              </button>
                 <span class="role-badge owner">Your class</span>
               } @else if (auth.isAuthenticated()) {
                 <span class="role-badge spectator">Spectate</span>
-              } @else {
-                <span class="role-badge join">Join</span>
               }
             </div>
           </mat-card-content>
-          @if (isOwner(classroom)) {
-            <mat-card-actions>
-              <button mat-icon-button class="delete-btn"
-                (click)="deleteClassroom(classroom, $event)"
-                matTooltip="Delete classroom">
-                <mat-icon>delete</mat-icon>
-              </button>
-            </mat-card-actions>
-          }
         </mat-card>
       } @empty {
         <p class="empty">No classrooms yet.</p>
