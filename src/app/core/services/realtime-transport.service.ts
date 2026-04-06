@@ -82,7 +82,11 @@ export class RealtimeTransport implements OnDestroy {
         this.events$.next(payload);
       })
       .on('presence', { event: 'sync' }, () => this.handlePresence())
-      .subscribe();
+      .subscribe(status=>{
+        if(status==='SUBSCRIBED'){
+          this.handlePresence(); // read presence state to check if students already joined
+        }
+      });
   }
 
   joinAsSpectator(channelId: string, displayName: string): void {
@@ -93,8 +97,9 @@ export class RealtimeTransport implements OnDestroy {
         this.events$.next(payload);
       })
       .on('presence', { event: 'sync' }, () => this.handlePresence())
-      .subscribe(async (status) => {
+      .subscribe(async status => {
         if (status === 'SUBSCRIBED') {
+          this.handlePresence(); // read presence state to check if students already joined
           await this.channel.track({ role: 'spectator', displayName });
         }
       });
