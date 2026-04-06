@@ -30,10 +30,10 @@
         [active]="false">
       </app-drawing-canvas>
 
-      @if (overlayService.activeConceptId()) {
+      @for (concept of overlayService.activeConcepts(); track concept.id) {
         <app-teaching-overlay
-          [conceptId]="overlayService.activeConceptId()!"
-          [squares]="overlayService.selectedSquares()"
+          [conceptId]="concept.id"
+          [squares]="concept.squares"
           orientation="white"
         ></app-teaching-overlay>
       }
@@ -111,11 +111,11 @@
             Click a square
             ({{ overlayService.selectedSquares().length }}/{{ overlayService.pendingConcept()!.squaresNeeded }})
           </div>
-          <button mat-button (click)="overlayService.clear()">Cancel</button>
+          <button mat-button (click)="overlayService.cancelSquareSelection()">Cancel</button>
         } @else {
           @for (concept of concepts; track concept.id) {
             <button mat-raised-button
-              [class.concept-active]="overlayService.activeConceptId() === concept.id"
+              [class.concept-active]="isConceptActive(concept.id)"
               (click)="overlayService.startConcept(concept)">
               {{ concept.label }}
             </button>

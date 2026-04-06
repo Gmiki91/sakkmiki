@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { TeachingConcept } from '../../shared/models/teaching-concept.model';
+import { TeachingConcept, TeachingConceptListItem } from '../../shared/models/teaching-concept.model';
 import { ClassroomStore } from './classroom-store.service';
 import { SoundService } from './sound.service';
 
@@ -8,14 +8,14 @@ export class TeachingOverlayService {
   private classroomStore = inject(ClassroomStore);
   private soundService = inject(SoundService);
 
-  activeConceptId = signal<string | null>(null);
+  activeConcepts = signal<TeachingConceptListItem[]>([]);
   selectedSquares = signal<string[]>([]);
   isSelectingSquares = signal<boolean>(false);
   pendingConcept = signal<TeachingConcept | null>(null);
 
   startConcept(concept: TeachingConcept): void {
-    if(concept.id===this.activeConceptId()){
-      this.clear();
+    if(this.activeConcepts().some(c=>c.id === concept.id)){
+      this.removeOne(concept.id);
       return;
     }
     if (concept.squaresNeeded === 0) {
@@ -24,7 +24,6 @@ export class TeachingOverlayService {
       this.pendingConcept.set(concept);
       this.selectedSquares.set([]);
       this.isSelectingSquares.set(true);
-      this.activeConceptId.set(null);
     }
   }
 
@@ -37,26 +36,30 @@ export class TeachingOverlayService {
 
     const updated = [...current, square];
     this.selectedSquares.set(updated);
-
     if (updated.length >= concept.squaresNeeded) {
       this.trigger(concept, updated);
     }
   }
 
-  clear(): void {
-    this.activeConceptId.set(null);
-    this.selectedSquares.set([]);
+  removeOne(conceptId: string): void {
+    this.activeConcepts.update(list => list.filter(c => c.id !== conceptId));
+    this.classroomStore.sendTeachingOverlay(this.activeConcepts());
+  }
+
+  cancelSquareSelection(): void {
     this.isSelectingSquares.set(false);
     this.pendingConcept.set(null);
-    this.classroomStore.clearTeachingOverlay();
   }
 
   private trigger(concept: TeachingConcept, squares: string[]): void {
-    this.activeConceptId.set(concept.id);
-    this.selectedSquares.set(squares);
+    this.activeConcepts.update(list => {
+      const filtered = list.filter(c => c.id !== concept.id);
+      return [...filtered, { id: concept.id, squares }];
+    });
+    this.selectedSquares.set([]);
     this.isSelectingSquares.set(false);
-    if (concept.sound) this.soundService.play(concept.sound);
     this.pendingConcept.set(null);
-    this.classroomStore.sendTeachingOverlay(concept.id, squares);
+    if (concept.sound) this.soundService.play(concept.sound);
+      this.classroomStore.sendTeachingOverlay(this.activeConcepts());
   }
 }

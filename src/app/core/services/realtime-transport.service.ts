@@ -6,6 +6,7 @@ import { SupabaseService } from './supabase.service';
 import { ChallengePair } from '../../shared/models/challenge-pair.model';
 import { Exercise } from '../../shared/models/exercise.model';
 import { Point, StampAnnotation } from '../../shared/models/drawing.model';
+import { TeachingConceptListItem } from '../../shared/models/teaching-concept.model';
 
 export type StudentPresence = {
   role: 'student';
@@ -48,8 +49,7 @@ export type BroadcastEvent =
   | { type: 'drawing_color'; studentName: string; color: string }
   | { type: 'drawing_clear'; studentName: string }
   | { type: 'drawing_clear_all' }
-  | { type: 'teaching_overlay_trigger'; conceptId: string; squares: string[] }
-  | { type: 'teaching_overlay_clear' }
+  | { type: 'teaching_overlay_update'; concepts: TeachingConceptListItem[] }
   | { type: 'stamp_annotation'; studentName: string; annotation: StampAnnotation }
   | { type: 'stamp_annotation_clear'; studentName: string }
   | { type: 'stamp_annotation_clear_all' }

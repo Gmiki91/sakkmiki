@@ -9,6 +9,7 @@ import { Exercise } from '../../shared/models/exercise.model';
 import { ExerciseList as List } from '../../shared/models/exercise-list.model';
 import { STARTING_FEN } from '../../shared/utils/chess.utils';
 import { Point, StampAnnotation } from '../../shared/models/drawing.model';
+import { TeachingConceptListItem } from '../../shared/models/teaching-concept.model';
 
 export type { StudentPresence, SpectatorPresence };
 export type ClassroomMode = 'normal' | 'gathered' | 'simul';
@@ -53,7 +54,7 @@ export class ClassroomStore {
   readonly incomingDrawingCommit = signal<{ strokeId: string } | null>(null);
   readonly incomingDrawingColor = signal<{ studentName: string; color: string } | null>(null);
   readonly incomingDrawingClear = signal<{ studentName: string } | null>(null);
-  readonly incomingTeachingOverlay = signal<{ conceptId: string; squares: string[] } | null>(null);
+  readonly incomingTeachingOverlay = signal<TeachingConceptListItem[] | null>(null);
   readonly incomingStampAnnotation = signal<StampAnnotation | null>(null);
   readonly incomingStampAnnotationClear = signal<{ studentName: string } | null>(null);
 
@@ -184,10 +185,9 @@ export class ClassroomStore {
     }
     this.transport.send({ type: 'set_auto_progress', value, studentName });
   }
-  sendTeachingOverlay(conceptId: string, squares: string[]): void {
-    this.transport.send({ type: 'teaching_overlay_trigger', conceptId, squares });
+  sendTeachingOverlay(concepts:TeachingConceptListItem[]): void {
+    this.transport.send({ type: 'teaching_overlay_update', concepts });
   }
-  clearTeachingOverlay(): void { this.transport.send({ type: 'teaching_overlay_clear' }); }
 
   sendAssignedList(studentName: string, exercises: Exercise[]): void {
     this.assignedLists.update((a) => ({ ...a, [studentName]: exercises }));
@@ -367,9 +367,8 @@ export class ClassroomStore {
           pairs.filter((p) => p.white !== event.pair.white || p.black !== event.pair.black)); break;
       case 'drawing_clear': this.incomingDrawingClear.set({ studentName: event.studentName }); break;
       case 'drawing_clear_all': this.incomingDrawingClear.set({ studentName: 'all' }); break;
-      case 'teaching_overlay_trigger':
-        this.incomingTeachingOverlay.set({ conceptId: event.conceptId, squares: event.squares }); break;
-      case 'teaching_overlay_clear': this.incomingTeachingOverlay.set(null); break;
+      case 'teaching_overlay_update':
+        this.incomingTeachingOverlay.set(event.concepts); break;
       case 'stamp_annotation_clear':
         this.incomingStampAnnotationClear.set({ studentName: event.studentName }); break;
       case 'stamp_annotation_clear_all':

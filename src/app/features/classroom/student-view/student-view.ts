@@ -128,22 +128,23 @@ export class StudentView implements AfterViewInit, OnDestroy {
   activeTool = signal<DrawingTool>('pen');
   activeStampIcon = signal<StampIcon>('star');
   
-  // --- Simul state ---
+  // Simul state
   private simulChess = new Chess();
   simulFen = signal<string>(STARTING_FEN);
   simulLastMove = signal<[Key, Key] | undefined>(undefined);
  
-  /** Live miniboards for classmates during simul */
+  //Live miniboards for classmates during simul
   simulPeerBoards = signal<SimulPeerBoard[]>([]);
 
-  private exerciseChess = new Chess();
+  // track teachingoverlay concepts length to detect additions
+  teachingConceptSize = 0;
 
-  // --- Gather/disperse: snapshot of exercise state ---
+  // Gather/disperse: snapshot of exercise state 
   private isGathered = false;
   private frozenFen: string | null = null;
   private frozenMoveHistory: string[] | null = null;
 
-  // --- Challenge props---
+  //  Challenge props
   myPair = computed(
     () =>
       this.classroomStore
@@ -170,8 +171,9 @@ export class StudentView implements AfterViewInit, OnDestroy {
 
   pendingPromotion = signal<{ orig: Key; dest: Key; pair: ChallengePair } | null>(null);
   private challengeChess = new Chess();
+  private exerciseChess = new Chess();
   
-  // --- Board config ---
+  // Board config 
 
   private gatheredConfig = computed<Config>(() => ({
     fen: this.classroomStore.teacherFen(),
@@ -657,10 +659,17 @@ export class StudentView implements AfterViewInit, OnDestroy {
 
     // Sound effect from incoming teaching overlay
     effect(()=>{
-      const overlay = this.classroomStore.incomingTeachingOverlay();
-      if (!overlay) return;
-      const concept = TEACHING_CONCEPTS.find(c => c.id === overlay.conceptId);
-      if (concept?.sound) this.soundService.play(concept.sound);
+    const concepts = this.classroomStore.incomingTeachingOverlay();
+     if (!concepts?.length){
+      this.teachingConceptSize = 0;
+      return; 
+    } 
+    if(concepts.length>this.teachingConceptSize){ //only play sound if something was added, not when something was removed
+        const latest = concepts.at(-1)!;
+        const concept = TEACHING_CONCEPTS.find(c => c.id === latest.id);
+        if (concept?.sound) this.soundService.play(concept.sound);
+      }
+      this.teachingConceptSize = concepts.length
     })
   }
 

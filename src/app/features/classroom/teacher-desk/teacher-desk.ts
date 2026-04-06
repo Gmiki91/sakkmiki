@@ -202,4 +202,7 @@ export class TeacherDesk implements AfterViewInit {
     event.dataTransfer?.setData('exercises', JSON.stringify(list.exercises));
     event.dataTransfer?.setData('list-title', list.title);
   }
+  isConceptActive(conceptId: string): boolean {
+    return this.overlayService.activeConcepts().some(c => c.id === conceptId);
+  }
 }

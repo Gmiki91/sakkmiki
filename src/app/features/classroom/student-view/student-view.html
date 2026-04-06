@@ -51,11 +51,13 @@
           <app-stamp-overlay #stampOverlay></app-stamp-overlay>
           <!-- Teaching overlay: only in gathered mode when teacher has triggered a concept -->
           @if (classroomStore.mode() === 'gathered' && classroomStore.incomingTeachingOverlay()) {
-            <app-teaching-overlay
-              [conceptId]="classroomStore.incomingTeachingOverlay()!.conceptId"
-              [squares]="classroomStore.incomingTeachingOverlay()!.squares"
-              orientation="white"
-            ></app-teaching-overlay>
+            @for (concept of classroomStore.incomingTeachingOverlay(); track concept.id) {
+             <app-teaching-overlay
+               [conceptId]="concept.id"
+               [squares]="concept.squares"
+               orientation="white"
+             ></app-teaching-overlay>
+            }
           }
           <app-drawing-canvas 
             [strokes]="drawingService.localStrokes()" 
