@@ -38,13 +38,8 @@
           <app-chess-board
             #chessBoard
             [config]="boardConfig()!"
-            [style.--mushroom-emoji]='"\"" + currentExercise()?.mushroomType + "\""'
-            [mushroomMode]="
-              myPair()
-                ? false
-                : classroomStore.mode() === 'normal' &&
-                  currentExercise()?.exerciseType === 'mushroom'
-            "
+            [style.--mushroom-emoji]='"\"" + mushroomType() + "\""'
+            [mushroomMode]="isMushroomMode()"
           ></app-chess-board>
 
           <app-piece-overlay #pieceOverlay [orientation]="boardOrientation()"> </app-piece-overlay>

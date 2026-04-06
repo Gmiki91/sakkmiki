@@ -22,6 +22,7 @@
         #chessBoard
         [config]="boardConfig()"
         [mushroomMode]="!readonly() && isGathered() && demoExercise()?.exerciseType === 'mushroom'"
+        [style.--mushroom-emoji]='"\"" + demoExercise()?.mushroomType + "\""'
       ></app-chess-board>
 
       <app-drawing-canvas

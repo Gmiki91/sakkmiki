@@ -64,7 +64,8 @@ export class TeacherDesk implements AfterViewInit {
     movable: { free: true, events: { after: () => this.handleMove() } },
     draggable: { enabled: true, deleteOnDropOff: true },
     drawable: { enabled: true },
-    highlight: { lastMove: true },
+    highlight: { lastMove: false },
+    events:{change:()=>this.handleMove()}
   };
 
   // Spectator board config reacts to teacherFen broadcasts
@@ -90,6 +91,8 @@ export class TeacherDesk implements AfterViewInit {
         this.chessBoard.api.set({ fen: ex.fen, lastMove: [] });
         if (this.isGathered()) {
           this.store.sendTeacherFen(ex.fen);
+          if(ex.mushroomType)this.store.sendMushroomType(ex.mushroomType);
+          else this.store.sendMushroomType('');
           this.drawingService.clearAllOnFenChange();
         }
       }
@@ -146,8 +149,9 @@ export class TeacherDesk implements AfterViewInit {
   }
 
   resetBoard(): void {
-    this.chessBoard.api?.set({ fen: STARTING_FEN, lastMove: [] });
-    this.store.sendTeacherFen(STARTING_FEN);
+    const fen = this.demoExercise()? this.demoExercise()!.fen : STARTING_FEN;
+    this.chessBoard.api?.set({ fen, lastMove: [] });
+    this.store.sendTeacherFen(fen);
     this.drawingService.clearAllOnFenChange();
   }
 
@@ -155,6 +159,7 @@ export class TeacherDesk implements AfterViewInit {
     this.chessBoard.api?.set({ fen: EMPTY_BOARD_FEN, lastMove: [] });
     this.store.sendTeacherFen(EMPTY_BOARD_FEN);
     this.drawingService.clearAllOnFenChange();
+    this.demoExercise.set(null);
   }
 
   

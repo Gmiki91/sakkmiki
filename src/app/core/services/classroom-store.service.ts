@@ -71,6 +71,7 @@ export class ClassroomStore {
   readonly stamp = signal<string | null>(null);
   readonly lock = signal<string | null>(null);
   readonly unlock = signal<string | null>(null);
+  readonly mushroomType = signal<string|null>(null);
 
   // Callback for classroom component to react to presence sync
   onStudentsUpdate: ((students: StudentPresence[]) => void) | null = null;
@@ -156,6 +157,7 @@ export class ClassroomStore {
     this.transport.send({ type: 'disperse' });
   }
   sendTeacherFen(fen: string): void { this.transport.send({ type: 'teacher_fen', fen }); }
+  sendMushroomType(mType:string):void{this.transport.send({type:'mushroom_type',mType});}
   sendSharedArrows(shapes: DrawShape[], target: 'all' | string = 'all'): void {
     this.transport.send({ type: 'shared_arrows', shapes, target });
   }
@@ -327,6 +329,7 @@ export class ClassroomStore {
       case 'disperse':
         this.sharedArrows.set([]); this.miniboardArrows.set(null); this.mode.set('normal'); break;
       case 'teacher_fen': this.teacherFen.set(event.fen); break;
+      case 'mushroom_type': this.mushroomType.set(event.mType); break;
       case 'shared_arrows':
         if (event.target === 'all' || event.target === myName) this.sharedArrows.set(event.shapes); break;
       case 'list_loaded':

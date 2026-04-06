@@ -12,7 +12,7 @@
   }
   @for (annotation of renderedAnnotations(); track annotation.id) {
     <g
-      [attr.transform]="'translate(' + (annotation.x - 16) + ',' + (annotation.y - 16) + ') scale(1.5) translate(-16,-16)'"
+      [attr.transform]="'translate(' + (annotation.x) + ',' + (annotation.y ) + ') scale(1.5) translate(-16,-16)'"
       style="pointer-events: none" 
     >
       @if (annotation.type === 'star') {

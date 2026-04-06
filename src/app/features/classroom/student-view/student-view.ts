@@ -93,6 +93,20 @@ export class StudentView implements AfterViewInit, OnDestroy {
   currentExercise = computed(
     () => this.classroomStore.droppedExercise() ?? this.loadedList()[this.exIndex()] ?? null,
   );
+
+  mushroomType = computed(() => {
+    if (this.classroomStore.mode() === 'gathered') {
+      return this.classroomStore.mushroomType() || '🍄';
+    }
+    return this.currentExercise()?.mushroomType || '🍄';
+  });
+
+  isMushroomMode = computed(() => {
+    if (this.myPair() || this.classroomStore.mode() === 'simul') return false;
+    if (this.classroomStore.mode() === 'gathered') return !!this.classroomStore.mushroomType();
+    return this.currentExercise()?.exerciseType === 'mushroom';
+  });
+
   moveHistory: WritableSignal<string[]> = linkedSignal({
     source: () => this.currentExercise(),
     computation: () => [],

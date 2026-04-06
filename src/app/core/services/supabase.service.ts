@@ -212,6 +212,7 @@ export class SupabaseService {
       themes: raw.themes ?? [],
       elo: raw.elo ?? undefined,
       lichessId: raw.lichess_id ?? undefined,
+      mushroomType:raw.mushroom_type
     };
   }
 
@@ -230,6 +231,7 @@ export class SupabaseService {
       themes: exercise.themes ?? [],
       elo: exercise.elo ?? null,
       lichess_id: exercise.lichessId ?? null,
+      mushroom_type:exercise.mushroomType
     };
   }
 
