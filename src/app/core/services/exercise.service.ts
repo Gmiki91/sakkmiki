@@ -105,6 +105,27 @@ export class ExerciseService {
     }
   }
 
+  async copyExerciseList(list: ExerciseList, newTitle: string, teacherId: string): Promise<ExerciseList | null> {
+    return await this.withLoading(async () => {
+      const { list: newList, exercises } = await this.supabase.copyExerciseList(
+        list.exercises,
+        newTitle,
+        teacherId,
+        list.type,
+      );
+      const copied: ExerciseList = {
+        id: newList.id,
+        title: newList.title,
+        type: newList.type,
+        teacherId,
+        exercises,
+      };
+      this.exerciseLists.update((lists) => [...lists, copied]);
+      this.snackbar.open('List copied', '', { duration: 3000 });
+      return copied;
+    });
+  }
+
   getListById(id: string): boolean {
     return !!this.exerciseLists().find((list) => list.id === id);
   }

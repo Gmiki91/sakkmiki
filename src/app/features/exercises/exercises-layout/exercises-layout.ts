@@ -5,6 +5,7 @@ import {
   ExerciseList as List,
 } from '../../../shared/models/exercise-list.model';
 import { MatFormField, MatInputModule } from '@angular/material/input';
+ import {MatDivider, MatDividerModule} from '@angular/material/divider';
 import { FormsModule } from '@angular/forms';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
@@ -28,6 +29,7 @@ import { AuthService } from '../../../core/services/auth.service';
     MatIcon,
     MatRadioModule,
     MatTooltipModule,
+    MatDivider
   ],
   templateUrl: './exercises-layout.html',
   styleUrl: './exercises-layout.scss',
@@ -97,6 +99,18 @@ export class ExercisesLayout {
   backToPanel1(): void {
     this.selectedListId.set(null);
     this.router.navigate(['/exercises']);
+  }
+
+  copyList(listId: string) {
+    const list = this.exerciseService.exerciseLists().find((l) => l.id === listId);
+    if (!list) return;
+    const teacherId = this.auth.currentUser()?.id;
+    if (!teacherId) { alert('Sign in first'); return; }
+    const newTitle = prompt('Name for the copy:', `${list.title} (copy)`);
+    if (!newTitle?.trim()) return;
+    this.exerciseService.copyExerciseList(list, newTitle.trim(), teacherId).then((copied) => {
+      if (copied) this.selectedListId.set(copied.id);
+    });
   }
 
   // --- Exercise reordering ---

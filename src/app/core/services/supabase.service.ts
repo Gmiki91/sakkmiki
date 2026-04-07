@@ -90,6 +90,36 @@ export class SupabaseService {
     if (error) throw error;
   }
 
+  async copyExerciseList(
+    sourceExercises: Exercise[],
+    newTitle: string,
+    newTeacherId: string,
+    type: string,
+  ): Promise<{ list: any; exercises: Exercise[] }> {
+    const { data: listData, error: listError } = await this.client
+      .from('exercise_lists')
+      .insert({ title: newTitle, type, teacher_id: newTeacherId })
+      .select()
+      .single();
+    if (listError) throw listError;
+
+    if (sourceExercises.length === 0) return { list: listData, exercises: [] };
+
+    const rows = sourceExercises.map((ex, i) =>
+      this.toDbExercise({ ...ex, listId: listData.id, position: i + 1 }),
+    );
+    const { data: exData, error: exError } = await this.client
+      .from('exercises')
+      .insert(rows)
+      .select();
+    if (exError) throw exError;
+
+    return {
+      list: listData,
+      exercises: (exData ?? []).map((r: any) => this.fromDbExercise(r)),
+    };
+  }
+
   async saveExercise(exercise: ExerciseInput): Promise<Exercise> {
     const { data, error } = await this.client
       .from('exercises')

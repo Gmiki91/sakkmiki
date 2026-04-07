@@ -56,9 +56,13 @@
     }
     @if (selectedList()!.type === 'puzzle') {
       <button mat-button (click)="importFromLichess(selectedList()!.id)">
-        <mat-icon>cloud_download</mat-icon> Import from Lichess
+        <mat-icon>cloud_download</mat-icon> New exercise from Lichess
       </button>
     }
+    <mat-divider></mat-divider>
+      <button mat-button (click)="copyList(selectedList()!.id)">
+       Copy list
+      </button>
     @if(isOwner()){
     <button mat-button class="delete-btn" (click)="deleteList(selectedList()!.id)">
        Delete list
