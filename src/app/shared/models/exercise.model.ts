@@ -18,6 +18,8 @@ export type ExerciseInput = {
   title: string;
   fen: string;
   exerciseType: ExerciseType;
+  position:number;
+  listId:string;
   solutions?: string[][];
   commonMistakes?: CommonMistake[];
   defaultHint?: string;

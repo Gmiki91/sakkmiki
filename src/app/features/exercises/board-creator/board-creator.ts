@@ -124,21 +124,26 @@ export class BoardCreator implements AfterViewInit {
 
   async save() {
     const fen = this.currentFen().split(' ')[0] + this.fenAppendix();
-    const type = this.exerciseType();
+    const exerciseType = this.exerciseType();
+    const listId = this.activatedRoute.snapshot.paramMap.get('listId');
+    if (!listId) return;
+    const position = this.exerciseService.exerciseLists().find((l) => l.id === listId)?.exercises.length
     try {
-      if (type === 'puzzle') {
+      if (exerciseType === 'puzzle') {
         this.chess.load(fen);
       }
       const exercise: ExerciseInput = {
         title: this.title(),
-        fen: fen,
-        exerciseType: type,
+        fen,
+        exerciseType,
+        listId,
+        position: position || 1,
         lastMove: this.lastMove() ?? undefined,
-        mushroomType:this.mushroomType()
+        mushroomType:this.mushroomType(),
+
       };
-      const listId = this.activatedRoute.snapshot.paramMap.get('listId');
-      if (!listId) return;
-      const ex = await this.exerciseService.addExercise(listId, exercise);
+
+      const ex = await this.exerciseService.addExercise(listId,exercise);
       if (!ex) return;
       if (ex.exerciseType === 'challenge') {
         this.router.navigate([`/exercises/challenge/${ex.id}`]);

@@ -79,7 +79,7 @@ export class SupabaseService {
   async saveExerciseList(list: ExerciseListInput) {
     const { data, error } = await this.client
       .from('exercise_lists')
-      .insert({ title: list.title, type: list.type })
+      .insert({ title: list.title, type: list.type, teacher_id: list.teacherId })
       .select();
     if (error) throw error;
     return data[0];
@@ -114,41 +114,31 @@ export class SupabaseService {
     return this.fromDbExercise(data[0]);
   }
 
-  async addExerciseToList(exerciseId: string, listId: string, position: number) {
-    const { error } = await this.client
-      .from('exercise_list_items')
-      .insert({ exercise_id: exerciseId, list_id: listId, position });
-    if (error) throw error;
-  }
-
-  async reorderExercises(listId: string, orderedExerciseIds: string[]): Promise<void> {
-    const updates = orderedExerciseIds.map((exerciseId, index) => ({
-      list_id: listId,
-      exercise_id: exerciseId,
-      position: index + 1,
-    }));
-    const { error } = await this.client
-      .from('exercise_list_items')
-      .upsert(updates, { onConflict: 'list_id,exercise_id' });
-    if (error) throw error;
+  async reorderExercises(orderedExerciseIds: string[]): Promise<void> {
+    await Promise.all(
+      orderedExerciseIds.map((id, index) =>
+        this.client
+          .from('exercises')
+          .update({ position: index + 1 })
+          .eq('id', id),
+      ),
+    );
   }
 
   async getExerciseLists() {
-    const { data, error } = await this.client.from('exercise_lists').select(`
-      *,
-      exercise_list_items (
-        position,
-        exercises (*)
-      )
-    `);
+    const { data, error } = await this.client
+      .from('exercise_lists')
+      .select(`*,exercises (*)`)
+      .order('position', { referencedTable: 'exercises' });
     if (error) throw error;
     return data.map((list) => ({
       id: list.id,
       title: list.title,
       type: list.type,
-      exercises: list.exercise_list_items
+      teacherId: list.teacher_id,
+      exercises: list.exercises
         .sort((a: { position: number }, b: { position: number }) => a.position - b.position)
-        .map((item: { exercises: any }) => this.fromDbExercise(item.exercises)),
+        .map((item: { exercises: any }) => this.fromDbExercise(item)),
     }));
   }
 
@@ -165,12 +155,9 @@ export class SupabaseService {
   }): Promise<{ puzzles: LichessPuzzle[]; count: number }> {
     let query = this.client.from('lichess_puzzles').select('*', { count: 'exact' });
 
-    if (opts.themes?.length)
-      query = query.overlaps('themes', opts.themes);
-    if (opts.minRating !== undefined)
-      query = query.gte('rating', opts.minRating);
-    if (opts.maxRating !== undefined)
-      query = query.lte('rating', opts.maxRating);
+    if (opts.themes?.length) query = query.overlaps('themes', opts.themes);
+    if (opts.minRating !== undefined) query = query.gte('rating', opts.minRating);
+    if (opts.maxRating !== undefined) query = query.lte('rating', opts.maxRating);
 
     query = query
       .order('rating', { ascending: true })
@@ -212,7 +199,9 @@ export class SupabaseService {
       themes: raw.themes ?? [],
       elo: raw.elo ?? undefined,
       lichessId: raw.lichess_id ?? undefined,
-      mushroomType:raw.mushroom_type
+      mushroomType: raw.mushroom_type,
+      position: raw.position,
+      listId: raw.list_id,
     };
   }
 
@@ -231,7 +220,9 @@ export class SupabaseService {
       themes: exercise.themes ?? [],
       elo: exercise.elo ?? null,
       lichess_id: exercise.lichessId ?? null,
-      mushroom_type:exercise.mushroomType
+      mushroom_type: exercise.mushroomType,
+      position: exercise.position,
+      list_id: exercise.listId,
     };
   }
 

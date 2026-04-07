@@ -7,7 +7,6 @@ import { SupabaseService } from './supabase.service';
 @Injectable({ providedIn: 'root' })
 export class ExerciseService {
   supabase = inject(SupabaseService);
-  // selectedExercise = signal<Exercise>(DEFAULT_EXERCISE);
   exerciseLists = signal<ExerciseList[]>([]);
   isLoading = signal<boolean>(false);
   private snackbar = inject(MatSnackBar);
@@ -23,7 +22,7 @@ export class ExerciseService {
   async addExerciseList(list: ExerciseListInput) {
     await this.withLoading(async () => {
       const newList = await this.supabase.saveExerciseList(list);
-      this.exerciseLists.update((lists) => [...lists, { ...newList, exercises: [] }]);
+      this.exerciseLists.update((lists) => [...lists, { ...newList, exercises: [],teacherId:newList.teacher_id }]);
     });
   }
   
@@ -35,13 +34,9 @@ export class ExerciseService {
     });
   }
 
-  async addExercise(listId: string, exercise: ExerciseInput): Promise<Exercise | null> {
+  async addExercise(listId:string,exercise: ExerciseInput): Promise<Exercise | null> {
     return await this.withLoading(async () => {
       const newEx = await this.supabase.saveExercise(exercise);
-      const position =
-        this.exerciseLists().find((list) => list.id === listId)!.exercises.length + 1;
-      // add exercise to the exercise_list_items join table
-      await this.supabase.addExerciseToList(newEx.id, listId, position);
       this.exerciseLists.update((lists) =>
         lists.map((list) =>
           list.id === listId ? { ...list, exercises: [...list.exercises, newEx] } : list,
@@ -53,6 +48,7 @@ export class ExerciseService {
   async addLichessPuzzleToList(listId: string, puzzle: LichessPuzzle): Promise<Exercise | null> {
     const primaryTheme = puzzle.themes[0] ?? 'puzzle';
     const title = `${primaryTheme} (${puzzle.elo})`;
+    const position = this.exerciseLists().find((list) => list.id === listId)!.exercises.length + 1;
     const exercise: ExerciseInput = {
       title,
       fen: puzzle.fen,
@@ -63,6 +59,8 @@ export class ExerciseService {
       themes: puzzle.themes,
       elo: puzzle.elo,
       lichessId: puzzle.id,
+      listId,
+      position
     };
     return this.addExercise(listId, exercise);
   }
@@ -101,7 +99,7 @@ export class ExerciseService {
     );
     // Persist in background — no loading spinner, failure shows snackbar
     try {
-      await this.supabase.reorderExercises(listId, reorderedExercises.map((e) => e.id));
+      await this.supabase.reorderExercises(reorderedExercises.map((e) => e.id));
     } catch (e) {
       this.snackbar.open(e instanceof Error ? e.message : 'Reorder failed', '', { duration: 2000 });
     }
@@ -120,7 +118,10 @@ export class ExerciseService {
         console.warn('Supabase lock timeout:', e.message);
         return null;
       }
-      this.snackbar.open(e instanceof Error ? e.message : 'Something went wrong', 'Dismiss', {
+      if(e instanceof Error){
+        console.warn(e.message)
+      }
+      this.snackbar.open('Something went wrong', 'Dismiss', {
         duration: 4000,
       });
       return null;

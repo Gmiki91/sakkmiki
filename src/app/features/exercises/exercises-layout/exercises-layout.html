@@ -33,7 +33,7 @@
     </button>
     @for (exercise of selectedList()!.exercises; track exercise.id) {
       <div class="exercise-row"
-        draggable="true"
+        [draggable]="isOwner()"
         [class.dragging]="draggedExerciseId() === exercise.id"
         [class.drop-above]="dropTargetId() === exercise.id && dropPosition() === 'above'"
         [class.drop-below]="dropTargetId() === exercise.id && dropPosition() === 'below'"
@@ -44,20 +44,26 @@
         (dragend)="onExerciseDragEnd()">
         <mat-icon class="drag-handle">drag_indicator</mat-icon>
         <span class="list-item" (click)="selectExercise(exercise)">{{ exercise.title }}</span>
-        <button matIconButton (click)="deleteExercise(exercise.id)"><mat-icon class="trash-icon">delete</mat-icon></button>
+        @if(isOwner()){
+          <button matIconButton (click)="deleteExercise(exercise.id)"><mat-icon class="trash-icon">delete</mat-icon></button>
+        }
       </div>
     }
-    <button mat-button (click)="addExercise(selectedList()!.id)">
-      + New exercise
-    </button>
+     @if(isOwner()){
+      <button mat-button (click)="addExercise(selectedList()!.id)">
+        + New exercise
+      </button>
+    }
     @if (selectedList()!.type === 'puzzle') {
       <button mat-button (click)="importFromLichess(selectedList()!.id)">
         <mat-icon>cloud_download</mat-icon> Import from Lichess
       </button>
     }
+    @if(isOwner()){
     <button mat-button class="delete-btn" (click)="deleteList(selectedList()!.id)">
        Delete list
      </button>
+    }
   }
   </div>
   <main class="content">

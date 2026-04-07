@@ -14,6 +14,7 @@ import { ExerciseListPicker } from '../../../shared/components/exercise-list-pic
 import { MatIcon } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { AuthService } from '../../../core/services/auth.service';
 @Component({
   selector: 'app-exercises-layout',
   imports: [
@@ -33,6 +34,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 })
 export class ExercisesLayout {
   exerciseService = inject(ExerciseService);
+  auth = inject(AuthService);
   isListCreationActive = signal<boolean>(false);
   title = model<string>('');
   exerciseType = model<ExerciseType>('puzzle');
@@ -46,6 +48,8 @@ export class ExercisesLayout {
   selectedList = computed(
     () => this.exerciseService.exerciseLists().find((l) => l.id === this.selectedListId()) ?? null,
   );
+
+  isOwner = computed(()=>this.selectedList()?.teacherId===this.auth.currentUser()?.id)
 
   addExercise(listId: string) {
     this.router.navigate([`/exercises/create/${listId}`]);
@@ -68,7 +72,12 @@ export class ExercisesLayout {
   }
   addList() {
     if (this.isListCreationActive()) {
-      const list: ExerciseListInput = { title: this.title(), type: this.exerciseType() };
+      const teacherId = this.auth.currentUser()?.id;
+      if(!teacherId){
+       alert("sign in first");
+       return;
+      }  
+      const list: ExerciseListInput = {teacherId, title: this.title(), type: this.exerciseType() };
       this.exerciseService.addExerciseList(list);
       this.isListCreationActive.set(false);
     } else {
