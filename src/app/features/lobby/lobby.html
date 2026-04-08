@@ -54,9 +54,13 @@
             </div>
           </mat-card-content>
         </mat-card>
-      } @empty {
-        <p class="empty">No classrooms yet.</p>
-      }
+      } 
     </div>
+    @if(classrooms().length===0){
+      <div class="empty-state">
+          <img src="/images/leaves.png" alt="No classrooms" />
+        <p class="empty-label">Nincs oktatás jelenleg</p>
+      </div>
+    }
   }
 </div>

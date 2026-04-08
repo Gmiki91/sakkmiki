@@ -1,6 +1,8 @@
 .lobby {
   padding: 32px 24px;
-  max-width: 960px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .create-row {
@@ -82,10 +84,14 @@
     color: var(--mat-sys-on-surface-variant);
   }
 }
+  .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 
-.empty {
-  grid-column: 1 / -1;
+.empty-label {
+  font-size: 1.1rem;
   color: var(--mat-sys-on-surface-variant);
-  padding: 48px 0;
-  text-align: center;
+  font-style: italic;
 }
