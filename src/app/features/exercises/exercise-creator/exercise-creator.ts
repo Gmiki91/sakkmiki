@@ -50,6 +50,7 @@ export class ExerciseCreator implements OnInit {
   private originalSolutions = signal<string[][]>([]);
   recordingText = computed(() => this.solutions().join(', '));
   exercise!: WritableSignal<Exercise>;
+  private originalDefaultHint = signal<string|undefined>('');
   defaultHint = model<string|undefined>('');
   boardConfig = signal<Config | undefined>(undefined);
   playerColor: Color = 'w';
@@ -59,10 +60,11 @@ export class ExerciseCreator implements OnInit {
   private route = inject(ActivatedRoute);
   private snackbar = inject(MatSnackBar);
 
-  // check whether there are unsaved solutions
+  // check whether there are unsaved solutions or hints
   isDirty = computed(
     () =>
-      JSON.stringify(this.exercise().solutions ?? []) !== JSON.stringify(this.originalSolutions()),
+      JSON.stringify(this.exercise().solutions ?? []) !== JSON.stringify(this.originalSolutions()) ||
+    this.originalDefaultHint() !== this.defaultHint()
   );
 
   ngOnInit(): void {
@@ -80,6 +82,7 @@ export class ExerciseCreator implements OnInit {
       if (!found) return;
       this.exercise = signal(found);
       this.defaultHint.set(found.defaultHint);
+      this.originalDefaultHint.set(found.defaultHint);
       this.originalSolutions.set([...(found.solutions ?? [])]);
       loadChess(this.chess, found.fen);
 
@@ -175,13 +178,12 @@ export class ExerciseCreator implements OnInit {
     }));
   }
 
-  addDefaultHint(hint:string){
-    this.exercise.update(e=>({...e,defaultHint:hint}));
-  }
 
   async save() {
     this.saveState.set('saving');
     this.saveRecording();
+    this.exercise.update(e=>({...e,defaultHint:this.defaultHint()}));
+    this.originalDefaultHint.set(this.defaultHint());
     await this.exerciseService.updateExercise(this.exercise());
     this.originalSolutions.set([...(this.exercise()?.solutions ?? [])]);
     this.saveState.set('saved');
