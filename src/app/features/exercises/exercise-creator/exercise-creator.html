@@ -44,6 +44,12 @@
       } @else {
         <button mat-button (click)="addSolution()">Record solution</button>
       }
+      <div>
+        <mat-form-field appearance="outline">
+          <mat-label>Default Hint</mat-label>
+          <input type="text" matInput [(ngModel)]="defaultHint" />
+        </mat-form-field>
+      </div>
 
       <div class="save-btn">
         <button mat-raised-button 

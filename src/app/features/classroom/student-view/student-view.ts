@@ -403,7 +403,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
           this.isLocked.set(true);
         }
       } else {
-        this.feedback.set('Good move!');
+        this.feedback.set('Jó lépés! 🥳');
         //gombaszedés, same color always
         if (ex.exerciseType === 'mushroom') {
           this.exerciseChess.setTurn('w');
@@ -425,8 +425,18 @@ export class StudentView implements AfterViewInit, OnDestroy {
       }
     } else {
       this.soundService.play('error');
-      if(this.classroomStore.autoRedo())
-      this.handleMistake(ex,move)
+      if(this.classroomStore.autoRedo()){
+        const mistake = ex.commonMistakes?.find((m) => m.move === move.san);
+        if (mistake) {
+          this.feedback.set(mistake.hint);
+        } else {
+          this.feedback.set(ex.defaultHint ?? 'Rossz lépés :(');
+        }
+        setTimeout(()=>{
+          this.handleMistake(ex);
+          this.feedback.set('');
+        },10000);
+      }
       else
       this.isLocked.set(true);
     }
@@ -769,28 +779,20 @@ export class StudentView implements AfterViewInit, OnDestroy {
     else this.soundService.play('move');
   }
 
-  private handleMistake(ex: Exercise, move?: Move) {
+  private handleMistake(ex: Exercise) {
     this.exerciseChess.undo();
     if (ex.exerciseType === 'mushroom') {
       this.exerciseChess.setTurn('w');
     }
     this.exerciseFen.set(this.exerciseChess.fen());
     this.exerciseLastMove.set(undefined);
-    if (move) {
-      const mistake = ex.commonMistakes?.find((m) => m.move === move.san);
-      if (mistake) {
-        this.feedback.set(mistake.hint);
-      } else {
-        this.feedback.set(ex.defaultHint ?? 'Wrong move, try again');
-      }
-    }
     this.isLocked.set(false);
   }
 
   private progressWithStamp() {
-    this.feedback.set('Solved! ✓');
+    this.feedback.set('Jó lépés! 🥳');
     this.soundService.play('stamp');
-    this.soundService.playRandomCheering()
+    this.soundService.playRandomCheering();
     this.stampOverlay.stamp();
     const stamp = this.stampOverlay.currentStamp();
     this.isWaitingForStamp.set(false);
@@ -803,7 +805,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
   }
 
   private progressAuto(){
-    this.feedback.set('Solved! ✓');
+    this.feedback.set('Jó lépés! 🥳');
     // this.soundService.play('won');
     setTimeout(() => {
       //leave droppedExercise set so currentExercise doesn't recompute and defaults to the loadedListExercise

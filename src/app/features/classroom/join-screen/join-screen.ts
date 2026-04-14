@@ -50,7 +50,7 @@ export class JoinScreen implements OnInit {
       () => this.router.navigate(['/student', this.classroomId]),
       () => {
         this.isLoading.set(false);
-        this.snackbar.open('Nem sikerült a csatlakozás', '', { duration: 2500 });
+        // this.snackbar.open('Nem sikerült a csatlakozás', '', { duration: 2500 });
       },
     );
   }

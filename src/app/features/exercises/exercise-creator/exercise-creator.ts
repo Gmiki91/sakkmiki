@@ -4,6 +4,7 @@ import {
   ViewChild,
   signal,
   computed,
+  model,
   OnInit,
   WritableSignal,
 } from '@angular/core';
@@ -17,11 +18,13 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FormsModule } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
 import { boardConfig, getValidMoves, loadChess } from '../../../shared/utils/chess.utils';
-import { Exercise } from '../../../shared/models/exercise.model';
+import { CommonMistake, Exercise } from '../../../shared/models/exercise.model';
 import { ActivatedRoute } from '@angular/router';
 import { ExerciseService } from '../../../core/services/exercise.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
 @Component({
   selector: 'app-exercise-creator',
   imports: [
@@ -30,6 +33,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
     MatButtonModule,
     MatCheckboxModule,
     FormsModule,
+    MatFormFieldModule,
+    MatInput,
     MatIcon,
     MatTooltipModule,
   ],
@@ -44,8 +49,8 @@ export class ExerciseCreator implements OnInit {
   solutions = signal<string[]>([]);
   private originalSolutions = signal<string[][]>([]);
   recordingText = computed(() => this.solutions().join(', '));
-  defaultHint = '';
   exercise!: WritableSignal<Exercise>;
+  defaultHint = model<string|undefined>('');
   boardConfig = signal<Config | undefined>(undefined);
   playerColor: Color = 'w';
   saveState = signal<'idle' | 'saving' | 'saved'>('idle');
@@ -74,6 +79,7 @@ export class ExerciseCreator implements OnInit {
 
       if (!found) return;
       this.exercise = signal(found);
+      this.defaultHint.set(found.defaultHint);
       this.originalSolutions.set([...(found.solutions ?? [])]);
       loadChess(this.chess, found.fen);
 
@@ -162,7 +168,16 @@ export class ExerciseCreator implements OnInit {
     this.chessBoard.api?.set(boardConfig(this.chess, false));
   }
 
-  addHint() {}
+  addHint(hint:CommonMistake) {
+    this.exercise.update(e=>({
+      ...e,
+      commonMistakes:[...(e.commonMistakes ?? []), hint]
+    }));
+  }
+
+  addDefaultHint(hint:string){
+    this.exercise.update(e=>({...e,defaultHint:hint}));
+  }
 
   async save() {
     this.saveState.set('saving');

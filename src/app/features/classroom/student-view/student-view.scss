@@ -1,7 +1,7 @@
 .background {
   position: fixed;
   inset: 0;
-  background-image: url('../../../../../public/77770.jpg');
+  background-image: url('../../../../../public/bg.png');
   background-size: cover;
   background-position: center;
   z-index: 0;
@@ -129,15 +129,13 @@ mat-card-header {
 }
 
 .feedback {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  text-align: center;
   min-height: 24px;
-  font-size: 0.85rem;
+  font-size: 1.5rem;
+  border-radius: 10px;
+  background-color: var(--mat-sys-surface);
   color: var(--mat-sys-on-surface-variant);
   padding: 4px 0;
-  border-top: 1px solid var(--mat-sys-outline-variant);
-  margin-top: 4px;
 }
 
 .gathered-label {

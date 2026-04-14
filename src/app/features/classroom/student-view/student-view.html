@@ -100,14 +100,14 @@
         }
        
       </div>
-      <!-- @if (!myPair()) {
+      @if (!myPair() && feedback()) {
         <div class="feedback">
-          <span>{{ status() }}</span>
+          <!-- <span>{{ status() }}</span> -->
           @if (classroomStore.mode() === 'normal') {
-            <span>{{ feedback() }}</span>
+            <span>{{feedback()}}</span>
           }
         </div>
-      } -->
+      }
       @if (stampCollection().length > 0) {
         <div class="collection">
           @for (stamp of stampCollection(); track $index) {
