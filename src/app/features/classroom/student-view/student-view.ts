@@ -702,6 +702,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
     this.pieceOverlay.hide();
     this.isGathered = true;
     this.frozenFen = this.exerciseChess.fen();
+    this.isLocked.set(false)
     this.frozenMoveHistory = [...this.moveHistory()];
     this.chessBoard?.api?.set({ lastMove: [], drawable: { shapes: [] } });
   }
