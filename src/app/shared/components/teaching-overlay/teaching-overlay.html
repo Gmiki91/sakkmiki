@@ -34,7 +34,20 @@
       <rect [attr.x]="coord.x + 0.93" [attr.y]="coord.y" width="0.07" height="1"    fill="#111"/>
     }
   }
-
+  @if (conceptId() === 'castling1') {
+     <image
+      href="/images/castling1.png"
+      x="2" y="2"
+      width="4" height="4"
+    />
+  }
+  @if (conceptId() === 'castling-dancing') {
+     <image
+      href="/images/castling-dancing.png"
+      x="2" y="2"
+      width="4" height="4"
+    />
+  }
   @if (conceptId() === 'surprise') {
      <image
       href="/images/surprise.png"

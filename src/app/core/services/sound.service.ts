@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-export type SoundEffect = 'move' | 'take' |'stamp'|'gasp'|'bite'| 'fanfare' | 'cheering'|'bravo'|
+export type SoundEffect = 'move' | 'take' |'stamp'|'gasp'|'bite'| 'fanfare' | 'cheering'|'bravo'|'shield'|
 'homer'|'bite1'|'bite2'|'bite3'|'bite4'|'bite5'|'bite6'|'lost'|'won'|'wrongMove'|'success'|'error'|'jailLocks'|'snoring';
 
 @Injectable({ providedIn: 'root' })
@@ -27,7 +27,8 @@ export class SoundService {
     success: new Audio('/sounds/success.mp3'),
     error: new Audio('/sounds/error.mp3'),
     jailLocks:new Audio('/sounds/jail-locks.mp3'),
-    snoring:new Audio('/sounds/snoring.mp3')
+    snoring:new Audio('/sounds/snoring.mp3'),
+    shield:new Audio('/sounds/shield.mp3')
   };
 
   play(sound: SoundEffect): void {
