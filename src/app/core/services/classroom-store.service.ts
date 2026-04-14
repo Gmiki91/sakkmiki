@@ -41,12 +41,12 @@ export class ClassroomStore {
   readonly loadedList = signal<Exercise[]>([]);
   readonly loadedListTitle = signal<string>('');
   readonly droppedExercises = signal<Record<string, Exercise>>({});
+  readonly sharedArrows = signal<{name:string, arrows:DrawShape[]}|null>(null);
 
   // Teacher-side
   readonly students = signal<StudentPresence[]>([]);
   readonly spectators = signal<SpectatorPresence[]>([]);
   readonly assignedLists = signal<Record<string, Exercise[]>>({});
-  readonly sharedArrows = signal<DrawShape[]>([]);
   readonly miniboardArrows = signal<{ name: string; shapes: DrawShape[] } | null>(null);
   readonly incomingDrawingPoints = signal<{
     studentName: string; strokeId: string; color: string; points: Point[];
@@ -153,7 +153,7 @@ export class ClassroomStore {
   }
   disperse(): void {
     this.mode.set('normal');
-    this.sharedArrows.set([]);
+    this.sharedArrows.set(null);
     this.transport.send({ type: 'disperse' });
   }
   sendTeacherFen(fen: string): void { this.transport.send({ type: 'teacher_fen', fen }); }
@@ -305,7 +305,7 @@ export class ClassroomStore {
         this.students.update((list) =>
           list.map((s) => (s.name === event.studentName ? { ...s, fen: event.fen } : s)));
         break;
-      case 'shared_arrows': this.sharedArrows.set(event.shapes); break;
+      
       case 'miniboard_arrows':
         this.miniboardArrows.set({ name: event.studentName, shapes: event.shapes }); break;
       case 'drawing_points':
@@ -325,13 +325,11 @@ export class ClassroomStore {
     const myName = this.studentName();
     switch (event.type) {
       case 'gather':
-        this.sharedArrows.set([]); this.miniboardArrows.set(null); this.mode.set('gathered'); break;
+        this.sharedArrows.set(null); this.miniboardArrows.set(null); this.mode.set('gathered'); break;
       case 'disperse':
-        this.sharedArrows.set([]); this.miniboardArrows.set(null); this.mode.set('normal'); break;
+        this.sharedArrows.set(null); this.miniboardArrows.set(null); this.mode.set('normal'); break;
       case 'teacher_fen': this.teacherFen.set(event.fen); break;
       case 'mushroom_type': this.mushroomType.set(event.mType); break;
-      case 'shared_arrows':
-        if (event.target === 'all' || event.target === myName) this.sharedArrows.set(event.shapes); break;
       case 'list_loaded':
         this.loadedExercises.set(event.exercises);
         this.assignedExercises.set([]);
@@ -386,6 +384,7 @@ export class ClassroomStore {
 
   private handleSharedEvents(event: BroadcastEvent): void {
     switch (event.type) {
+      case 'shared_arrows': this.sharedArrows.set({arrows:event.shapes,name:event.target}); break;
       case 'challenge_move':
         this.challengeMove.set({
           white: event.white, black: event.black, fen: event.fen,

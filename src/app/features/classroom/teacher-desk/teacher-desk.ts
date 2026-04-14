@@ -100,8 +100,8 @@ export class TeacherDesk implements AfterViewInit {
 
     // Apply shared arrows in gathered mode
     effect(() => {
-      const shapes = this.store.sharedArrows();
-      if (this.isGathered()) this.chessBoard?.api?.set({ drawable: { shapes } });
+      const arrows = this.store.sharedArrows()?.arrows;
+      if (this.isGathered()) this.chessBoard?.api?.set({ drawable: { shapes:arrows } });
     });
 
     // Redraw board when gathered/normal toggles (board resizes via CSS)
