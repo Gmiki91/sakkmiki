@@ -36,17 +36,11 @@ export class ExerciseListPicker {
   // dialogData values from modal use (classroom, puzzlerush), input values for inline use (exercises)
   isMultiSelect = computed(() => this.dialogData?.multiSelect ?? this.multiSelect());
   computedAlreadySelected = computed(() => this.dialogData?.alreadySelected ?? this.alreadySelected());
-  computedAllowedTypes = computed(() => this.dialogData?.allowedTypes ?? this.allowedTypes());
 
   pendingSelection = signal<ExerciseList[]>([]);
-  allowedTypes = input<ExerciseType[]>(['puzzle', 'mushroom', 'challenge']);
 
   isAlreadySelected(list: ExerciseList): boolean {
     return this.computedAlreadySelected().some((l) => l.id === list.id);
-  }
-
-  isDisabled(list: ExerciseList): boolean {
-    return !this.computedAllowedTypes().includes(list.type) || this.isAlreadySelected(list);
   }
 
   isPending(list: ExerciseList): boolean {
