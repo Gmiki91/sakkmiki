@@ -628,8 +628,8 @@ export class StudentView implements AfterViewInit, OnDestroy {
     effect(() => {
       const arrows = this.classroomStore.sharedArrows()?.arrows;
       const name = this.classroomStore.sharedArrows()?.name;
-      if(name===this.classroomStore.studentName() && arrows)
-      this.chessBoard?.api?.set({ drawable: { shapes: arrows }  });
+      if(name===this.classroomStore.studentName() )
+      this.chessBoard?.api?.set({ drawable: { shapes: arrows ??[] }  });
     });
   }
 
