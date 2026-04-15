@@ -61,8 +61,10 @@ export class ExercisesLayout {
     this.router.navigate([`/exercises/lichess/${listId}`]);
   }
   selectExercise(exercise: Exercise) {
-    const type = exercise.exerciseType === 'challenge' ? 'challenge' : 'edit';
-    this.router.navigate([`/exercises/${type}/${exercise.id}`]);
+    const type =exercise.exerciseType;
+    if(type ==='demo')return;
+    if(type === 'challenge') this.router.navigate([`/exercises/challenge/${exercise.id}`]);
+    else this.router.navigate([`/exercises/edit/${exercise.id}`]); //mushroom or puzzle
   }
   async deleteExercise(id: string) {
     const isOkDelete: boolean = confirm('Are you sure you want to delete this exercise?');

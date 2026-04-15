@@ -11,7 +11,7 @@ export type LastMove = {
   color: 'white' | 'black';
 }
 
-export type ExerciseType = 'puzzle' | 'mushroom' | 'challenge';
+export type ExerciseType = 'puzzle' | 'mushroom' | 'challenge'|'demo';
 export type ExerciseSource = 'custom' | 'lichess';
 
 export type ExerciseInput = {

@@ -145,7 +145,9 @@ export class BoardCreator implements AfterViewInit {
 
       const ex = await this.exerciseService.addExercise(listId,exercise);
       if (!ex) return;
-      if (ex.exerciseType === 'challenge') {
+      if(ex.exerciseType==='demo'){
+        return
+      }else if (ex.exerciseType === 'challenge') {
         this.router.navigate([`/exercises/challenge/${ex.id}`]);
       } else {
         this.router.navigate([`/exercises/edit/${ex.id}`]);
