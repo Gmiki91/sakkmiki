@@ -1,4 +1,4 @@
-<nav class="nav">
+<nav class="nav" [class.hide]="this.auth.isTeacher()===false">
   <div class="nav-left">
     <a class="nav-brand" routerLink="/">
       <img src="/logo.svg" alt="Sakkmiki logo" />
