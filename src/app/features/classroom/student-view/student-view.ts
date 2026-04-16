@@ -42,6 +42,7 @@ import { DEFAULT_BRUSH_COLOR } from '../../../shared/utils/brushes';
 import { TeachingOverlay } from '../../../shared/components/teaching-overlay/teaching-overlay';
 import { TEACHING_CONCEPTS } from '../../../shared/models/teaching-concept.model';
 import { DrawingToolbar } from '../../../shared/components/drawing-toolbar/drawing-toolbar';
+import { WhiteBoard } from "../../../shared/components/white-board/white-board";
 
 type SimulPeerBoard = {
   name: string;
@@ -63,8 +64,9 @@ type SimulPeerBoard = {
     StampOverlay,
     StampSvg,
     DrawingCanvas,
-    TeachingOverlay 
-  ],
+    TeachingOverlay,
+    WhiteBoard
+],
 })
 export class StudentView implements AfterViewInit, OnDestroy {
   @ViewChild('chessBoard') chessBoard!: ChessBoard;
@@ -626,10 +628,11 @@ export class StudentView implements AfterViewInit, OnDestroy {
 
     // arrows
     effect(() => {
-      const arrows = this.classroomStore.sharedArrows()?.arrows;
-      const name = this.classroomStore.sharedArrows()?.name;
-      if(name===this.classroomStore.studentName() )
-      this.chessBoard?.api?.set({ drawable: { shapes: arrows ??[] }  });
+      const arrows = this.classroomStore.sharedArrows()?.arrows ?? [];
+      const target = this.classroomStore.sharedArrows()?.name;
+      if (target === 'all' || target === this.classroomStore.studentName()) {
+        this.chessBoard?.api?.set({ drawable: { shapes: arrows } });
+      }
     });
   }
 

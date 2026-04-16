@@ -1,4 +1,5 @@
 .drawing-toolbar {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -6,6 +7,7 @@
   padding: 8px;
   background: rgba(235, 235, 235, 0.9);
   border-radius: 10px;
+  max-width: 300px;
 }
 
 .tool-row {

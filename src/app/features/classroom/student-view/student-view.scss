@@ -7,7 +7,10 @@
   z-index: 0;
 }
 .chess-container {
-  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;  
   &.simul {
     display:flex;
     justify-content: flex-start;
@@ -167,11 +170,6 @@ mat-card-header {
   border-radius: 25px;
 }
 
-.drawing-toolbar {
-  padding: 8px 0;
-  display: flex;
-  justify-content: center;
-}
 // ── Simul sidebar ────────────────────────────────────────────────
  
 .simul-sidebar {

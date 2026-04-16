@@ -1,0 +1,24 @@
+.container {
+  position: relative;
+  width: 100%;
+  min-width: 300px;
+  min-height: 640px;
+  box-sizing: border-box;
+  background-color: white;
+  border-radius:20px;
+}
+
+.white-board {
+  min-width: 300px;
+  min-height: 640px;
+  height: auto;
+  overflow-y: hidden;
+  resize: none;
+  box-sizing: border-box;
+  padding: 12px;
+  border:none;
+  border-radius:20px;
+  background-color: white;
+  font-family:cursive;
+  font-size:large
+}

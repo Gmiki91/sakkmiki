@@ -1,5 +1,9 @@
 <div class="background"></div>
 <div class="chess-container" [class.simul]="classroomStore.mode()==='simul'">
+    @if (classroomStore.mode()==='gathered') {
+      <app-white-board [disabled]="true"></app-white-board>
+    }
+     <!-- Simul sidebar: odd classmates' boards -->
     @if (classroomStore.mode()==='simul') {
     <div class="simul-sidebar">
       @for (board of simulPeerBoards(); track board.name;) {
@@ -73,15 +77,7 @@
           <span>🍄</span>
           <span>☃️</span>
         </div>
-        @if (classroomStore.mode() === 'gathered') {
-          <div class="drawing-toolbar-wrapper">
-            <app-drawing-toolbar
-              [(activeTool)]="activeTool"
-              [(activeStampIcon)]="activeStampIcon"
-              (colorSelected)="onColorSelected($event)"
-            ></app-drawing-toolbar>
-          </div>
-        }
+        
         
         @if (pendingPromotion()) {
           <div class="promotion-overlay">
@@ -126,7 +122,16 @@
       }
     </mat-card-content>
   </mat-card>
-   <!-- Simul sidebar: classmates' boards -->
+  @if (classroomStore.mode() === 'gathered') {
+    <div class="drawing-toolbar-wrapper">
+      <app-drawing-toolbar
+        [(activeTool)]="activeTool"
+        [(activeStampIcon)]="activeStampIcon"
+        (colorSelected)="onColorSelected($event)"
+      ></app-drawing-toolbar>
+    </div>
+  }
+   <!-- Simul sidebar: even classmates' boards -->
   @if (classroomStore.mode()==='simul') {
     <div class="simul-sidebar">
       @for (board of simulPeerBoards(); track board.name;) {

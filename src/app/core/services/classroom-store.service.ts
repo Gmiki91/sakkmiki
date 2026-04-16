@@ -72,6 +72,7 @@ export class ClassroomStore {
   readonly lock = signal<string | null>(null);
   readonly unlock = signal<string | null>(null);
   readonly mushroomType = signal<string|null>(null);
+  readonly whiteBoardText = signal<string>('');
 
   // Callback for classroom component to react to presence sync
   onStudentsUpdate: ((students: StudentPresence[]) => void) | null = null;
@@ -213,6 +214,9 @@ export class ClassroomStore {
   sendStampAnnotationClearAll(): void {
     this.transport.send({ type: 'stamp_annotation_clear_all' });
   }
+  sendUpdatedText(text:string):void{
+    this.transport.send({type:'white_board_text',text})
+  }
 
   // ----------------------------------------------------------------
   // Simul
@@ -317,7 +321,7 @@ export class ClassroomStore {
       case 'drawing_color':
         this.incomingDrawingColor.set({ studentName: event.studentName, color: event.color }); break;
       case 'stamp_annotation': this.incomingStampAnnotation.set(event.annotation); break;
-      case 'simul_student_move': this.incomingSimulStudentMove.set(event); break;
+      case 'simul_student_move': this.incomingSimulStudentMove.set(event); break;     
     }
   }
 
@@ -379,6 +383,7 @@ export class ClassroomStore {
       case 'simul_teacher_move':
         this.incomingSimulTeacherMove.set({ studentName: event.studentName, fen: event.fen, from: event.from, to: event.to });
         break;
+      case 'white_board_text': this.whiteBoardText.set(event.text);
     }
   }
 

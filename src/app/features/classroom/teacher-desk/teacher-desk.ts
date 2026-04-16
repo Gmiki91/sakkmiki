@@ -23,13 +23,15 @@ import { TEACHING_CONCEPTS, TeachingConcept } from '../../../shared/models/teach
 import { Exercise } from '../../../shared/models/exercise.model';
 import { ExerciseList as List } from '../../../shared/models/exercise-list.model';
 import { DEFAULT_BRUSH_COLOR } from '../../../shared/utils/brushes';
+import { WhiteBoard } from "../../../shared/components/white-board/white-board";
 
 @Component({
   selector: 'app-teacher-desk',
   imports: [
     ChessBoard, DrawingCanvas, TeachingOverlay, ExerciseList,
     MatButtonModule, MatIconModule, MatTooltipModule,
-  ],
+    WhiteBoard
+],
   templateUrl: './teacher-desk.html',
   styleUrl: './teacher-desk.scss',
 })
@@ -63,7 +65,7 @@ export class TeacherDesk implements AfterViewInit {
     coordinates: false,
     movable: { free: true, events: { after: () => this.handleMove() } },
     draggable: { enabled: true, deleteOnDropOff: true },
-    drawable: { enabled: true },
+    drawable: { enabled: true, shapes: [] },
     highlight: { lastMove: false },
     events:{change:()=>this.handleMove()}
   };
@@ -74,7 +76,7 @@ export class TeacherDesk implements AfterViewInit {
     orientation: 'white',
     coordinates: false,
     movable: { free: false, color: undefined },
-    draggable: { enabled: false },
+    draggable: { enabled: false, shapes: [] },
     drawable: { enabled: false },
     highlight: { lastMove: true },
   }));
@@ -100,7 +102,7 @@ export class TeacherDesk implements AfterViewInit {
 
     // Apply shared arrows in gathered mode
     effect(() => {
-      const arrows = this.store.sharedArrows()?.arrows;
+      const arrows = this.store.sharedArrows()?.arrows ?? [];
       if (this.isGathered()) this.chessBoard?.api?.set({ drawable: { shapes:arrows } });
     });
 

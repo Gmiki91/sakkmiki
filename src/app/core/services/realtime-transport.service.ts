@@ -58,6 +58,7 @@ export type BroadcastEvent =
   | { type: 'simul_end' }
   | { type: 'simul_teacher_move'; studentName: string; fen: string; from: string; to: string }
   | { type: 'simul_student_move'; studentName: string; fen: string; from: string; to: string }
+  | { type: 'white_board_text', text:string}
 
 @Injectable({ providedIn: 'root' })
 export class RealtimeTransport implements OnDestroy {
