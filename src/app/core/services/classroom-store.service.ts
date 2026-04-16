@@ -120,7 +120,6 @@ export class ClassroomStore {
     this.isJoined.set(false);
     this.isSpectator.set(false);
     this.transport.joinAsStudent(
-      name,
       classroomId,
       { role: 'student', name, fen: STARTING_FEN, status: '', feedback: '', exIndex: 0, locked: false, awaitingStamp: false },
       () => {
@@ -129,7 +128,6 @@ export class ClassroomStore {
         this.trackLobbyPresence(classroomId);
         onJoined();
       },
-      onError,
     );
   }
 

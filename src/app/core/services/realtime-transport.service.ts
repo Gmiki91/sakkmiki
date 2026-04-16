@@ -65,7 +65,6 @@ export class RealtimeTransport implements OnDestroy {
   private supabase = inject(SupabaseService);
   private channel!: RealtimeChannel;
   private lastPresence: StudentPresence | null = null;
-  private presenceHeartbeat?: ReturnType<typeof setInterval>;
   private cleaningUp = false;
 
   readonly events$ = new Subject<BroadcastEvent>();
@@ -108,12 +107,9 @@ export class RealtimeTransport implements OnDestroy {
   }
 
   joinAsStudent(
-    name: string,
     channelId: string,
     initialPresence: StudentPresence,
     onJoined: () => void,
-    onError: () => void,
-    retries = 0,
   ): void {
     this.cleanup();
     this.channel = this.supabase.realtimeClient
@@ -124,23 +120,14 @@ export class RealtimeTransport implements OnDestroy {
       .subscribe(async (status) => {
         if (this.cleaningUp) return;
         if (status === 'SUBSCRIBED') {
-          if (!this.lastPresence) {
-            await this.channel.track(initialPresence);
-            this.lastPresence = initialPresence;
-            this.startHeartbeat();
-            onJoined();
-          } else {
-            await this.channel.track(this.lastPresence);
-          }
-        } else if (status === 'TIMED_OUT' || status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-          if (this.lastPresence && retries < 3) {
-            setTimeout(() => {
-              this.supabase.realtimeClient.removeChannel(this.channel);
-              this.joinAsStudent(name, channelId, initialPresence, onJoined, onError, retries + 1);
-            }, 2000);
-          } else {
-            onError();
-          }
+          const presence = this.lastPresence ?? initialPresence;
+          await this.channel.track(presence);
+          // force a local read (important)
+          setTimeout(() => {
+            this.channel.presenceState();
+          }, 0);
+          this.lastPresence = presence;
+          onJoined();
         }
       });
   }
@@ -156,7 +143,6 @@ export class RealtimeTransport implements OnDestroy {
 
  cleanup(): void {
     this.cleaningUp = true;
-    this.stopHeartbeat();
     this.lastPresence = null;
     if (this.channel) this.supabase.realtimeClient.removeChannel(this.channel);
     this.cleaningUp = false
@@ -173,19 +159,6 @@ export class RealtimeTransport implements OnDestroy {
   // Private
   // ----------------------------------------------------------------
 
-  private startHeartbeat(): void {
-    this.stopHeartbeat();
-    this.presenceHeartbeat = setInterval(async () => {
-      if (this.lastPresence) await this.channel.track(this.lastPresence);
-    }, 20_000);
-  }
-
-  private stopHeartbeat(): void {
-    if (this.presenceHeartbeat) {
-      clearInterval(this.presenceHeartbeat);
-      this.presenceHeartbeat = undefined;
-    }
-  }
 
   private handlePresence(){
     const state = this.channel.presenceState<any>();
