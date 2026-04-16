@@ -405,7 +405,6 @@ export class StudentView implements AfterViewInit, OnDestroy {
           this.isLocked.set(true);
         }
       } else {
-        this.feedback.set('Jó lépés! 🥳');
         //gombaszedés, same color always
         if (ex.exerciseType === 'mushroom') {
           this.exerciseChess.setTurn('w');
@@ -502,6 +501,10 @@ export class StudentView implements AfterViewInit, OnDestroy {
       y,
       this.selectedColor(),
     );
+  }
+
+  toggleSound(){
+    this.soundService.isMute.update(v=>!v);
   }
 
   // --- Effect groups ---

@@ -1,10 +1,11 @@
-import { Injectable } from '@angular/core';
+import { Injectable,signal } from '@angular/core';
 
 export type SoundEffect = 'move' | 'take' |'stamp'|'gasp'|'bite'| 'fanfare' | 'cheering'|'bravo'|'shield'|
 'homer'|'bite1'|'bite2'|'bite3'|'bite4'|'bite5'|'bite6'|'lost'|'won'|'wrongMove'|'success'|'error'|'jailLocks'|'snoring';
 
 @Injectable({ providedIn: 'root' })
 export class SoundService {
+  isMute = signal(false)
   private sounds: Record<SoundEffect, HTMLAudioElement> = {
     move: new Audio('/sounds/move.mp3'),
     take: new Audio('/sounds/take.mp3'),
@@ -32,20 +33,24 @@ export class SoundService {
   };
 
   play(sound: SoundEffect): void {
+    if(this.isMute()) return;
     const audio = this.sounds[sound];
     audio.currentTime = 0; // rewind in case it's still playing
     audio.play().catch(() => {}); // catch needed because browser may block autoplay
   }
   playRandomCheering():void{
+     if(this.isMute()) return;
     const cheering = [ 'fanfare' , 'cheering','bravo','homer'];
     this.playRandom(cheering);
   }
     playRandomBite(){
+       if(this.isMute()) return;
       const bites =['bite1','bite2','bite3','bite4','bite5','bite6'];
      this.playRandom(bites);
 
   }
   playRandom(arr:string[]){
+     if(this.isMute()) return;
     const random =arr[Math.floor(Math.random() * arr.length)] as SoundEffect;
       this.sounds[random].play();
   }
