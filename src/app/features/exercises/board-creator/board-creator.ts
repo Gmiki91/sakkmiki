@@ -60,7 +60,7 @@ export class BoardCreator implements AfterViewInit {
   lastMove = signal<LastMove | null>(null);
   isRecordingLastMove = signal(false);
 
-  mushroomType = model<string>('🍄');
+  mushroomType = model<string>('');
   mushroomTypes = ['🍄','🍫','🍬','🍦', '🍔', '🥤', '🍩' ,'🎃', '♥️', '🎁', '🎈', '⭐', '🌼','🍀','🌻','⚽'];
 
   private chess = new Chess();

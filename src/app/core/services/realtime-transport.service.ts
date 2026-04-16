@@ -66,6 +66,7 @@ export class RealtimeTransport implements OnDestroy {
   private channel!: RealtimeChannel;
   private lastPresence: StudentPresence | null = null;
   private cleaningUp = false;
+  private reconnectTimer: any;
 
   readonly events$ = new Subject<BroadcastEvent>();
   readonly presenceSync$ = new Subject<StudentPresence[]>();
@@ -118,6 +119,7 @@ export class RealtimeTransport implements OnDestroy {
         this.events$.next(payload);
       })
       .subscribe(async (status) => {
+        console.log("status: ",status);
         if (this.cleaningUp) return;
         if (status === 'SUBSCRIBED') {
           const presence = this.lastPresence ?? initialPresence;
@@ -129,6 +131,21 @@ export class RealtimeTransport implements OnDestroy {
           this.lastPresence = presence;
           onJoined();
         }
+          if (status === 'CLOSED') {
+            
+    // start recovery timer
+    if (!this.reconnectTimer) {
+      this.reconnectTimer = setTimeout(() => {
+        console.log('FORCE RECONNECT');
+
+        const preservedPresence = this.lastPresence;
+        this.cleanup();
+        this.joinAsStudent(channelId, preservedPresence ?? initialPresence, onJoined);
+
+      }, 5000); // wait 5s for auto-reconnect
+    }
+  }
+
       });
   }
 
@@ -143,6 +160,10 @@ export class RealtimeTransport implements OnDestroy {
 
  cleanup(): void {
     this.cleaningUp = true;
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     this.lastPresence = null;
     if (this.channel) this.supabase.realtimeClient.removeChannel(this.channel);
     this.cleaningUp = false
