@@ -2,7 +2,7 @@
 .container {
   display: flex;
   gap: 32px;
-  padding: 24px;
+  padding: 16px;
   align-items: flex-start;
 }
 
@@ -45,6 +45,7 @@
 }
 
 app-chess-board {
+  margin-top:12px;
   display: block;
   width: var(--board-size);
   height: var(--board-size);

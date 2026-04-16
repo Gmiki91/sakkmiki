@@ -19,7 +19,7 @@ import { FormsModule } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
 import { boardConfig, getValidMoves, loadChess } from '../../../shared/utils/chess.utils';
 import { CommonMistake, Exercise } from '../../../shared/models/exercise.model';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ExerciseService } from '../../../core/services/exercise.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -58,6 +58,7 @@ export class ExerciseCreator implements OnInit {
 
   private chess: Chess = new Chess();
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private snackbar = inject(MatSnackBar);
 
   // check whether there are unsaved solutions or hints
@@ -176,6 +177,10 @@ export class ExerciseCreator implements OnInit {
       ...e,
       commonMistakes:[...(e.commonMistakes ?? []), hint]
     }));
+  }
+
+  returnToBoard():void{
+    this.router.navigate([`/exercises/edit-board/${this.exercise().id}`]); 
   }
 
 

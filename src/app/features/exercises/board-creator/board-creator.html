@@ -95,7 +95,7 @@
     </div>
 
     @if(exerciseType()==='puzzle'){
-    <div class="control-section">
+    <div class="control-section" style="align-items: center;">
       @if (!lastMove()) {
         @if (!isRecordingLastMove()) {
           <button mat-stroked-button (click)="isRecordingLastMove.set(true)">
@@ -119,10 +119,25 @@
     </div>
   }
     <div class="save-action">
-      <button mat-raised-button (click)="save()">
-        <mat-icon>save</mat-icon>
-        Save exercise
-      </button>
+      @if (isEditMode()) {
+        <div style="display:flex; flex-direction: column;">
+        <button mat-raised-button (click)="save()" [disabled]="isSaving()">
+          <mat-icon>{{ isSaving() ? 'sync' : 'save' }}</mat-icon>
+          {{ isSaving() ? 'Saving...' : 'Save board' }}
+        </button>
+        @if (exerciseType() !== 'demo') {
+          <button mat-button (click)="goToNextStep()">
+            {{ exerciseType() === 'challenge' ? 'Win conditions' : 'Solutions' }}
+            <mat-icon>arrow_forward</mat-icon>
+          </button>
+        }
+        </div>
+      } @else {
+        <button mat-raised-button (click)="save()">
+          <mat-icon>save</mat-icon>
+          Save exercise
+        </button>
+      }
     </div>
   </div>
 </div>

@@ -61,6 +61,12 @@ export const routes: Routes = [
         canActivate: [validListGuard],
       },
       {
+        path: 'edit-board/:exerciseId',
+        loadComponent: () =>
+          import('./features/exercises/board-creator/board-creator').then((m) => m.BoardCreator),
+        canActivate: [validExerciseGuard],
+      },
+      {
         path: 'edit/:exerciseId',
         loadComponent: () =>
           import('./features/exercises/exercise-creator/exercise-creator').then((m) => m.ExerciseCreator),

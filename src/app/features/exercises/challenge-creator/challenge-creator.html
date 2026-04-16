@@ -97,6 +97,12 @@
             {{saveState() === 'saving'? 'Updating...': saveState() === 'saved'? 'Updated': 'Update exercise'}}
           </button>
         </div>
+        <div class="return-btn">
+          <button
+            mat-button
+            (click)="returnToBoard()"
+          > Back to board creator</button>
+        </div>
       </div>
     }
   </div>

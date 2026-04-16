@@ -3,7 +3,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 16px;
+  gap: 24px;
   padding: 16px;
 
   app-chess-board {
@@ -37,5 +37,8 @@
     padding-top: 16px;
     border-top: 1px solid var(--mat-sys-outline-variant);
     text-align:center;
+  }
+    .return-btn{
+    text-align: center;
   }
 }

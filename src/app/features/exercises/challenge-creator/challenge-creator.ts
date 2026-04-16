@@ -5,7 +5,7 @@ import { Key } from '@lichess-org/chessground/types';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ExerciseService } from '../../../core/services/exercise.service';
 import { Exercise } from '../../../shared/models/exercise.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -21,6 +21,7 @@ export class ChallengeCreator implements OnInit {
 
   exerciseService = inject(ExerciseService);
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private snackbar = inject(MatSnackBar);
 
   exercise!: WritableSignal<Exercise>;
@@ -115,6 +116,9 @@ export class ChallengeCreator implements OnInit {
 
   removeBlackMove(i: number): void {
     this.blackWinMoves.update((prev) => prev.filter((_, idx) => idx !== i));
+  }
+  returnToBoard():void{
+    this.router.navigate([`/exercises/edit-board/${this.exercise().id}`]); 
   }
 
   async save() {

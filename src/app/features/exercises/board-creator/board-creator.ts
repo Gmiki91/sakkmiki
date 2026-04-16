@@ -1,5 +1,6 @@
 import {
   AfterViewInit,
+  OnInit,
   Component,
   inject,
   model,
@@ -16,7 +17,7 @@ import { FormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatInputModule } from '@angular/material/input';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ExerciseInput, ExerciseType, LastMove } from '../../../shared/models/exercise.model';
+import { ExerciseInput, ExerciseType, LastMove, Exercise } from '../../../shared/models/exercise.model';
 import { ExerciseService } from '../../../core/services/exercise.service';
 import {
   BARE_STARTING_FEN,
@@ -25,6 +26,7 @@ import {
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
+
 @Component({
   selector: 'app-board-creator',
   imports: [
@@ -39,9 +41,15 @@ import { MatIcon } from '@angular/material/icon';
   templateUrl: './board-creator.html',
   styleUrl: './board-creator.scss',
 })
-export class BoardCreator implements AfterViewInit {
+export class BoardCreator implements OnInit, AfterViewInit {
   @ViewChild('chessBoard') chessBoard!: ChessBoard;
+
   exerciseService = inject(ExerciseService);
+  private router = inject(Router);
+  private snackbar = inject(MatSnackBar);
+  private activatedRoute = inject(ActivatedRoute);
+  private chess = new Chess();
+
   title = model('');
   whiteCastlingKingSide = model(true);
   whiteCastlingQueenSide = model(true);
@@ -49,53 +57,53 @@ export class BoardCreator implements AfterViewInit {
   blackCastlingQueenSide = model(true);
   turnOrder = model<'w' | 'b'>('w');
   currentFen = model<string>(BARE_STARTING_FEN);
-  exerciseType = computed<ExerciseType>(() => {
-    //inferred from the exerciseList
-    const listId = this.activatedRoute.snapshot.paramMap.get('listId');
-    const list = this.exerciseService.exerciseLists().find((l) => l.id === listId);
-    return list?.type ?? 'puzzle';
-  });
-
-  // opponents last move for puzzle
-  lastMove = signal<LastMove | null>(null);
-  isRecordingLastMove = signal(false);
-
   mushroomType = model<string>('');
   mushroomTypes = ['🍄','🍫','🍬','🍦', '🍔', '🥤', '🍩' ,'🎃', '♥️', '🎁', '🎈', '⭐', '🌼','🍀','🌻','⚽'];
 
-  private chess = new Chess();
-  private router = inject(Router);
-  private snackbar = inject(MatSnackBar);
-  private activatedRoute = inject(ActivatedRoute);
+  lastMove = signal<LastMove | null>(null);
+  isRecordingLastMove = signal(false);
+
+  // Mode
+  isEditMode = signal(false);
+  isSaving = signal(false);
+  private editExerciseId = signal<string | null>(null);
+  exerciseType = signal<ExerciseType>('puzzle');
 
   boardConfig = computed<Config>(() => ({
     fen: this.currentFen(),
     coordinates: false,
-    movable: {
-      free: true,
-    },
-    draggable: {
-      enabled: true,
-      deleteOnDropOff: true,
-    },
-    highlight: {
-      lastMove: false,
-    },
+    movable: { free: true },
+    draggable: { enabled: true, deleteOnDropOff: true },
+    highlight: { lastMove: false },
   }));
+
+  ngOnInit(): void {
+    this.activatedRoute.paramMap.subscribe(params=>{
+    const exerciseId = params.get('exerciseId');
+      if (exerciseId) {
+        // Edit mode
+        this.isEditMode.set(true);
+        this.editExerciseId.set(exerciseId);
+        const exercise = this.exerciseService.exerciseLists()
+        .flatMap(l => l.exercises)
+        .find(e => e.id === exerciseId);
+        if (exercise) this.loadExercise(exercise);
+      } else {
+        // Create mode — infer type from the list
+        const listId = this.activatedRoute.snapshot.paramMap.get('listId');
+        const list = this.exerciseService.exerciseLists().find(l => l.id === listId);
+        this.exerciseType.set(list?.type ?? 'puzzle');
+      }
+    });
+  }
 
   ngAfterViewInit(): void {
     const board = this.chessBoard.boardElement.nativeElement;
     this.addDragListener(board);
     this.addDropListener(board);
     this.chessBoard.api.set({
-      events: {
-        change: () => this.boardChange(), // to update when dragging off pieces
-      },
-      movable: {
-        events: {
-          after: (orig: Key, dest: Key) => this.handleMove(orig, dest),
-        },
-      },
+      events: { change: () => this.boardChange() },
+      movable: { events: { after: (orig: Key, dest: Key) => this.handleMove(orig, dest) } },
     });
   }
 
@@ -106,97 +114,138 @@ export class BoardCreator implements AfterViewInit {
   onDragStart(event: DragEvent, role: Role, color: Color) {
     event.dataTransfer?.setData('role', role);
     event.dataTransfer?.setData('color', color);
-
-    // set the drag image to just the element being dragged
     const el = event.target as HTMLElement;
     event.dataTransfer?.setDragImage(el, el.offsetWidth / 2, el.offsetHeight / 2);
   }
 
   resetBoard() {
     this.lastMove.set(null);
-    const fen = `rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR`;
-    this.currentFen.set(fen);
+    this.currentFen.set(BARE_STARTING_FEN);
   }
+
   clearBoard() {
     this.lastMove.set(null);
     this.currentFen.set(EMPTY_BOARD_FEN);
   }
 
-  async save() {
+  async save(): Promise<void> {
     const fen = this.currentFen().split(' ')[0] + this.fenAppendix();
-    const exerciseType = this.exerciseType();
+
+    if (this.isEditMode()) {
+      const existing = this.exerciseService.exerciseLists()
+        .flatMap(l => l.exercises)
+        .find(e => e.id === this.editExerciseId()!);
+      if (!existing) return;
+      this.isSaving.set(true);
+      try {
+        await this.exerciseService.updateExercise({
+          ...existing,
+          title: this.title(),
+          fen,
+          lastMove: this.lastMove() ?? undefined,
+          mushroomType: this.mushroomType() || undefined,
+        });
+      } catch (e) {
+        this.snackbar.open((e as Error).message, '', { duration: 2000 });
+      } finally {
+        this.isSaving.set(false);
+      }
+      return;
+    }
+
+    // Create mode
     const listId = this.activatedRoute.snapshot.paramMap.get('listId');
     if (!listId) return;
-    const position = this.exerciseService.exerciseLists().find((l) => l.id === listId)?.exercises.length
+    const position = this.exerciseService.exerciseLists().find(l => l.id === listId)?.exercises.length;
     try {
-      if (exerciseType === 'puzzle') {
-        this.chess.load(fen);
-      }
+      if (this.exerciseType() === 'puzzle') this.chess.load(fen);
       const exercise: ExerciseInput = {
         title: this.title(),
         fen,
-        exerciseType,
+        exerciseType: this.exerciseType(),
         listId,
         position: position || 1,
         lastMove: this.lastMove() ?? undefined,
-        mushroomType:this.mushroomType(),
-
+        mushroomType: this.mushroomType() || undefined,
       };
-
-      const ex = await this.exerciseService.addExercise(listId,exercise);
+      const ex = await this.exerciseService.addExercise(listId, exercise);
       if (!ex) return;
-      if(ex.exerciseType==='demo'){
-        return
-      }else if (ex.exerciseType === 'challenge') {
-        this.router.navigate([`/exercises/challenge/${ex.id}`]);
-      } else {
-        this.router.navigate([`/exercises/edit/${ex.id}`]);
-      }
+      this.navigateNext(ex.id, ex.exerciseType);
     } catch (e) {
       this.snackbar.open((e as Error).message, '', { duration: 2000 });
     }
   }
 
+  goToNextStep(): void {
+    const id = this.editExerciseId();
+    if (id) this.navigateNext(id, this.exerciseType());
+  }
+
+
   handleMove(orig: Key, dest: Key) {
     if (this.isRecordingLastMove()) {
       try {
-     this.move(orig,dest);
+        this.move(orig, dest);
       } catch (e) {
-        try{
-        // retry with opposite color
-        this.turnOrder.update(value=>value==='b'?'w':'b')
-        this.move(orig,dest);
-        }catch (err){
-          // it was probably an invalid move, reset original turnOrder
-          this.turnOrder.update(value=>value==='b'?'w':'b')
+        try {
+          this.turnOrder.update(value => value === 'b' ? 'w' : 'b');
+          this.move(orig, dest);
+        } catch (err) {
+          this.turnOrder.update(value => value === 'b' ? 'w' : 'b');
           this.snackbar.open((err as Error).message, '', { duration: 2000 });
           this.chessBoard.api.set({ fen: this.currentFen() });
         }
-        
-      }finally{
+      } finally {
         this.isRecordingLastMove.set(false);
       }
     }
   }
-  private move(from: Key, to: Key){
-      this.chess.load(this.currentFen() + this.fenAppendix());
-        this.chess.move({ from, to });
-        const color = this.chessBoard.api.state.pieces.get(to)!.color;
-        this.lastMove.set({ from, to, color });
-        this.turnOrder.set(color === 'white' ? 'b' : 'w');
+
+  // ----------------------------------------------------------------
+  // Private
+  // ----------------------------------------------------------------
+
+  private navigateNext(exerciseId: string, type: ExerciseType): void {
+    switch (type) {
+      case 'challenge': this.router.navigate([`/exercises/challenge/${exerciseId}`]); break;
+      case 'puzzle':
+      case 'mushroom':  this.router.navigate([`/exercises/edit/${exerciseId}`]); break;
+      case 'demo':      this.router.navigate(['/exercises']); break;
+    }
   }
+
+  private loadExercise(exercise: Exercise): void {
+    this.exerciseType.set(exercise.exerciseType);
+    this.title.set(exercise.title);
+    const fenParts = exercise.fen.split(' ');
+    this.currentFen.set(fenParts[0] ?? BARE_STARTING_FEN);
+    this.turnOrder.set((fenParts[1] as 'w' | 'b') ?? 'w');
+    const castling = fenParts[2] ?? '-';
+    this.whiteCastlingKingSide.set(castling.includes('K'));
+    this.whiteCastlingQueenSide.set(castling.includes('Q'));
+    this.blackCastlingKingSide.set(castling.includes('k'));
+    this.blackCastlingQueenSide.set(castling.includes('q'));
+    this.lastMove.set(exercise.lastMove ?? null);
+    if (exercise.mushroomType) this.mushroomType.set(exercise.mushroomType);
+  }
+
+  private move(from: Key, to: Key) {
+    this.chess.load(this.currentFen() + this.fenAppendix());
+    this.chess.move({ from, to });
+    const color = this.chessBoard.api.state.pieces.get(to)!.color;
+    this.lastMove.set({ from, to, color });
+    this.turnOrder.set(color === 'white' ? 'b' : 'w');
+  }
+
   private boardChange() {
     if (!this.isRecordingLastMove()) {
-      // If user set last move, but then touches the board, the last move gets removed
       this.lastMove.set(null);
       this.currentFen.set(this.chessBoard.api.getFen());
     }
   }
 
   private onDrop(event: DragEvent) {
-    const x = event.clientX;
-    const y = event.clientY;
-    const square = this.chessBoard.api?.getKeyAtDomPos([x, y]);
+    const square = this.chessBoard.api?.getKeyAtDomPos([event.clientX, event.clientY]);
     const role = event.dataTransfer?.getData('role') as Role;
     const color = event.dataTransfer?.getData('color') as Color;
     if (role && color && square) {
@@ -206,28 +255,22 @@ export class BoardCreator implements AfterViewInit {
   }
 
   private addDragListener(el: HTMLElement) {
-    el.addEventListener('dragover', (e: DragEvent) => {
-      e.preventDefault();
-    });
+    el.addEventListener('dragover', (e: DragEvent) => e.preventDefault());
   }
 
   private addDropListener(el: HTMLElement) {
-    el.addEventListener('drop', (e: DragEvent) => {
-      this.onDrop(e);
-    });
+    el.addEventListener('drop', (e: DragEvent) => this.onDrop(e));
   }
 
   private fenAppendix(): string {
     const turn = this.lastMove()
-      ? this.lastMove()!.color === 'white'
-        ? 'w'
-        : 'b'
+      ? this.lastMove()!.color === 'white' ? 'w' : 'b'
       : this.turnOrder();
     const castling =
       (this.whiteCastlingKingSide() ? 'K' : '') +
-        (this.whiteCastlingQueenSide() ? 'Q' : '') +
-        (this.blackCastlingKingSide() ? 'k' : '') +
-        (this.blackCastlingQueenSide() ? 'q' : '') || '-';
+      (this.whiteCastlingQueenSide() ? 'Q' : '') +
+      (this.blackCastlingKingSide() ? 'k' : '') +
+      (this.blackCastlingQueenSide() ? 'q' : '') || '-';
     return ` ${turn} ${castling} - 0 1`;
   }
 }
