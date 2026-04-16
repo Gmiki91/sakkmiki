@@ -432,7 +432,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
         if (mistake) {
           this.feedback.set(mistake.hint);
         } else {
-          this.feedback.set(ex.defaultHint ?? 'Rossz lépés :(');
+          this.feedback.set(ex.defaultHint ?? 'Biztos? 🤔');
         }
         setTimeout(()=>{
           this.handleMistake(ex);

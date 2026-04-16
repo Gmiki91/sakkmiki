@@ -96,14 +96,6 @@
         }
        
       </div>
-      @if (!myPair() && feedback()) {
-        <div class="feedback">
-          <!-- <span>{{ status() }}</span> -->
-          @if (classroomStore.mode() === 'normal') {
-            <span>{{feedback()}}</span>
-          }
-        </div>
-      }
       @if (stampCollection().length > 0) {
         <div class="collection">
           @for (stamp of stampCollection(); track $index) {
@@ -131,6 +123,14 @@
       ></app-drawing-toolbar>
     </div>
   }
+  @if (!myPair() && feedback()) {
+        <div class="feedback">
+          <!-- <span>{{ status() }}</span> -->
+          @if (classroomStore.mode() === 'normal') {
+            <span>{{feedback()}}</span>
+          }
+        </div>
+      }
    <!-- Simul sidebar: even classmates' boards -->
   @if (classroomStore.mode()==='simul') {
     <div class="simul-sidebar">
