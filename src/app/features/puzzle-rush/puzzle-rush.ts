@@ -108,7 +108,8 @@ export class PuzzleRush implements OnInit, OnDestroy {
         width: '360px',
         data: {
           multiSelect: false,
-          alreadySelected: this.selectedList() ? [this.selectedList()!] : []
+          alreadySelected: this.selectedList() ? [this.selectedList()!] : [],
+          puzzleRush:true
         } satisfies ExerciseListPickerData,
       })
       .afterClosed()

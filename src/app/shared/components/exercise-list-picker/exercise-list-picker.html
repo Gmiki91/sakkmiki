@@ -9,8 +9,8 @@
   <!-- List items -->
   <div class="list-items">
     @for (list of exerciseService.exerciseLists(); track list.id) {
-      <!-- modal mode is used by puzzlerush -> only show puzzles in the list -->
-      @if(isModal() && list.type==='puzzle' || !isModal()){
+      <!-- mutliselect  is used by classroom, single select is puzzlerush -->
+      @if(isPuzzleRush() && list.type==='puzzle'  || isPuzzleRush()===undefined){
       <div
         class="list-item"
         [class.disabled]="isAlreadySelected(list)"

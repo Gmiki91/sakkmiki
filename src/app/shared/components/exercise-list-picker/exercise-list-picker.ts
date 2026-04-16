@@ -10,7 +10,7 @@ import { ExerciseType } from '../../models/exercise.model';
 export type ExerciseListPickerData = {
   multiSelect: boolean;
   alreadySelected: ExerciseList[];
-  allowedTypes?: ExerciseType[];
+  puzzleRush?: boolean;
 };
 
 @Component({
@@ -20,8 +20,6 @@ export type ExerciseListPickerData = {
   styleUrl: './exercise-list-picker.scss',
 })
 export class ExerciseListPicker {
-  // select one list and close (puzzle rush) or multiple lists are selectable (classroom)
-  multiSelect = input<boolean>(false);
   // for graying out list(s) that are already loaded (1 for puzzle rush, 1+ for classroom)
   alreadySelected = input<ExerciseList[]>([]);
   select = output<ExerciseList[]>();
@@ -32,9 +30,10 @@ export class ExerciseListPicker {
   private dialogRef = inject(MatDialogRef<ExerciseListPicker>, { optional: true });
   private dialogData = inject<ExerciseListPickerData>(MAT_DIALOG_DATA, { optional: true });
 
-  isModal = computed(() => !!this.dialogRef);
+  isPuzzleRush = computed(() => this.dialogData?.puzzleRush);
+  // select one list and close (puzzle rush) or multiple lists are selectable (classroom)
+  isMultiSelect = computed(() => this.dialogData?.multiSelect);
   // dialogData values from modal use (classroom, puzzlerush), input values for inline use (exercises)
-  isMultiSelect = computed(() => this.dialogData?.multiSelect ?? this.multiSelect());
   computedAlreadySelected = computed(() => this.dialogData?.alreadySelected ?? this.alreadySelected());
 
   pendingSelection = signal<ExerciseList[]>([]);
