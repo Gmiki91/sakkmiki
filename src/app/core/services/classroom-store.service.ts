@@ -88,9 +88,16 @@ export class ClassroomStore {
 
     this.transport.presenceSync$
       .pipe(takeUntilDestroyed())
-      .subscribe((students) => {
-        this.students.set(students);
-        this.onStudentsUpdate?.(students);
+      .subscribe((presenceStudents) => {
+        // Merge presence data with existing students, preserving FEN from broadcasts
+        this.students.update((current) => {
+          const merged = presenceStudents.map(p => ({
+            ...p,
+            fen: current.find(s => s.name === p.name)?.fen,
+          }));
+          return merged;
+        });
+        this.onStudentsUpdate?.(this.students());
       });
 
     this.transport.spectatorSync$
