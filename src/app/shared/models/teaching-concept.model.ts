@@ -32,6 +32,18 @@ export const TEACHING_CONCEPTS: TeachingConcept[] = [
     duration: 'persistent',
   },
   {
+    id: 'checkmate',
+    label: 'Mate',
+    squaresNeeded: 1,
+    duration: 'persistent',
+  },
+  {
+    id: 'alarmed',
+    label: 'Alarmed',
+    squaresNeeded: 1,
+    duration: 'persistent',
+  },
+  {
     id: 'tired',
     label: 'Tired',
     squaresNeeded: 0,
@@ -45,7 +57,7 @@ export const TEACHING_CONCEPTS: TeachingConcept[] = [
     duration: 'persistent',
     sound: undefined,
   },
-    {
+  {
     id: 'phew',
     label: 'Phew',
     squaresNeeded: 1,
