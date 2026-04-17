@@ -42,6 +42,7 @@ export class ClassroomStore {
   readonly loadedListTitle = signal<string>('');
   readonly droppedExercises = signal<Record<string, Exercise>>({});
   readonly sharedArrows = signal<{name:string, arrows:DrawShape[]}|null>(null);
+  readonly requestFen = signal(false);
 
   // Teacher-side
   readonly students = signal<StudentPresence[]>([]);
@@ -121,7 +122,7 @@ export class ClassroomStore {
     this.isSpectator.set(false);
     this.transport.joinAsStudent(
       classroomId,
-      { role: 'student', name, fen: STARTING_FEN, status: '', feedback: '', exIndex: 0, locked: false, awaitingStamp: false },
+      { role: 'student', name, status: '', feedback: '', exIndex: 0, locked: false, awaitingStamp: false },
       () => {
         this.isJoined.set(true);
         this.supabase.touchClassroom(classroomId).catch(() => {});
@@ -132,7 +133,7 @@ export class ClassroomStore {
   }
 
   async updatePresence(state: Omit<StudentPresence, 'name' | 'role'>): Promise<void> {
-    await this.transport.updatePresence({ role: 'student', name: this.studentName(), ...state });
+    await this.transport.updatePresence(state);
   }
 
   leave(): void {
@@ -381,7 +382,9 @@ export class ClassroomStore {
       case 'simul_teacher_move':
         this.incomingSimulTeacherMove.set({ studentName: event.studentName, fen: event.fen, from: event.from, to: event.to });
         break;
-      case 'white_board_text': this.whiteBoardText.set(event.text);
+      case 'white_board_text': this.whiteBoardText.set(event.text);break;
+      case 'request_fen':
+        this.requestFen.set(true); break;
     }
   }
 

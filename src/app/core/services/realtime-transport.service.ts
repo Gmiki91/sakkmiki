@@ -11,12 +11,12 @@ import { TeachingConceptListItem } from '../../shared/models/teaching-concept.mo
 export type StudentPresence = {
   role: 'student';
   name: string;
-  fen: string;
   status: string;
   feedback: string;
   exIndex: number;
   locked: boolean;
   awaitingStamp: boolean;
+  fen?: string;
 };
 
 export type SpectatorPresence = {
@@ -45,6 +45,7 @@ export type BroadcastEvent =
   | { type: 'lock'; studentName: string }
   | { type: 'unlock'; studentName: string }
   | { type: 'student_fen'; studentName: string; fen: string }
+  | { type: 'request_fen' }
   | { type: 'drawing_points'; studentName: string; strokeId: string; color: string; points: Point[] }
   | { type: 'drawing_commit'; strokeId: string }
   | { type: 'drawing_color'; studentName: string; color: string }
@@ -87,6 +88,7 @@ export class RealtimeTransport implements OnDestroy {
       .subscribe(status=>{
         if(status==='SUBSCRIBED'){
           this.handlePresence(); // read presence state to check if students already joined
+          this.send({ type: 'request_fen' }); // request current FENs from students
         }
       });
   }
@@ -109,7 +111,7 @@ export class RealtimeTransport implements OnDestroy {
 
   joinAsStudent(
     channelId: string,
-    initialPresence: StudentPresence,
+    initialPresence: Omit<StudentPresence, 'fen'>,
     onJoined: () => void,
   ): void {
     this.cleanup();
@@ -149,9 +151,9 @@ export class RealtimeTransport implements OnDestroy {
       });
   }
 
-  async updatePresence(state: StudentPresence): Promise<void> {
-    this.lastPresence = state;
-    await this.channel.track(state);
+  async updatePresence(state: Omit<StudentPresence, 'name' | 'role'>): Promise<void> {
+    this.lastPresence = { ...this.lastPresence!, ...state };
+    await this.channel.track(this.lastPresence);
   }
 
   send(event: BroadcastEvent): void {
@@ -188,7 +190,7 @@ export class RealtimeTransport implements OnDestroy {
       .filter(p => p.role === 'student')
       .map(p => ({
         role: 'student' as const,
-        name: p.name, fen: p.fen, status: p.status, feedback: p.feedback,
+        name: p.name, status: p.status, feedback: p.feedback,
         exIndex: p.exIndex, locked: p.locked, awaitingStamp: p.awaitingStamp,
       }));
     const spectators: SpectatorPresence[] = all

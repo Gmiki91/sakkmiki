@@ -470,6 +470,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
       this.exIndex.update((n) => n + 1);
     } else {
       this.status.set('All done!');
+      this.feedback.set("Minden feladatot megoldottál!")
       this.isWaitingForStamp.set(true);
     }
   }
@@ -588,10 +589,9 @@ export class StudentView implements AfterViewInit, OnDestroy {
       const locked = this.isLocked();
       const awaitingStamp = this.isWaitingForStamp();
       // Everything else is just snapshotted at the time of the meaningful event
-      const fen = untracked(() =>exercise.exerciseType === 'challenge' ? this.challengeFen() : this.exerciseFen());
       const status = untracked(() => this.status());
       const feedback = untracked(() => this.feedback());
-      this.classroomStore.updatePresence({ fen, status, feedback, exIndex, locked, awaitingStamp });
+      this.classroomStore.updatePresence({ status, feedback, exIndex, locked, awaitingStamp });
 
     });
 
@@ -604,6 +604,20 @@ export class StudentView implements AfterViewInit, OnDestroy {
        this.classroomStore.studentName(),
        fen
      );
+    });
+
+    // Request fen from teacher
+    effect(() => {
+      if (!this.classroomStore.requestFen()) return;
+      this.classroomStore.requestFen.set(false);
+      const exercise = this.currentExercise();
+      if (!exercise) return;
+      const fen = exercise.exerciseType === 'challenge' ? this.challengeFen() : this.exerciseFen();
+      if (this.classroomStore.mode() === 'gathered') return;
+      this.classroomStore.broadcastStudentFen(
+        this.classroomStore.studentName(),
+        fen
+      );
     });
 
     // Gather/disperse
@@ -799,7 +813,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
   }
 
   private progressWithStamp() {
-    this.feedback.set('Jó lépés! 🥳');
+    this.feedback.set('Ügyes! 🥳');
     this.soundService.play('stamp');
     this.soundService.playRandomCheering();
     this.stampOverlay.stamp();
@@ -814,7 +828,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
   }
 
   private progressAuto(){
-    this.feedback.set('Jó lépés! 🥳');
+    this.feedback.set('Ügyes! 🥳');
     // this.soundService.play('won');
     setTimeout(() => {
       //leave droppedExercise set so currentExercise doesn't recompute and defaults to the loadedListExercise
