@@ -17,9 +17,9 @@
   gap: 12px;
 }
 .exercise-column{
-  height:90vh;
+  height:40vh;
   overflow-y: auto;
-    overflow-x: hidden;
+  overflow-x: hidden;
 }
 .board-wrapper {
   width: var(--mini-board-size);
@@ -206,18 +206,6 @@
   color: var(--mat-sys-on-surface-variant);
   padding: 8px 4px;
 }
-
-// ── Normal mode lists ────────────────────────────────────────────
-
-.normal-lists-column {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 240px;
-  overflow-y: auto;
-}
-
-
 
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; transform: scale(1); }

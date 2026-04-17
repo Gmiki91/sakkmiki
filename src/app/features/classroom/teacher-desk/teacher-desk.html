@@ -43,39 +43,25 @@
           <button style="width: 100%" mat-raised-button (click)="disperse()">Disperse</button>
         </div>
         <div class="row">
-          <button mat-raised-button style="width: 100%" (click)="openInviteDialog()">
-            Invite student
-          </button>
+          <button style="width: 100%" mat-raised-button (click)="openPicker()">Load exercises</button>
         </div>
-        @if (!isGathered()) {
-          <div class="row">
-            <button mat-raised-button
-              style="width: 100%"
-              [color]="store.autoRedo() ? 'primary' : ''"
-              (click)="toggleAutoRedo()">
-              Auto Redo {{ store.autoRedo() ? 'ON' : 'OFF' }}
-            </button>
-          </div>
-          <div class="row">
-            <button mat-raised-button
-              style="width: 100%"
-              [color]="store.autoProgress() ? 'primary' : ''"
-              (click)="toggleAutoProgress()">
-              Auto Progress {{ store.autoProgress() ? 'ON' : 'OFF' }}
-            </button>
-          </div>
-          <div class="row">
-           @if (store.mode()==='simul') {
-             <button style="width: 100%" mat-raised-button color="warn" (click)="stopSimul()">End Simul</button>
-           } @else {
-             <button style="width: 100%" mat-raised-button (click)="startSimul()">Start Simul</button>
-           }
-         </div>
-         <div class="row">
-           <button style="width: 100%" mat-raised-button (click)="openPicker()">Load exercises</button>
       </div>
-    }
-      </div>
+       <!-- Normal mode: exercise lists next to board  -->
+  @if (!isGathered()) {
+    <div class="exercise-column">
+      @for (list of loadedLists(); track list.id) {
+        <div class="list-header" draggable="true" (dragstart)="onListDragStart(list, $event)">
+          <mat-icon class="drag-handle">drag_indicator</mat-icon>
+          <h3>{{ list.title }}</h3>
+          <button mat-icon-button (click)="removeList(list)"><mat-icon>close</mat-icon></button>
+          <button mat-icon-button (click)="loadListToAll(list)" matTooltip="Load list to all students">
+              <mat-icon >arrow_forward</mat-icon>    
+            </button>
+        </div>
+        <app-exercise-list [list]="list" (selectExercise)="demoExercise.set($event)"></app-exercise-list>
+      }
+    </div>
+  }
   }
 
     <!-- Spectators — always visible when anyone is watching -->
@@ -151,21 +137,38 @@
   }
 
 
-  <!-- Normal mode: exercise lists below board — owner only -->
   @if (!isGathered() && !readonly()) {
-    <div class="exercise-column">
-      @for (list of loadedLists(); track list.id) {
-        <div class="list-header" draggable="true" (dragstart)="onListDragStart(list, $event)">
-          <mat-icon class="drag-handle">drag_indicator</mat-icon>
-          <h3>{{ list.title }}</h3>
-          <button mat-icon-button (click)="removeList(list)"><mat-icon>close</mat-icon></button>
-          <button mat-icon-button (click)="loadListToAll(list)" matTooltip="Load list to all students">
-              <mat-icon >arrow_forward</mat-icon>    
+    <div class="controls">
+          <div class="row">
+            <button mat-raised-button style="width: 100%" (click)="openInviteDialog()">
+              Invite student
             </button>
-        </div>
-        <app-exercise-list [list]="list" (selectExercise)="demoExercise.set($event)"></app-exercise-list>
-      }
-    </div>
-  }
+          </div>
+          <div class="row">
+            <button mat-raised-button
+              style="width: 100%"
+              [color]="store.autoRedo() ? 'primary' : ''"
+              (click)="toggleAutoRedo()">
+              Auto Redo {{ store.autoRedo() ? 'ON' : 'OFF' }}
+            </button>
+          </div>
+          <div class="row">
+            <button mat-raised-button
+              style="width: 100%"
+              [color]="store.autoProgress() ? 'primary' : ''"
+              (click)="toggleAutoProgress()">
+              Auto Progress {{ store.autoProgress() ? 'ON' : 'OFF' }}
+            </button>
+          </div>
+          <div class="row">
+           @if (store.mode()==='simul') {
+             <button style="width: 100%" mat-raised-button color="warn" (click)="stopSimul()">End Simul</button>
+           } @else {
+             <button style="width: 100%" mat-raised-button (click)="startSimul()">Start Simul</button>
+           }
+         </div>
+         </div>
+    }
+ 
 
 </div>
