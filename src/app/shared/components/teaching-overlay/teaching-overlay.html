@@ -63,6 +63,17 @@
       width="4" height="4"
     />
   }
+  @if (conceptId() === 'phew') {
+    @let coord = squareCoord();
+    @if (coord) {
+     <image
+      href="/images/phew.png"
+      [attr.x]="coord.x"
+      [attr.y]="coord.y"
+      width="1" height="1"
+    />
+    }
+  }
 
   @if (conceptId() === 'happy') {
     @let coord = squareCoord();
@@ -83,7 +94,6 @@
     }
   }
 
-  <!-- ─── Sad ──────────────────────────────────────────────── -->
   @if (conceptId() === 'sad') {
     @let coord = squareCoord();
     @if (coord) {

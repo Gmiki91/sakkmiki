@@ -25,7 +25,7 @@
     <mat-card-header>
       <mat-card-title>
         @if (classroomStore.mode() === 'gathered') {
-          <span class="gathered-label">Közös tábla</span>
+          <!-- <span class="gathered-label">Közös tábla</span> -->
         } @else if (myPair()) {
           <span> {{ myPair()!.white }} vs {{ myPair()!.black }}</span>
             } @else if (classroomStore.mode()==='simul') {

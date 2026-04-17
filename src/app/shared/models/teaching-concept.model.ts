@@ -45,6 +45,13 @@ export const TEACHING_CONCEPTS: TeachingConcept[] = [
     duration: 'persistent',
     sound: undefined,
   },
+    {
+    id: 'phew',
+    label: 'Phew',
+    squaresNeeded: 1,
+    duration: 'persistent',
+    sound: undefined,
+  },
   {
     id: 'castling1',
     label: 'Castling protects',

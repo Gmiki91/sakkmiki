@@ -130,6 +130,7 @@
       @for (list of loadedLists(); track list.id) {
         <div class="list-header">
           <h3>{{ list.title }}</h3>
+          <button mat-icon-button (click)="removeList(list)"><mat-icon>close</mat-icon></button>
         </div>
         <app-exercise-list [list]="list" (selectExercise)="demoExercise.set($event)"></app-exercise-list>
       }
