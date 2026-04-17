@@ -163,9 +163,9 @@ export class StudentRoster implements AfterViewInit {
     this.attachBoardListeners();
   }
 
-  boardConfigFor(fen: string, from?: string, to?: string): Config {
+  boardConfigFor(fen?: string, from?: string, to?: string): Config {
     return {
-      fen,
+      fen:fen||STARTING_FEN,
       orientation: 'white',
       coordinates: false,
       movable: { free: false, color: undefined },
