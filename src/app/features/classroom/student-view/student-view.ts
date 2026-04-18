@@ -160,6 +160,9 @@ export class StudentView implements AfterViewInit, OnDestroy {
   private frozenFen: string | null = null;
   private frozenMoveHistory: string[] | null = null;
 
+  // boolean flag to skip curtain soundeffect when first joined
+  private curtainInitialized = false;
+
   //  Challenge props
   myPair = computed(
     () =>
@@ -717,6 +720,13 @@ export class StudentView implements AfterViewInit, OnDestroy {
         if (concept?.sound) this.soundService.play(concept.sound);
       }
       this.teachingConceptSize = concepts.length
+    })
+
+    // Sound effect from curtain toggle
+    effect(()=>{
+      const curtain = this.classroomStore.curtainClosed();
+      if(!this.curtainInitialized) {this.curtainInitialized = true;return;}
+      this.soundService.play('curtain');
     })
   }
 
