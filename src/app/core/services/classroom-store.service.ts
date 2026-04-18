@@ -76,6 +76,8 @@ export class ClassroomStore {
   readonly mushroomType = signal<string|null>(null);
   readonly whiteBoardText = signal<string>('');
 
+  private previousStudentNames = new Set<string>();
+
   // Callback for classroom component to react to presence sync
   onStudentsUpdate: ((students: StudentPresence[]) => void) | null = null;
 
@@ -98,6 +100,8 @@ export class ClassroomStore {
           }));
           return merged;
         });
+        const hasNewJoiner = presenceStudents.some(s => !this.previousStudentNames.has(s.name));
+        if (hasNewJoiner) this.resyncEphemeralState();
         this.onStudentsUpdate?.(this.students());
       });
 
@@ -149,6 +153,16 @@ export class ClassroomStore {
     this.untrackLobbyPresence();
     this.isJoined.set(false);
     this.isSpectator.set(false);
+  }
+
+  private resyncEphemeralState(): void {
+    this.transport.send({ type: 'curtain', closed: this.curtainClosed() });
+    this.transport.send({ type: 'mushroom_type', mType: this.mushroomType() ?? '' });
+    const mode = this.mode();
+    if (mode === 'gathered') this.transport.send({ type: 'gather' });
+    else if (mode === 'simul') this.transport.send({ type: 'simul_start' });
+    else this.transport.send({ type: 'disperse' }); //normal mode
+
   }
 
   // ----------------------------------------------------------------
