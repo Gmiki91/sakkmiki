@@ -43,6 +43,7 @@ export class ClassroomStore {
   readonly droppedExercises = signal<Record<string, Exercise>>({});
   readonly sharedArrows = signal<{name:string, arrows:DrawShape[]}|null>(null);
   readonly requestFen = signal(false);
+  readonly curtainClosed = signal(true);
 
   // Teacher-side
   readonly students = signal<StudentPresence[]>([]);
@@ -223,6 +224,10 @@ export class ClassroomStore {
   sendUpdatedText(text:string):void{
     this.transport.send({type:'white_board_text',text})
   }
+  sendCurtain(closed: boolean): void {
+    this.curtainClosed.set(closed);
+    this.transport.send({ type: 'curtain', closed });
+  }
 
   // ----------------------------------------------------------------
   // Simul
@@ -392,6 +397,7 @@ export class ClassroomStore {
       case 'white_board_text': this.whiteBoardText.set(event.text);break;
       case 'request_fen':
         this.requestFen.set(true); break;
+      case 'curtain': this.curtainClosed.set(event.closed); break;
     }
   }
 

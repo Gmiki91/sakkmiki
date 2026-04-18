@@ -41,7 +41,10 @@
         <div class="overlay-wrapper" 
         [class.locked]="isLocked() && feedback()===''" 
         [class.stamp-mode]="classroomStore.mode() === 'gathered' && activeTool() === 'stamp'"
-        (click)="onBoardClick($event)">
+        (click)="onBoardClick($event)">     
+          <div class="curtain" [class.open]="!classroomStore.curtainClosed()">
+            <img src="/images/curtain.png" alt="" />
+          </div>
           <app-chess-board
             #chessBoard
             [config]="boardConfig()!"

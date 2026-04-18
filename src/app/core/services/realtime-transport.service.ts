@@ -60,6 +60,7 @@ export type BroadcastEvent =
   | { type: 'simul_teacher_move'; studentName: string; fen: string; from: string; to: string }
   | { type: 'simul_student_move'; studentName: string; fen: string; from: string; to: string }
   | { type: 'white_board_text', text:string}
+  | { type: 'curtain'; closed: boolean }
 
 @Injectable({ providedIn: 'root' })
 export class RealtimeTransport implements OnDestroy {
@@ -167,7 +168,10 @@ export class RealtimeTransport implements OnDestroy {
       this.reconnectTimer = null;
     }
     this.lastPresence = null;
-    if (this.channel) this.supabase.realtimeClient.removeChannel(this.channel);
+    if (this.channel) {
+      this.supabase.realtimeClient.removeChannel(this.channel);
+      this.channel.unsubscribe();
+    }
     this.cleaningUp = false
   }
 

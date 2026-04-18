@@ -43,6 +43,15 @@
           <button style="width: 100%" mat-raised-button (click)="disperse()">Disperse</button>
         </div>
         <div class="row">
+          <button
+            style="width: 100%" 
+            mat-raised-button 
+            [matTooltip]="store.curtainClosed() ? 'Reveal board' : 'Hide board'"
+            (click)="store.sendCurtain(!store.curtainClosed())">
+            {{ store.curtainClosed() ? 'Curtain up' : 'Curtain down' }}
+          </button>
+        </div>
+        <div class="row">
           <button style="width: 100%" mat-raised-button (click)="openPicker()">Load exercises</button>
         </div>
       </div>
