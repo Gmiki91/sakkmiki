@@ -39,11 +39,11 @@
           </mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-          <div class="mini-board">
+          <div class="mini-board"  [class.awaiting-teacher]="store.mode()==='simul' && isAwaitingTeacher(student.name)">
             @if (isLoadingList()) {
               <div class="board-loading"><mat-spinner diameter="32"></mat-spinner></div>
             } @else {
-              <app-chess-board [config]="boardConfigFor(student.fen)" #studentBoard></app-chess-board>
+              <app-chess-board  [config]="store.mode()==='simul' ? simulBoardConfigFor(student.name) : boardConfigFor(student.fen)" #studentBoard></app-chess-board>
             }
           </div>
           <div class="student-status">

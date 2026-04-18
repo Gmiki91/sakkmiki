@@ -433,6 +433,7 @@ export class StudentView implements AfterViewInit, OnDestroy {
         } else {
           this.feedback.set(ex.defaultHint ?? 'Biztos? 🤔');
         }
+        this.isLocked.set(true);
         setTimeout(()=>{
           this.handleMistake(ex);
           this.feedback.set('');
@@ -829,8 +830,10 @@ export class StudentView implements AfterViewInit, OnDestroy {
 
   private progressAuto(){
     this.feedback.set('Ügyes! 🥳');
+    this.isLocked.set(true);
     // this.soundService.play('won');
     setTimeout(() => {
+      this.isLocked.set(false);
       //leave droppedExercise set so currentExercise doesn't recompute and defaults to the loadedListExercise
       if (!this.classroomStore.droppedExercise()) this.nextExercise();
     }, 2000);

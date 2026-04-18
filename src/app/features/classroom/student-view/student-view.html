@@ -2,7 +2,7 @@
 <div class="volume-btn">
   <button matIconButton (click)="toggleSound()"><mat-icon>{{this.soundService.isMute() ? 'volume_off' : 'volume_up'}}</mat-icon></button>
 </div>
-<div class="chess-container" [class.simul]="classroomStore.mode()==='simul'">
+<div class="chess-container">
     @if (classroomStore.mode()==='gathered') {
       <app-white-board [disabled]="true"></app-white-board>
     }
@@ -39,7 +39,7 @@
     <mat-card-content>
       <div class="board-wrapper" #boardWrapper>
         <div class="overlay-wrapper" 
-        [class.locked]="isLocked()" 
+        [class.locked]="isLocked() && feedback()===''" 
         [class.stamp-mode]="classroomStore.mode() === 'gathered' && activeTool() === 'stamp'"
         (click)="onBoardClick($event)">
           <app-chess-board
