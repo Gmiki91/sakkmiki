@@ -1,6 +1,6 @@
 import {
-  Component, viewChild, AfterViewInit, inject,
-  signal, effect, computed, input,
+  Component, viewChild,  inject,
+  signal, effect, computed,
 } from '@angular/core';
 import { Config } from '@lichess-org/chessground/config';
 import { MatButtonModule } from '@angular/material/button';
@@ -35,11 +35,8 @@ import { WhiteBoard } from "../../../shared/components/white-board/white-board";
   templateUrl: './teacher-desk.html',
   styleUrl: './teacher-desk.scss',
 })
-export class TeacherDesk implements AfterViewInit {
- chessBoard = viewChild(ChessBoard);
-
-  // When true this is a spectator view: board is read-only, no controls
-  readonly = input(false);
+export class TeacherDesk {
+  chessBoard = viewChild(ChessBoard);
 
   store = inject(ClassroomStore);
   drawingService = inject(DrawingService);
@@ -59,8 +56,7 @@ export class TeacherDesk implements AfterViewInit {
     this.store.spectators().map(s => s.displayName).join(', ')
   );
 
-  // Owner board config (static — board state is driven by api.set() calls)
-  private ownerBoardConfig: Config = {
+  boardConfig : Config = {
     orientation: 'white',
     coordinates: false,
     movable: { free: true, events: { after: () => this.handleMove() } },
@@ -70,26 +66,11 @@ export class TeacherDesk implements AfterViewInit {
     events:{change:()=>this.handleMove()}
   };
 
-  // Spectator board config reacts to teacherFen broadcasts
-  private spectatorBoardConfig = computed<Config>(() => ({
-    fen: this.store.teacherFen(),
-    orientation: 'white',
-    coordinates: false,
-    movable: { free: false, color: undefined },
-    draggable: { enabled: false, shapes: [] },
-    drawable: { enabled: false },
-    highlight: { lastMove: true },
-  }));
-
-  boardConfig = computed<Config>(() =>
-    this.readonly() ? this.spectatorBoardConfig() : this.ownerBoardConfig
-  );
-
   constructor() {
-    // Load exercise onto board when selected from list (owner only)
+    // Load exercise onto board when selected from list 
     effect(() => {
       const ex = this.demoExercise();
-      if (ex && this.chessBoard()?.api && !this.readonly()) {
+      if (ex && this.chessBoard()?.api) {
         this.chessBoard()?.api.set({ fen: ex.fen, lastMove: [] });
         if (this.isGathered()) {
           this.store.sendTeacherFen(ex.fen);
@@ -113,21 +94,12 @@ export class TeacherDesk implements AfterViewInit {
     });
   }
 
-  ngAfterViewInit(): void {
-    if (this.readonly()) return; // spectators don't send anything
-
-    const el = this.chessBoard()?.boardElement.nativeElement as HTMLElement;
-    // send shared arrows in gathered mode (left mouse-clear, right mouse-draw)
-    if(el)
-    el.addEventListener('mouseup', (e: MouseEvent) => {
-      if (e.button !== 0 && e.button !== 2) return;
-      if (this.isGathered()) {
+  onBoardMouseUp(e: MouseEvent): void {
+    if (e.button !== 0 && e.button !== 2) return; // spectators don't send anything
         setTimeout(() => {
           const shapes = this.chessBoard()?.api?.state.drawable.shapes ?? [];
           this.store.sendSharedArrows(shapes);
         }, 0);
-      }
-    });
   }
 
   handleMove(): void {

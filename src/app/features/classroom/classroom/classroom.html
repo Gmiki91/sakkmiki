@@ -4,7 +4,11 @@
   </div>
 } @else {
   <div class="classroom-container" [class.gathered]="store.mode() === 'gathered'">
-    <app-teacher-desk [readonly]="!isOwner()"></app-teacher-desk>
+    @if (isOwner()) {
+      <app-teacher-desk></app-teacher-desk>
+    } @else {
+      <app-spectator-view></app-spectator-view>
+    }
     @if (store.mode() !== 'gathered') {
       <app-student-roster [readonly]="!isOwner()"></app-student-roster>
     }
