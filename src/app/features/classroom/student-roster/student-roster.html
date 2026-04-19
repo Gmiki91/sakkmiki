@@ -10,7 +10,9 @@
             <mat-card-title>{{ pair.white }} vs {{ pair.black }}</mat-card-title>
           </mat-card-header>
           <mat-card-content>
-            <div class="mini-board">
+            <div class="mini-board"
+              (mouseup)="onBoardMouseUp($event, student.name)"
+              (contextmenu)="$event.preventDefault()">
               <app-chess-board
                 [config]="boardConfigFor(chFen.fen, chFen.from, chFen.to)"
                 #studentBoard>
@@ -39,8 +41,11 @@
           </mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-          <div class="mini-board"  [class.awaiting-teacher]="store.mode()==='simul' && isAwaitingTeacher(student.name)">
-            @if (isLoadingList()) {
+          <div class="mini-board"
+              [class.awaiting-teacher]="store.mode()==='simul' && isAwaitingTeacher(student.name)"
+              (mouseup)="onBoardMouseUp($event, student.name)"
+              (contextmenu)="$event.preventDefault()">
+              @if (isLoadingList()) {
               <div class="board-loading"><mat-spinner diameter="32"></mat-spinner></div>
             } @else {
               <app-chess-board  [config]="store.mode()==='simul' ? simulBoardConfigFor(student.name) : boardConfigFor(student.fen)" #studentBoard></app-chess-board>

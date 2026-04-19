@@ -1,4 +1,4 @@
-import { Component, inject, input, QueryList, ViewChildren, AfterViewInit, signal, computed, effect,untracked } from '@angular/core';
+import { Component, inject, input, QueryList, ViewChildren, signal, computed, effect, untracked } from '@angular/core';
 import { ClassroomStore } from '../../../core/services/classroom-store.service';
 import { DrawingService } from '../../../core/services/drawing.service';
 import { ChessBoard } from '../../../shared/components/chess-board/chess-board';
@@ -12,7 +12,7 @@ import { Config } from '@lichess-org/chessground/config';
 import { Key } from '@lichess-org/chessground/types';
 import { ChallengePair } from '../../../shared/models/challenge-pair.model';
 import { Exercise } from '../../../shared/models/exercise.model';
-import { STARTING_FEN,getValidMoves, loadChess } from '../../../shared/utils/chess.utils';
+import { STARTING_FEN, getValidMoves, loadChess } from '../../../shared/utils/chess.utils';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Chess } from 'chess.js';
 
@@ -22,11 +22,10 @@ import { Chess } from 'chess.js';
   templateUrl: './student-roster.html',
   styleUrl: './student-roster.scss',
 })
-export class StudentRoster implements AfterViewInit {
+export class StudentRoster {
   @ViewChildren('studentBoard') studentBoards!: QueryList<ChessBoard>;
   @ViewChildren(StudentTimer) timers!: QueryList<StudentTimer>;
 
-  // When true, hide all interactive controls (spectator mode)
   readonly = input(false);
 
   store = inject(ClassroomStore);
@@ -51,10 +50,9 @@ export class StudentRoster implements AfterViewInit {
       if (droppedEx) {
         result[student.name] = droppedEx.title;
       } else {
-        const assignedList = assigned[student.name];
-        const list = assignedList ?? globalList;
+        const list = assigned[student.name] ?? globalList;
         const ex = list[student.exIndex];
-        result[student.name] = ex ? `${ex.title}` : 'No exercise loaded';
+        result[student.name] = ex ? ex.title : 'No exercise loaded';
       }
     }
     return result;
@@ -75,22 +73,21 @@ export class StudentRoster implements AfterViewInit {
   });
 
   private lastExIndex: Record<string, number> = {};
-  private listenedElements = new Set<HTMLElement>();
 
   constructor() {
+    // Push incoming arrows into a specific student's miniboard
     effect(() => {
       const update = this.store.miniboardArrows();
       if (!update) return;
-      const index = this.store.students().findIndex((s) => s.name === update.name);
+      const index = this.store.students().findIndex(s => s.name === update.name);
       if (index === -1) return;
-      if (this.studentBoards)
-        this.studentBoards.get(index)?.api?.set({ drawable: { shapes: update.shapes } });
+      this.studentBoards.get(index)?.api?.set({ drawable: { shapes: update.shapes } });
     });
 
-    // Reset timer when a student moves to a new exercise
+    // Reset timer when student advances to a new exercise
     effect(() => {
       const students = this.store.students();
-      students.forEach((student) => {
+      students.forEach(student => {
         const prev = this.lastExIndex[student.name];
         if (prev === undefined) { this.lastExIndex[student.name] = student.exIndex; return; }
         if (prev !== student.exIndex) {
@@ -100,23 +97,16 @@ export class StudentRoster implements AfterViewInit {
       });
     });
 
-    // Simul: init/update chess instances when simul state or student list changes
+    // Simul: sync chess instances with student list
     effect(() => {
       const students = this.store.students();
-
-      if (this.store.mode()!=='simul') {
-        if (this.simulChessMap.size > 0) {
-          this.simulChessMap.clear();
-          this.simulConfigs.set({});
-        }
+      if (this.store.mode() !== 'simul') {
+        if (this.simulChessMap.size > 0) { this.simulChessMap.clear(); this.simulConfigs.set({}); }
         return;
       }
-
       const currentNames = new Set(students.map(s => s.name));
       let changed = false;
       const newConfigs = untracked(() => ({ ...this.simulConfigs() }));
-
-      // Add new students
       students.forEach(student => {
         if (!this.simulChessMap.has(student.name)) {
           const chess = new Chess();
@@ -125,20 +115,13 @@ export class StudentRoster implements AfterViewInit {
           changed = true;
         }
       });
-
-      // Remove departed students
       for (const name of this.simulChessMap.keys()) {
-        if (!currentNames.has(name)) {
-          this.simulChessMap.delete(name);
-          delete newConfigs[name];
-          changed = true;
-        }
+        if (!currentNames.has(name)) { this.simulChessMap.delete(name); delete newConfigs[name]; changed = true; }
       }
-
       if (changed) this.simulConfigs.set(newConfigs);
     });
 
-    // Simul: receive student's move and update teacher's miniboard
+    // Simul: receive student move, update teacher miniboard
     effect(() => {
       const move = this.store.incomingSimulStudentMove();
       if (!move) return;
@@ -148,24 +131,33 @@ export class StudentRoster implements AfterViewInit {
       loadChess(chess, move.fen);
       this.simulConfigs.update(c => ({
         ...c,
-        [move.studentName]: this.buildSimulConfig(move.studentName, chess, move.from,move.to),
+        [move.studentName]: this.buildSimulConfig(move.studentName, chess, move.from, move.to),
       }));
     });
   }
 
-  ngAfterViewInit(): void {
-    this.studentBoards.changes.subscribe(() => {
-      this.listenedElements.forEach((el) => {
-        if (!document.contains(el)) this.listenedElements.delete(el);
-      });
-      this.attachBoardListeners();
-    });
-    this.attachBoardListeners();
+  // ── Board event handlers (template bindings) ─────────────────────
+
+  onBoardMouseUp(e: MouseEvent, studentName: string): void {
+    if (this.readonly()) return;
+    if (e.button !== 0 && e.button !== 2) return;
+    setTimeout(() => {
+      const index = this.store.students().findIndex(s => s.name === studentName);
+      const shapes = this.studentBoards.get(index)?.api?.state.drawable.shapes ?? [];
+      this.store.sendSharedArrows(shapes, studentName);
+      const pair = this.getPair(studentName);
+      if (pair) {
+        const partner = pair.white === studentName ? pair.black : pair.white;
+        this.store.sendSharedArrows(shapes, partner);
+      }
+    }, 0);
   }
+
+  // ── Config builders ──────────────────────────────────────────────
 
   boardConfigFor(fen?: string, from?: string, to?: string): Config {
     return {
-      fen:fen||STARTING_FEN,
+      fen: fen || STARTING_FEN,
       orientation: 'white',
       coordinates: false,
       movable: { free: false, color: undefined },
@@ -176,37 +168,44 @@ export class StudentRoster implements AfterViewInit {
     };
   }
 
+  simulBoardConfigFor(studentName: string): Config {
+    return this.simulConfigs()[studentName] ?? { fen: STARTING_FEN, orientation: 'white', movable: { free: false } };
+  }
+
+  isAwaitingTeacher(studentName: string): boolean {
+    return this.simulConfigs()[studentName]?.turnColor === 'white';
+  }
+
+  // ── Teacher actions ──────────────────────────────────────────────
+
   handleResume(studentName: string): void {
     this.store.sendResume(studentName);
-    this.store.students.update((s) => s.map((x) => x.name === studentName ? { ...x, locked: false } : x));
+    this.store.students.update(s => s.map(x => x.name === studentName ? { ...x, locked: false } : x));
   }
 
   handleStamp(studentName: string): void {
     this.store.sendStamp(studentName);
-    this.store.students.update((s) =>
-      s.map((x) => x.name === studentName ? { ...x, locked: false, awaitingStamp: false } : x));
+    this.store.students.update(s =>
+      s.map(x => x.name === studentName ? { ...x, locked: false, awaitingStamp: false } : x));
   }
 
   handleLock(studentName: string): void {
-    const student = this.store.students().find((s) => s.name === studentName);
+    const student = this.store.students().find(s => s.name === studentName);
     if (student?.locked) {
-      this.teacherLockedStudents.update((set) => { set.delete(studentName); return new Set(set); });
+      this.teacherLockedStudents.update(set => { set.delete(studentName); return new Set(set); });
       this.store.sendUnlock(studentName);
-      this.store.students.update((s) => s.map((x) => x.name === studentName ? { ...x, locked: false } : x));
+      this.store.students.update(s => s.map(x => x.name === studentName ? { ...x, locked: false } : x));
     } else {
-      this.teacherLockedStudents.update((set) => new Set(set).add(studentName));
+      this.teacherLockedStudents.update(set => new Set(set).add(studentName));
       this.store.sendLock(studentName);
-      this.store.students.update((s) => s.map((x) => x.name === studentName ? { ...x, locked: true } : x));
+      this.store.students.update(s => s.map(x => x.name === studentName ? { ...x, locked: true } : x));
     }
   }
 
-  toggleStudentAutoRedo(name: string): void {
-    this.store.sendAutoRedo(!this.effectiveAutoRedo()(name), name);
-  }
+  toggleStudentAutoRedo(name: string): void { this.store.sendAutoRedo(!this.effectiveAutoRedo()(name), name); }
+  toggleStudentAutoProgress(name: string): void { this.store.sendAutoProgress(!this.effectiveAutoProgress()(name), name); }
 
-  toggleStudentAutoProgress(name: string): void {
-    this.store.sendAutoProgress(!this.effectiveAutoProgress()(name), name);
-  }
+  // ── Drag & drop ──────────────────────────────────────────────────
 
   onDrop(targetName: string, event: DragEvent): void {
     if (this.readonly()) return;
@@ -217,8 +216,7 @@ export class StudentRoster implements AfterViewInit {
   }
 
   handleListDrop(targetName: string, event: DragEvent): void {
-    const pair = this.getPair(targetName);
-    if (pair) {
+    if (this.getPair(targetName)) {
       this.snackBar.open("Can't assign a list to a two player game", '', { duration: 2000 });
     } else {
       const exercises = JSON.parse(event.dataTransfer?.getData('exercises') ?? '[]');
@@ -243,7 +241,7 @@ export class StudentRoster implements AfterViewInit {
     const source = this.pendingPair();
     if (!source || source === targetName) { this.pendingPair.set(null); return; }
     const pair: ChallengePair = { white: source, black: targetName };
-    this.store.challengePairs.update((pairs) => [...pairs, pair]);
+    this.store.challengePairs.update(pairs => [...pairs, pair]);
     this.store.syncChallengePair(pair);
     this.pendingPair.set(null);
   }
@@ -253,21 +251,23 @@ export class StudentRoster implements AfterViewInit {
     this.pendingPair.set(studentName);
   }
 
+  // ── Challenge helpers ────────────────────────────────────────────
+
   getPair(studentName: string): ChallengePair | null {
     return this.store.challengePairs().find(
-      (p) => p.white === studentName || p.black === studentName) ?? null;
+      p => p.white === studentName || p.black === studentName) ?? null;
   }
 
   removePair(pair: ChallengePair): void {
-    this.store.challengePairs.update((pairs) =>
-      pairs.filter((p) => p.white !== pair.white || p.black !== pair.black));
+    this.store.challengePairs.update(pairs =>
+      pairs.filter(p => p.white !== pair.white || p.black !== pair.black));
     this.store.sendChallengeRemove(pair);
   }
 
   triggerRematch(pair: ChallengePair): void {
     const swapped: ChallengePair = { white: pair.black, black: pair.white };
-    this.store.challengePairs.update((pairs) =>
-      pairs.map((p) => (p.white === pair.white && p.black === pair.black ? swapped : p)));
+    this.store.challengePairs.update(pairs =>
+      pairs.map(p => (p.white === pair.white && p.black === pair.black ? swapped : p)));
     this.store.sendChallengeRematch(swapped);
   }
 
@@ -275,31 +275,19 @@ export class StudentRoster implements AfterViewInit {
     const move = this.store.challengeMove();
     if (move && move.white === pair.white && move.black === pair.black)
       return { fen: move.fen, from: move.from, to: move.to };
-    const whiteFen = this.store.students().find((s) => s.name === pair.white)?.fen;
+    const whiteFen = this.store.students().find(s => s.name === pair.white)?.fen;
     return whiteFen ? { fen: whiteFen } : { fen: STARTING_FEN };
   }
 
-  freezeTimers(): void { this.timers.forEach((t) => t.stop()); }
-  resumeTimers(): void { this.timers.forEach((t) => t.start()); }
+  // ── Timers ───────────────────────────────────────────────────────
 
-  // ----------------------------------------------------------------
-  // Simul helpers
-  // ----------------------------------------------------------------
+  freezeTimers(): void { this.timers.forEach(t => t.stop()); }
+  resumeTimers(): void { this.timers.forEach(t => t.start()); }
 
-  simulBoardConfigFor(studentName: string): Config {
-    return this.simulConfigs()[studentName] ?? { fen: STARTING_FEN, orientation: 'white', movable: { free: false } };
-  }
+  // ── Private ──────────────────────────────────────────────────────
 
-  isAwaitingTeacher(studentName: string): boolean {
-    const cfg = this.simulConfigs()[studentName];
-    if (!cfg) return false;
-    // White to move = teacher's turn
-    return cfg.turnColor === 'white';
-  }
-
-  private buildSimulConfig(studentName: string, chess: Chess, orig?:string,dest?:string): Config {
+  private buildSimulConfig(studentName: string, chess: Chess, orig?: string, dest?: string): Config {
     const isWhiteTurn = chess.turn() === 'w';
-    const lastMove = (orig && dest) ? [orig as Key, dest as Key] : undefined;
     return {
       fen: chess.fen(),
       orientation: 'white',
@@ -309,14 +297,12 @@ export class StudentRoster implements AfterViewInit {
         free: false,
         color: isWhiteTurn ? 'white' : undefined,
         dests: isWhiteTurn ? getValidMoves(chess) : new Map(),
-        events: {
-          after: (orig: Key, dest: Key) => this.onSimulTeacherMove(studentName, orig, dest),
-        },
+        events: { after: (o: Key, d: Key) => this.onSimulTeacherMove(studentName, o, d) },
       },
       draggable: { enabled: isWhiteTurn, showGhost: true },
       highlight: { lastMove: true, check: true },
-      drawable: { enabled: true,  visible:true },
-      lastMove:lastMove
+      drawable: { enabled: true, visible: true },
+      lastMove: orig && dest ? [orig as Key, dest as Key] : undefined,
     };
   }
 
@@ -326,45 +312,14 @@ export class StudentRoster implements AfterViewInit {
     try {
       const move = chess.move({ from: orig, to: dest });
       if (!move) return;
-      this.simulConfigs.update(c => ({
-        ...c,
-        [studentName]: this.buildSimulConfig(studentName, chess),
-      }));
+      this.simulConfigs.update(c => ({ ...c, [studentName]: this.buildSimulConfig(studentName, chess) }));
       this.store.sendSimulTeacherMove(studentName, chess.fen(), orig, dest);
     } catch {
-      // Invalid move — reset board to current chess state
-      this.simulConfigs.update(c => ({
-        ...c,
-        [studentName]: this.buildSimulConfig(studentName, chess),
-      }));
+      this.simulConfigs.update(c => ({ ...c, [studentName]: this.buildSimulConfig(studentName, chess) }));
     }
   }
 
   private resetTimer(name: string): void {
-    this.timers.find((t) => t.name() === name)?.reset();
-  }
-
-  private attachBoardListeners(): void {
-    if (this.readonly()) return; // spectators don't send arrows
-    this.studentBoards.forEach((board, index) => {
-      const el = board.boardElement?.nativeElement as HTMLElement;
-      if (!el || this.listenedElements.has(el)) return;
-      this.listenedElements.add(el);
-      const studentName = this.store.students()[index]?.name;
-      el.addEventListener('contextmenu', (e) => e.preventDefault());
-      el.addEventListener('mouseup', (e: MouseEvent) => {
-        if (e.button !== 0 && e.button !== 2) return;
-        setTimeout(() => {
-          const shapes = board.api?.state.drawable.shapes ?? [];
-          if (!studentName) return;
-          this.store.sendSharedArrows(shapes, studentName);
-          const pair = this.getPair(studentName);
-          if (pair) {
-            const partner = pair.white === studentName ? pair.black : pair.white;
-            this.store.sendSharedArrows(shapes, partner);
-          }
-        }, 0);
-      });
-    });
+    this.timers.find(t => t.name() === name)?.reset();
   }
 }
