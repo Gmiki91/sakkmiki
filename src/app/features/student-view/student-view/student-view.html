@@ -1,0 +1,27 @@
+<div class="background"></div>
+<button class="volume-btn" (click)="toggleSound()">
+  <mat-icon>{{ soundService.isMute() ? 'volume_off' : 'volume_up' }}</mat-icon>
+</button>
+
+<div class="chess-container" [class.gathered]="classroomStore.mode() === 'gathered'">
+   <mat-card-header>
+      <mat-card-title>{{ title() }}</mat-card-title>
+    </mat-card-header>
+  @if (classroomStore.mode() === 'gathered') {
+    <app-white-board [disabled]="true"></app-white-board>
+  }
+
+  @if (classroomStore.mode() === 'simul') {
+    <app-simul-board></app-simul-board>
+  } @else  {
+    <mat-card class="main-card">
+    
+      <mat-card-content>
+        <app-exercise-board [hidden]="myPair() !== null"></app-exercise-board>
+        @if (myPair()) {
+          <app-challenge-board></app-challenge-board>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

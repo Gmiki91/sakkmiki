@@ -1,0 +1,67 @@
+.background {
+  position: fixed;
+  inset: 0;
+  background-image: url('../../../../../public/bg.png');
+  background-size: cover;
+  background-position: center;
+  z-index: -10;
+}
+
+.volume-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.chess-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+
+  &.gathered{
+    flex-direction: row;
+  }
+  app-exercise-board{
+    display: flex;
+    align-items: center;
+  }
+}
+
+.main-card {
+  border-radius: 12px;
+  background-color: transparent;
+  box-shadow: none;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+mat-card {
+  border-radius: 12px;
+  background-color: transparent;
+  box-shadow: none;
+  overflow: hidden;
+}
+
+mat-card-header {
+  padding-bottom: 14px;
+  justify-content: center;
+
+  mat-card-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--mat-sys-on-surface);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    padding-bottom: 6px;
+  }
+}
+
+@media (max-width: 600px) {
+  .chess-container { padding: 4px; flex-direction: column; }
+}

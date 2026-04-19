@@ -5,7 +5,7 @@ import { ClassroomStore } from '../../../core/services/classroom-store.service';
 import { ExerciseService } from '../../../core/services/exercise.service';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { TeacherDesk } from '../teacher-desk/teacher-desk';
-import { SpectatorView } from '../spectator-view/spectator-view';
+import { SpectatorView } from '../../student-view/spectator-view/spectator-view';
 import { StudentRoster } from '../student-roster/student-roster';
 import { AuthService } from '../../../core/services/auth.service';
 
