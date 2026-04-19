@@ -52,6 +52,7 @@ export class ExerciseService {
     const exercise: ExerciseInput = {
       title,
       fen: puzzle.fen,
+      instruction:'',
       exerciseType: 'puzzle',
       solutions: puzzle.solutions,
       lastMove: puzzle.lastMove ?? undefined,

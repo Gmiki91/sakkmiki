@@ -26,6 +26,7 @@ import {
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
 
 @Component({
   selector: 'app-board-creator',
@@ -35,6 +36,7 @@ import { MatIcon } from '@angular/material/icon';
     MatRadioModule,
     MatCheckboxModule,
     MatInputModule,
+    MatFormFieldModule,
     MatButton,
     MatIcon,
   ],
@@ -51,6 +53,7 @@ export class BoardCreator implements OnInit, AfterViewInit {
   private chess = new Chess();
 
   title = model('');
+  instruction = model('');
   whiteCastlingKingSide = model(true);
   whiteCastlingQueenSide = model(true);
   blackCastlingKingSide = model(true);
@@ -141,6 +144,7 @@ export class BoardCreator implements OnInit, AfterViewInit {
         await this.exerciseService.updateExercise({
           ...existing,
           title: this.title(),
+          instruction:this.instruction(),
           fen,
           lastMove: this.lastMove() ?? undefined,
           mushroomType: this.mushroomType() || undefined,
@@ -161,6 +165,7 @@ export class BoardCreator implements OnInit, AfterViewInit {
       if (this.exerciseType() === 'puzzle') this.chess.load(fen);
       const exercise: ExerciseInput = {
         title: this.title(),
+        instruction:this.instruction(),
         fen,
         exerciseType: this.exerciseType(),
         listId,
@@ -217,6 +222,7 @@ export class BoardCreator implements OnInit, AfterViewInit {
   private loadExercise(exercise: Exercise): void {
     this.exerciseType.set(exercise.exerciseType);
     this.title.set(exercise.title);
+    this.instruction.set(exercise.instruction);
     const fenParts = exercise.fen.split(' ');
     this.currentFen.set(fenParts[0] ?? BARE_STARTING_FEN);
     this.turnOrder.set((fenParts[1] as 'w' | 'b') ?? 'w');

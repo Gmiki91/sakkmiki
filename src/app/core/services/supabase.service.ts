@@ -217,6 +217,7 @@ export class SupabaseService {
     return {
       id: raw.id,
       title: raw.title,
+      instruction:raw.instruction,
       fen: raw.fen,
       exerciseType: raw.exercise_type,
       solutions: raw.solutions,
@@ -239,6 +240,7 @@ export class SupabaseService {
     return {
       title: exercise.title,
       fen: exercise.fen,
+      instruction:exercise.instruction,
       exercise_type: exercise.exerciseType,
       solutions: exercise.solutions,
       common_mistakes: exercise.commonMistakes,
