@@ -1,106 +1,140 @@
 <div class="teacher-desk" [class.gathered]="isGathered()">
+  @if (isGathered()) {
+    <app-white-board></app-white-board>
+  }
+  <div class="board-column" [class.normal]="!isGathered()">
+    @if (isGathered()) {
+      <div class="board-wrapper" [class.gathered]="isGathered()">
+        <app-chess-board
+          #chessBoard
+          [config]="boardConfig()"
+          [mushroomMode]="
+            !readonly() && isGathered() && demoExercise()?.exerciseType === 'mushroom'
+          "
+          [style.--mushroom-emoji]="'&quot;' + demoExercise()?.mushroomType + '&quot;'"
+        ></app-chess-board>
+        <app-drawing-canvas
+          [strokes]="drawingService.allStrokes()"
+          [annotations]="drawingService.allAnnotations()"
+          [active]="false"
+        >
+        </app-drawing-canvas>
 
-   @if (isGathered()) {
-  <app-white-board></app-white-board>
-   }
-  <!-- Board column — always in DOM -->
-  <div class="board-column">
-    <div class="board-wrapper" [class.gathered]="isGathered()">
-      <app-chess-board
-        #chessBoard
-        [config]="boardConfig()"
-        [mushroomMode]="!readonly() && isGathered() && demoExercise()?.exerciseType === 'mushroom'"
-        [style.--mushroom-emoji]='"\"" + demoExercise()?.mushroomType + "\""'
-      ></app-chess-board>
-
-      <app-drawing-canvas
-        [strokes]="drawingService.allStrokes()"
-        [annotations]="drawingService.allAnnotations()"
-        [active]="false">
-      </app-drawing-canvas>
-
-      @for (concept of overlayService.activeConcepts(); track concept.id) {
-        <app-teaching-overlay
-          [conceptId]="concept.id"
-          [squares]="concept.squares"
-          orientation="white"
-        ></app-teaching-overlay>
-      }
-      @if (!readonly() && overlayService.isSelectingSquares()) {
-        <div class="square-interceptor" (click)="onInterceptorClick($event)"></div>
-      }
-    </div>
-
+        @for (concept of overlayService.activeConcepts(); track concept.id) {
+          <app-teaching-overlay
+            [conceptId]="concept.id"
+            [squares]="concept.squares"
+            orientation="white"
+          ></app-teaching-overlay>
+        }
+        @if (!readonly() && overlayService.isSelectingSquares()) {
+          <div class="square-interceptor" (click)="onInterceptorClick($event)"></div>
+        }
+      </div>
+    }
     <!-- Owner controls only -->
     @if (!readonly()) {
+      <!-- Gathered-only controls -->
       <div class="controls">
-        <div class="row">
-          <button mat-icon-button (click)="resetBoard()" matTooltip="Reset board"><mat-icon>refresh</mat-icon></button>
-          <button mat-icon-button (click)="clearBoard()" matTooltip="Clear board"><mat-icon>delete</mat-icon></button>
-        </div>
-        <div class="row">
-          <button style="width: 100%" mat-raised-button color="primary" (click)="gather()">Gather</button>
-          <button style="width: 100%" mat-raised-button (click)="disperse()">Disperse</button>
-        </div>
+        @if (isGathered()) {
+          <div class="row">
+            <button mat-icon-button (click)="resetBoard()" matTooltip="Reset board">
+              <mat-icon>refresh</mat-icon>
+            </button>
+            <button mat-icon-button (click)="clearBoard()" matTooltip="Clear board">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+          <div class="row">
+            <button style="width: 100%" mat-raised-button (click)="disperse()">Disperse</button>
+          </div>
+        }
+        @if (!isGathered()) {
+          <div class="row">
+            <button style="width: 100%" mat-raised-button color="primary" (click)="gather()">
+              Gather
+            </button>
+          </div>
+        }
+
+        <!-- Always visible controls -->
+
         <div class="row">
           <button
-            style="width: 100%" 
-            mat-raised-button 
+            style="width: 100%"
+            mat-raised-button
             [matTooltip]="store.curtainClosed() ? 'Reveal board' : 'Hide board'"
-            (click)="store.sendCurtain(!store.curtainClosed())">
+            (click)="store.sendCurtain(!store.curtainClosed())"
+          >
             {{ store.curtainClosed() ? 'Curtain up' : 'Curtain down' }}
           </button>
         </div>
         <div class="row">
-          <button style="width: 100%" mat-raised-button (click)="openPicker()">Load exercises</button>
+          <button mat-raised-button style="width: 100%" (click)="openInviteDialog()">
+            Invite student
+          </button>
         </div>
-      </div>
-       <!-- Normal mode: exercise lists next to board  -->
-  @if (!isGathered()) {
-    <div class="exercise-column">
-      @for (list of loadedLists(); track list.id) {
-        <div class="list-header" draggable="true" (dragstart)="onListDragStart(list, $event)">
-          <mat-icon class="drag-handle">drag_indicator</mat-icon>
-          <h3>{{ list.title }}</h3>
-          <button mat-icon-button (click)="removeList(list)"><mat-icon>close</mat-icon></button>
-          <button mat-icon-button (click)="loadListToAll(list)" matTooltip="Load list to all students">
-              <mat-icon >arrow_forward</mat-icon>    
-            </button>
-        </div>
-        <app-exercise-list [list]="list" (selectExercise)="demoExercise.set($event)"></app-exercise-list>
-      }
-    </div>
-  }
-  }
 
-    <!-- Spectators — always visible when anyone is watching -->
-    @if (store.spectators().length > 0) {
-      <div class="spectators-bar">
-        <mat-icon class="eye-icon">visibility</mat-icon>
-        <span class="spectator-count">{{ store.spectators().length }}</span>
-        <span class="spectator-names">{{ spectatorNames() }}</span>
+        <!-- Auto redo, auto progress, simul controls - normal mode only -->
+        @if (store.mode() !== 'simul' && !isGathered()) {
+          <div class="row">
+            <button
+              mat-raised-button
+              style="width: 100%"
+              [color]="store.autoRedo() ? 'primary' : ''"
+              (click)="toggleAutoRedo()"
+            >
+              Auto Redo {{ store.autoRedo() ? 'ON' : 'OFF' }}
+            </button>
+          </div>
+          <div class="row">
+            <button
+              mat-raised-button
+              style="width: 100%"
+              [color]="store.autoProgress() ? 'primary' : ''"
+              (click)="toggleAutoProgress()"
+            >
+              Auto Progress {{ store.autoProgress() ? 'ON' : 'OFF' }}
+            </button>
+          </div>
+          <div class="row">
+            <button style="width: 100%" mat-raised-button (click)="startSimul()">
+              Start Simul
+            </button>
+          </div>
+        }
+
+        <!-- End simul button - simul mode only -->
+        @if (store.mode() === 'simul' && !isGathered()) {
+          <div class="row">
+            <button style="width: 100%" mat-raised-button color="warn" (click)="stopSimul()">
+              End Simul
+            </button>
+          </div>
+        }
       </div>
     }
   </div>
-
-
   <!-- Concepts + drawings column — gathered + owner only -->
   @if (isGathered() && !readonly()) {
-    <div class="right-column">
+    <div class="column">
       <div class="concept-palette">
         <span class="palette-title">Animations</span>
         @if (overlayService.isSelectingSquares()) {
           <div class="selection-indicator">
             <span class="selection-dot"></span>
-            Click a square
-            ({{ overlayService.selectedSquares().length }}/{{ overlayService.pendingConcept()!.squaresNeeded }})
+            Click a square ({{ overlayService.selectedSquares().length }}/{{
+              overlayService.pendingConcept()!.squaresNeeded
+            }})
           </div>
           <button mat-button (click)="overlayService.cancelSquareSelection()">Cancel</button>
         } @else {
           @for (concept of concepts; track concept.id) {
-            <button mat-raised-button
+            <button
+              mat-raised-button
               [class.concept-active]="isConceptActive(concept.id)"
-              (click)="overlayService.startConcept(concept)">
+              (click)="overlayService.startConcept(concept)"
+            >
               {{ concept.label }}
             </button>
           }
@@ -112,12 +146,16 @@
       <span class="palette-title">Drawings</span>
       @for (student of store.students(); track student.name) {
         <div class="student-drawing-row">
-          <div class="color-swatch"
-            [style.background]="drawingService.studentColors()[student.name] ?? defaultBrush">
-          </div>
+          <div
+            class="color-swatch"
+            [style.background]="drawingService.studentColors()[student.name] ?? defaultBrush"
+          ></div>
           <span class="student-name">{{ student.name }}</span>
-          <button mat-icon-button matTooltip="Clear drawings"
-            (click)="drawingService.clearStudent(student.name)">
+          <button
+            mat-icon-button
+            matTooltip="Clear drawings"
+            (click)="drawingService.clearStudent(student.name)"
+          >
             <mat-icon>cleaning_services</mat-icon>
           </button>
         </div>
@@ -129,56 +167,40 @@
       </button>
     </div>
   }
-
-  <!-- Exercise list column — gathered + owner only -->
-  @if (isGathered() && !readonly()) {
-    <div class="exercises-column">
-      @if (loadedLists().length === 0) {
-        <p class="empty-label">No lists loaded</p>
-      }
+  @if (!readonly()) {
+    <div class="exercise-column">
+      <div class="row">
+        <button style="width: 100%" mat-raised-button (click)="openPicker()">Load exercises</button>
+      </div>
       @for (list of loadedLists(); track list.id) {
-        <div class="list-header">
-          <h3>{{ list.title }}</h3>
+        <div class="list-header" draggable="true" (dragstart)="onListDragStart(list, $event)">
+          <mat-icon class="drag-handle">drag_indicator</mat-icon>
+          <h3 [matTooltip]="list.title" matTooltipShowDelay="500">{{ list.title }}</h3>
           <button mat-icon-button (click)="removeList(list)"><mat-icon>close</mat-icon></button>
+          @if (!this.isGathered()) {
+            <button
+              mat-icon-button
+              (click)="loadListToAll(list)"
+              matTooltip="Load list to all students"
+            >
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
+          }
         </div>
-        <app-exercise-list [list]="list" (selectExercise)="demoExercise.set($event)"></app-exercise-list>
+        <app-exercise-list
+          [list]="list"
+          (selectExercise)="demoExercise.set($event)"
+        ></app-exercise-list>
       }
     </div>
   }
 
-
-  @if (!isGathered() && !readonly()) {
-    <div class="controls">
-          <div class="row">
-            <button mat-raised-button style="width: 100%" (click)="openInviteDialog()">
-              Invite student
-            </button>
-          </div>
-          <div class="row">
-            <button mat-raised-button
-              style="width: 100%"
-              [color]="store.autoRedo() ? 'primary' : ''"
-              (click)="toggleAutoRedo()">
-              Auto Redo {{ store.autoRedo() ? 'ON' : 'OFF' }}
-            </button>
-          </div>
-          <div class="row">
-            <button mat-raised-button
-              style="width: 100%"
-              [color]="store.autoProgress() ? 'primary' : ''"
-              (click)="toggleAutoProgress()">
-              Auto Progress {{ store.autoProgress() ? 'ON' : 'OFF' }}
-            </button>
-          </div>
-          <div class="row">
-           @if (store.mode()==='simul') {
-             <button style="width: 100%" mat-raised-button color="warn" (click)="stopSimul()">End Simul</button>
-           } @else {
-             <button style="width: 100%" mat-raised-button (click)="startSimul()">Start Simul</button>
-           }
-         </div>
-         </div>
-    }
- 
-
+  <!-- Spectators — always visible when anyone is watching -->
+  @if (store.spectators().length > 0) {
+    <div class="spectators-bar">
+      <mat-icon class="eye-icon">visibility</mat-icon>
+      <span class="spectator-count">{{ store.spectators().length }}</span>
+      <span class="spectator-names">{{ spectatorNames() }}</span>
+    </div>
+  }
 </div>

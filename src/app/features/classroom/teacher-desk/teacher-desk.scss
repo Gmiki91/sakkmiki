@@ -14,16 +14,21 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+
   gap: 12px;
+  &.normal{
+      width: 170px;
+  }
 }
 .exercise-column{
-  height:40vh;
+  height:80vh;
+  width: 200px;
   overflow-y: auto;
   overflow-x: hidden;
 }
 .board-wrapper {
-  width: var(--mini-board-size);
-  height: var(--mini-board-size);
+  width: var(--board-size);
+  height: var(--board-size);
   position: relative;
   overflow: hidden;
   transition: width 0.3s ease, height 0.3s ease;
@@ -31,10 +36,6 @@
 
   app-chess-board { display: block; width: 100%; height: 100%; }
 
-  &.gathered {
-    width: var(--board-size);
-    height: var(--board-size);
-  }
 }
 
 .square-interceptor {
@@ -132,7 +133,7 @@
 
 // ── Right column (gathered) ──────────────────────────────────────
 
-.right-column {
+.column {
   display: flex;
   flex-direction: column;
   gap: 8px;

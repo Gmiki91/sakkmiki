@@ -1,5 +1,5 @@
 import {
-  Component, ViewChild, AfterViewInit, inject,
+  Component, viewChild, AfterViewInit, inject,
   signal, effect, computed, input,
 } from '@angular/core';
 import { Config } from '@lichess-org/chessground/config';
@@ -36,7 +36,7 @@ import { WhiteBoard } from "../../../shared/components/white-board/white-board";
   styleUrl: './teacher-desk.scss',
 })
 export class TeacherDesk implements AfterViewInit {
-  @ViewChild('chessBoard') chessBoard!: ChessBoard;
+ chessBoard = viewChild(ChessBoard);
 
   // When true this is a spectator view: board is read-only, no controls
   readonly = input(false);
@@ -89,8 +89,8 @@ export class TeacherDesk implements AfterViewInit {
     // Load exercise onto board when selected from list (owner only)
     effect(() => {
       const ex = this.demoExercise();
-      if (ex && this.chessBoard?.api && !this.readonly()) {
-        this.chessBoard.api.set({ fen: ex.fen, lastMove: [] });
+      if (ex && this.chessBoard()?.api && !this.readonly()) {
+        this.chessBoard()?.api.set({ fen: ex.fen, lastMove: [] });
         if (this.isGathered()) {
           this.store.sendTeacherFen(ex.fen);
           if(ex.mushroomType)this.store.sendMushroomType(ex.mushroomType);
@@ -103,26 +103,27 @@ export class TeacherDesk implements AfterViewInit {
     // Apply shared arrows in gathered mode
     effect(() => {
       const arrows = this.store.sharedArrows()?.arrows ?? [];
-      if (this.isGathered()) this.chessBoard?.api?.set({ drawable: { shapes:arrows } });
+      if (this.isGathered()) this.chessBoard()?.api?.set({ drawable: { shapes:arrows } });
     });
 
     // Redraw board when gathered/normal toggles (board resizes via CSS)
     effect(() => {
       this.isGathered(); // track
-      setTimeout(() => this.chessBoard?.api?.redrawAll(), 0);
+      setTimeout(() => this.chessBoard()?.api?.redrawAll(), 0);
     });
   }
 
   ngAfterViewInit(): void {
     if (this.readonly()) return; // spectators don't send anything
 
-    const el = this.chessBoard.boardElement.nativeElement as HTMLElement;
+    const el = this.chessBoard()?.boardElement.nativeElement as HTMLElement;
     // send shared arrows in gathered mode (left mouse-clear, right mouse-draw)
+    if(el)
     el.addEventListener('mouseup', (e: MouseEvent) => {
       if (e.button !== 0 && e.button !== 2) return;
       if (this.isGathered()) {
         setTimeout(() => {
-          const shapes = this.chessBoard.api?.state.drawable.shapes ?? [];
+          const shapes = this.chessBoard()?.api?.state.drawable.shapes ?? [];
           this.store.sendSharedArrows(shapes);
         }, 0);
       }
@@ -130,18 +131,20 @@ export class TeacherDesk implements AfterViewInit {
   }
 
   handleMove(): void {
-    this.store.sendTeacherFen(this.chessBoard.api.getFen());
+    if(this.chessBoard()?.api!==undefined){
+    this.store.sendTeacherFen(this.chessBoard()!.api.getFen());
     this.drawingService.clearAllOnFenChange();
+    }
   }
 
   onInterceptorClick(event: MouseEvent): void {
-    const boardEl = this.chessBoard.boardElement.nativeElement as HTMLElement;
+    const boardEl = this.chessBoard()?.boardElement.nativeElement as HTMLElement;
     const square = clientToSquare(event.clientX, event.clientY, boardEl, 'white');
     this.overlayService.onSquareClicked(square);
   }
 
   gather(): void {
-    this.store.sendTeacherFen(this.chessBoard.api.getFen());
+    if(this.chessBoard()?.api!==undefined) this.store.sendTeacherFen(this.chessBoard()!.api.getFen());
     this.drawingService.clearAllOnFenChange();
     this.store.gather();
   }
@@ -152,13 +155,13 @@ export class TeacherDesk implements AfterViewInit {
 
   resetBoard(): void {
     const fen = this.demoExercise()? this.demoExercise()!.fen : STARTING_FEN;
-    this.chessBoard.api?.set({ fen, lastMove: [] });
+    this.chessBoard()?.api?.set({ fen, lastMove: [] });
     this.store.sendTeacherFen(fen);
     this.drawingService.clearAllOnFenChange();
   }
 
   clearBoard(): void {
-    this.chessBoard.api?.set({ fen: EMPTY_BOARD_FEN, lastMove: [] });
+    this.chessBoard()?.api?.set({ fen: EMPTY_BOARD_FEN, lastMove: [] });
     this.store.sendTeacherFen(EMPTY_BOARD_FEN);
     this.drawingService.clearAllOnFenChange();
     this.demoExercise.set(null);
