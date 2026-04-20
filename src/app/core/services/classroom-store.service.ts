@@ -134,7 +134,7 @@ export class ClassroomStore {
     this.isSpectator.set(false);
     this.transport.joinAsStudent(
       classroomId,
-      { role: 'student', name, status: '', feedback: '', exIndex: 0, locked: false, awaitingStamp: false },
+      { role: 'student', name,  exIndex: 0, locked:false, awaitingRedo: false, awaitingStamp: false },
       () => {
         this.isJoined.set(true);
         this.supabase.touchClassroom(classroomId).catch(() => {});

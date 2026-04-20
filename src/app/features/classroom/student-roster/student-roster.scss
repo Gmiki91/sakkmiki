@@ -39,22 +39,22 @@
     }
   }
 
-  .student-status {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.78rem;
-    color: var(--mat-sys-on-surface-variant);
-    min-height: 20px;
-    padding-top: 4px;
-    border-top: 1px solid var(--mat-sys-outline-variant);
-    margin-top: 4px;
+  // .student-status {
+  //   display: flex;
+  //   justify-content: space-between;
+  //   font-size: 0.78rem;
+  //   color: var(--mat-sys-on-surface-variant);
+  //   min-height: 20px;
+  //   padding-top: 4px;
+  //   border-top: 1px solid var(--mat-sys-outline-variant);
+  //   margin-top: 4px;
 
-    .feedback {
-      font-style: italic;
-      color: var(--mat-sys-primary);
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-  }
+  //   .feedback {
+  //     font-style: italic;
+  //     color: var(--mat-sys-primary);
+  //     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  //   }
+  // }
 }
 
 .no-students {

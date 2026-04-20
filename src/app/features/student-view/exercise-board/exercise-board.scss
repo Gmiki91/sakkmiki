@@ -1,7 +1,14 @@
 :host {
   display: contents;
 }
-
+.container{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap:25px;
+}
 .board-wrapper {
   display: flex;
   flex-direction: column;
@@ -97,14 +104,16 @@
 .collection {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-  padding: 8px 0;
   justify-content: center;
+  height:60px; 
 }
 
 .collection-item {
   font-size: 33px;
-  background: white;
-  padding: 10px;
-  border-radius: 25px;
+  text-shadow:
+  -1px -1px 0 #000,
+   1px -1px 0 #000,
+  -1px  1px 0 #000,
+   1px  1px 0 #000;
+  color: white;
 }

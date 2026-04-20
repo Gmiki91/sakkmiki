@@ -8,17 +8,16 @@ import { WhiteBoard } from '../../../shared/components/white-board/white-board';
 import { ExerciseBoard } from '../exercise-board/exercise-board';
 import { ChallengeBoard } from '../challenge-board/challenge-board';
 import { SimulBoard } from '../simul-board/simul-board';
+import { GatheredBoard } from '../gathered-board/gathered-board';
 
 @Component({
   selector: 'app-student-view',
-  imports: [MatCardModule, MatIconModule, MatButtonModule, WhiteBoard, ExerciseBoard, ChallengeBoard, SimulBoard],
+  imports: [MatCardModule, MatIconModule, MatButtonModule, WhiteBoard, ExerciseBoard, ChallengeBoard, SimulBoard, GatheredBoard],
   templateUrl: './student-view.html',
   styleUrl: './student-view.scss',
 })
 export class StudentView implements OnDestroy {
-  private exerciseBoard = viewChild(ExerciseBoard);
-  private challengeBoard = viewChild(ChallengeBoard);
-  private simulBoard = viewChild(SimulBoard);
+  exerciseBoard = viewChild(ExerciseBoard);
 
   classroomStore = inject(ClassroomStore);
   soundService = inject(SoundService);
@@ -34,31 +33,17 @@ export class StudentView implements OnDestroy {
 
   title = computed(() => {
     if (this.myPair()) return `${this.myPair()!.white} vs ${this.myPair()!.black}`;
-    if (this.classroomStore.mode() === 'simul') return 'Szimultán a tanár ellen 😱';
-    if (this.classroomStore.mode() === 'gathered') return '';
     return `Szia ${this.classroomStore.studentName()}! ${this.emoji()}`;
   });
 
-  constructor() {
-    // Presence sync — driven by exercise state changes
-    effect(() => {
-      const eb = this.exerciseBoard();
-      if (!eb) return;
-      const exIndex = eb.exIndex();
-      const locked = eb.isLocked();
-      const awaitingStamp = eb.isWaitingForStamp();
-      const status = eb.status();
-      const feedback = eb.feedback();
-      this.classroomStore.updatePresence({ status, feedback, exIndex, locked, awaitingStamp });
-    });
-
-    // Request FEN from teacher (re-broadcast current FEN)
-    effect(() => {
-      if (!this.classroomStore.requestFen()) return;
-      this.classroomStore.requestFen.set(false);
-      if (this.classroomStore.mode() === 'gathered' || this.myPair()) return;
-      const fen = this.exerciseBoard()?.exerciseFen() ?? '';
-      if (fen) this.classroomStore.broadcastStudentFen(this.classroomStore.studentName(), fen);
+  
+  private curtainInitialized = false;
+  
+  constructor(){
+      effect(() => {
+      this.classroomStore.curtainClosed();
+      if (!this.curtainInitialized) { this.curtainInitialized = true; return; }
+      this.soundService.play('curtain');
     });
   }
 

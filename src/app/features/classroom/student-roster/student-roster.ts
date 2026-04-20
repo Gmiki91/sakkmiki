@@ -33,7 +33,6 @@ export class StudentRoster {
   snackBar = inject(MatSnackBar);
 
   isLoadingList = signal(false);
-  teacherLockedStudents = signal<Set<string>>(new Set());
   pendingPair = signal<string | null>(null);
 
   // Simul
@@ -180,7 +179,7 @@ export class StudentRoster {
 
   handleResume(studentName: string): void {
     this.store.sendResume(studentName);
-    this.store.students.update(s => s.map(x => x.name === studentName ? { ...x, locked: false } : x));
+    this.store.students.update(s => s.map(x => x.name === studentName ? { ...x, awaitingRedo: false } : x));
   }
 
   handleStamp(studentName: string): void {
@@ -192,11 +191,9 @@ export class StudentRoster {
   handleLock(studentName: string): void {
     const student = this.store.students().find(s => s.name === studentName);
     if (student?.locked) {
-      this.teacherLockedStudents.update(set => { set.delete(studentName); return new Set(set); });
       this.store.sendUnlock(studentName);
       this.store.students.update(s => s.map(x => x.name === studentName ? { ...x, locked: false } : x));
     } else {
-      this.teacherLockedStudents.update(set => new Set(set).add(studentName));
       this.store.sendLock(studentName);
       this.store.students.update(s => s.map(x => x.name === studentName ? { ...x, locked: true } : x));
     }

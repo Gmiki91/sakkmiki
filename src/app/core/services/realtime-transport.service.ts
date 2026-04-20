@@ -11,10 +11,9 @@ import { TeachingConceptListItem } from '../../shared/models/teaching-concept.mo
 export type StudentPresence = {
   role: 'student';
   name: string;
-  status: string;
-  feedback: string;
   exIndex: number;
-  locked: boolean;
+  locked:boolean;
+  awaitingRedo:boolean;
   awaitingStamp: boolean;
   fen?: string;
 };
@@ -127,7 +126,7 @@ export class RealtimeTransport implements OnDestroy {
         if (status === 'SUBSCRIBED') {
           const presence = this.lastPresence ?? initialPresence;
           await this.channel.track(presence);
-          // force a local read (important)
+          // force a local read 
           setTimeout(() => {
             this.channel.presenceState();
           }, 0);
@@ -194,8 +193,8 @@ export class RealtimeTransport implements OnDestroy {
       .filter(p => p.role === 'student')
       .map(p => ({
         role: 'student' as const,
-        name: p.name, status: p.status, feedback: p.feedback,
-        exIndex: p.exIndex, locked: p.locked, awaitingStamp: p.awaitingStamp,
+        name: p.name, exIndex: p.exIndex, locked:p.locked,
+        awaitingRedo: p.awaitingRedo, awaitingStamp: p.awaitingStamp,
       }));
     const spectators: SpectatorPresence[] = all
       .filter(p => p.role === 'spectator')

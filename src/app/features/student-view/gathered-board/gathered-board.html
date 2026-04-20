@@ -1,0 +1,30 @@
+<div class="board-wrapper">
+  <div
+    class="overlay-wrapper"
+    [class.stamp-mode]="activeTool() === 'stamp'"
+    (click)="onBoardClick($event)"
+    (mouseup)="onMouseUp($event)"
+  >
+    <app-chess-board #chessBoard [config]="boardConfig()"></app-chess-board>
+    @for (concept of classroomStore.incomingTeachingOverlay() ?? []; track concept.id) {
+      <app-teaching-overlay
+        [conceptId]="concept.id"
+        [squares]="concept.squares"
+        orientation="white"
+      ></app-teaching-overlay>
+    }
+    <app-drawing-canvas
+      [strokes]="drawingService.localStrokes()"
+      [annotations]="drawingService.localAnnotations()"
+      [active]="activeTool() === 'pen'"
+      (pointAdded)="onPointAdded($event)"
+      (strokeCommitted)="onStrokeCommitted($event)"
+    ></app-drawing-canvas>
+  </div>
+</div>
+
+<app-drawing-toolbar
+  [(activeTool)]="activeTool"
+  [(activeStampIcon)]="activeStampIcon"
+  (colorSelected)="onColorSelected($event)"
+></app-drawing-toolbar>

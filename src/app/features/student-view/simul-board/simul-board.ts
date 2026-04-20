@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, effect, viewChild, untracked } from '@angular/core';
+import { Component, inject, signal, computed, effect } from '@angular/core';
 import { Chess } from 'chess.js';
 import { Key } from '@lichess-org/chessground/types';
 import { Config } from '@lichess-org/chessground/config';
@@ -16,7 +16,6 @@ type PeerBoard = { name: string; config: Config };
   styleUrl: './simul-board.scss',
 })
 export class SimulBoard {
-  private chessBoard = viewChild<ChessBoard>('chessBoard');
   private classroomStore = inject(ClassroomStore);
   private soundService = inject(SoundService);
 
