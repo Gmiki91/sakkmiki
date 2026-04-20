@@ -33,6 +33,7 @@ export type ExerciseInput = {
   elo?: number;         // teacher-set for custom; Lichess rating for imported
   lichessId?: string;   // only when source === 'lichess'
   mushroomType?:string;
+  numberOfMushrooms?:number
 }
 
 export type Exercise = ExerciseInput & {

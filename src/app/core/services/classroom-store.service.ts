@@ -69,6 +69,7 @@ export class ClassroomStore {
   readonly loadedExercises = signal<Exercise[]>([]);
   readonly assignedExercises = signal<Exercise[]>([]);
   readonly droppedExercise = signal<Exercise | null>(null);
+  readonly reset = signal<string | null>(null);
   readonly resume = signal<string | null>(null);
   readonly stamp = signal<string | null>(null);
   readonly lock = signal<string | null>(null);
@@ -187,6 +188,7 @@ export class ClassroomStore {
     this.droppedExercises.update((d) => ({ ...d, [studentName]: exercise }));
     this.transport.send({ type: 'dropped_exercise', studentName, exercise });
   }
+  sendReset(studentName: string): void { this.transport.send({ type: 'reset', studentName }); }
   sendResume(studentName: string): void { this.transport.send({ type: 'resume', studentName }); }
   sendStamp(studentName: string): void { this.transport.send({ type: 'stamp', studentName }); }
   sendLock(studentName: string): void { this.transport.send({ type: 'lock', studentName }); }
@@ -372,6 +374,8 @@ export class ClassroomStore {
         break;
       case 'dropped_exercise':
         if (event.studentName === myName) this.droppedExercise.set(event.exercise); break;
+      case 'reset':
+        if (event.studentName === myName) this.reset.set(event.studentName); break;
       case 'resume':
         if (event.studentName === myName) this.resume.set(event.studentName); break;
       case 'stamp':

@@ -199,6 +199,10 @@ export class StudentRoster {
     }
   }
 
+  handleReset(studentName:string):void{
+    this.store.sendReset(studentName);
+  }
+
   toggleStudentAutoRedo(name: string): void { this.store.sendAutoRedo(!this.effectiveAutoRedo()(name), name); }
   toggleStudentAutoProgress(name: string): void { this.store.sendAutoProgress(!this.effectiveAutoProgress()(name), name); }
 

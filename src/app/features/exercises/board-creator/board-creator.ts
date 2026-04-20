@@ -133,7 +133,8 @@ export class BoardCreator implements OnInit, AfterViewInit {
 
   async save(): Promise<void> {
     const fen = this.currentFen().split(' ')[0] + this.fenAppendix();
-
+    let numberOfMushrooms = undefined;
+    if(this.mushroomType())numberOfMushrooms = this.countBlackPawns(fen);
     if (this.isEditMode()) {
       const existing = this.exerciseService.exerciseLists()
         .flatMap(l => l.exercises)
@@ -148,6 +149,7 @@ export class BoardCreator implements OnInit, AfterViewInit {
           fen,
           lastMove: this.lastMove() ?? undefined,
           mushroomType: this.mushroomType() || undefined,
+          numberOfMushrooms
         });
       } catch (e) {
         this.snackbar.open((e as Error).message, '', { duration: 2000 });
@@ -172,6 +174,7 @@ export class BoardCreator implements OnInit, AfterViewInit {
         position: position || 1,
         lastMove: this.lastMove() ?? undefined,
         mushroomType: this.mushroomType() || undefined,
+        numberOfMushrooms
       };
       const ex = await this.exerciseService.addExercise(listId, exercise);
       if (!ex) return;
@@ -213,8 +216,8 @@ export class BoardCreator implements OnInit, AfterViewInit {
   private navigateNext(exerciseId: string, type: ExerciseType): void {
     switch (type) {
       case 'challenge': this.router.navigate([`/exercises/challenge/${exerciseId}`]); break;
-      case 'puzzle':
-      case 'mushroom':  this.router.navigate([`/exercises/edit/${exerciseId}`]); break;
+      case 'puzzle':this.router.navigate([`/exercises/edit/${exerciseId}`]); break;
+      case 'mushroom':  
       case 'demo':      this.router.navigate(['/exercises']); break;
     }
   }
@@ -267,6 +270,18 @@ export class BoardCreator implements OnInit, AfterViewInit {
   private addDropListener(el: HTMLElement) {
     el.addEventListener('drop', (e: DragEvent) => this.onDrop(e));
   }
+
+  private countBlackPawns(fen:string):number {
+    // 1. Get the board layout (everything before the first space)
+    const boardLayout = fen.split(' ')[0];
+
+    // 2. Use a Global Regex match to find all 'p' characters.
+    // The 'g' flag ensures we find all occurrences, not just the first one.
+    // If no pawns are found, match() returns null, so we default to an empty array.
+    const matches = boardLayout.match(/p/g) || [];
+
+    return matches.length;
+}
 
   private fenAppendix(): string {
     const turn = this.lastMove()
