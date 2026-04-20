@@ -35,7 +35,7 @@ export const routes: Routes = [
   {
     path: 'student/:classroomId',
     loadComponent: () =>
-      import('./features/classroom/student-view/student-view').then((m) => m.StudentView),
+      import('./features/student-view/student-view/student-view').then((m) => m.StudentView),
     canActivate: [studentGuard]
   },
   {

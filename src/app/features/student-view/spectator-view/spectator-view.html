@@ -1,0 +1,22 @@
+<div class="spectator-desk">
+  @if (isGathered()) {
+    <app-white-board [disabled]="true"></app-white-board>
+    <div class="board-wrapper">
+      <app-chess-board [config]="boardConfig()"></app-chess-board>
+      <app-drawing-canvas
+        [strokes]="drawingService.allStrokes()"
+        [annotations]="drawingService.allAnnotations()"
+        [active]="false"
+      ></app-drawing-canvas>
+      @if (store.incomingTeachingOverlay(); as concepts) {
+        @for (concept of concepts; track concept.id) {
+          <app-teaching-overlay
+            [conceptId]="concept.id"
+            [squares]="concept.squares"
+            orientation="white"
+          ></app-teaching-overlay>
+        }
+      }
+    </div>
+  }
+</div>

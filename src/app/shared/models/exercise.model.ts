@@ -20,6 +20,7 @@ export type ExerciseInput = {
   exerciseType: ExerciseType;
   position:number;
   listId:string;
+  instruction:string;
   solutions?: string[][];
   commonMistakes?: CommonMistake[];
   defaultHint?: string;

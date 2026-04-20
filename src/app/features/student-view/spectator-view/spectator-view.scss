@@ -1,0 +1,20 @@
+.spectator-desk {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 10px;
+}
+
+.board-wrapper {
+  width: var(--board-size);
+  height: var(--board-size);
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+
+  app-chess-board {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+}

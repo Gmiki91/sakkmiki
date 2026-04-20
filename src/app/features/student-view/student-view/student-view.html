@@ -1,0 +1,30 @@
+<div class="background"></div>
+<button class="volume-btn" (click)="toggleSound()">
+  <mat-icon>{{ soundService.isMute() ? 'volume_off' : 'volume_up' }}</mat-icon>
+</button>
+
+<div class="chess-container"> 
+    <div class="curtain" [class.open]="!classroomStore.curtainClosed()">
+      <img src="/images/curtain.png" alt="" />
+    </div>
+  @if (classroomStore.mode() === 'gathered') {
+    <app-white-board [disabled]="true"></app-white-board>
+    <app-gathered-board></app-gathered-board>
+  } @else if (classroomStore.mode() === 'simul') {
+    <app-simul-board></app-simul-board>
+  } @else {
+    <mat-card class="main-card">
+      <mat-card-header>
+        <mat-card-title>{{ title() }}</mat-card-title>
+          <mat-card-subtitle>{{this.exerciseBoard()?.currentExercise()?.instruction}}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        @if (myPair()) {
+          <app-challenge-board></app-challenge-board>
+        } @else {
+          <app-exercise-board></app-exercise-board>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

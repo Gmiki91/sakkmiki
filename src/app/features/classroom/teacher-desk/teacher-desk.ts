@@ -1,6 +1,6 @@
 import {
-  Component, ViewChild, AfterViewInit, inject,
-  signal, effect, computed, input,
+  Component, viewChild,  inject,
+  signal, effect, computed,
 } from '@angular/core';
 import { Config } from '@lichess-org/chessground/config';
 import { MatButtonModule } from '@angular/material/button';
@@ -35,11 +35,8 @@ import { WhiteBoard } from "../../../shared/components/white-board/white-board";
   templateUrl: './teacher-desk.html',
   styleUrl: './teacher-desk.scss',
 })
-export class TeacherDesk implements AfterViewInit {
-  @ViewChild('chessBoard') chessBoard!: ChessBoard;
-
-  // When true this is a spectator view: board is read-only, no controls
-  readonly = input(false);
+export class TeacherDesk {
+  chessBoard = viewChild(ChessBoard);
 
   store = inject(ClassroomStore);
   drawingService = inject(DrawingService);
@@ -59,8 +56,7 @@ export class TeacherDesk implements AfterViewInit {
     this.store.spectators().map(s => s.displayName).join(', ')
   );
 
-  // Owner board config (static — board state is driven by api.set() calls)
-  private ownerBoardConfig: Config = {
+  boardConfig : Config = {
     orientation: 'white',
     coordinates: false,
     movable: { free: true, events: { after: () => this.handleMove() } },
@@ -70,27 +66,12 @@ export class TeacherDesk implements AfterViewInit {
     events:{change:()=>this.handleMove()}
   };
 
-  // Spectator board config reacts to teacherFen broadcasts
-  private spectatorBoardConfig = computed<Config>(() => ({
-    fen: this.store.teacherFen(),
-    orientation: 'white',
-    coordinates: false,
-    movable: { free: false, color: undefined },
-    draggable: { enabled: false, shapes: [] },
-    drawable: { enabled: false },
-    highlight: { lastMove: true },
-  }));
-
-  boardConfig = computed<Config>(() =>
-    this.readonly() ? this.spectatorBoardConfig() : this.ownerBoardConfig
-  );
-
   constructor() {
-    // Load exercise onto board when selected from list (owner only)
+    // Load exercise onto board when selected from list 
     effect(() => {
       const ex = this.demoExercise();
-      if (ex && this.chessBoard?.api && !this.readonly()) {
-        this.chessBoard.api.set({ fen: ex.fen, lastMove: [] });
+      if (ex && this.chessBoard()?.api) {
+        this.chessBoard()?.api.set({ fen: ex.fen, lastMove: [] });
         if (this.isGathered()) {
           this.store.sendTeacherFen(ex.fen);
           if(ex.mushroomType)this.store.sendMushroomType(ex.mushroomType);
@@ -103,45 +84,39 @@ export class TeacherDesk implements AfterViewInit {
     // Apply shared arrows in gathered mode
     effect(() => {
       const arrows = this.store.sharedArrows()?.arrows ?? [];
-      if (this.isGathered()) this.chessBoard?.api?.set({ drawable: { shapes:arrows } });
+      if (this.isGathered()) this.chessBoard()?.api?.set({ drawable: { shapes:arrows } });
     });
 
     // Redraw board when gathered/normal toggles (board resizes via CSS)
     effect(() => {
       this.isGathered(); // track
-      setTimeout(() => this.chessBoard?.api?.redrawAll(), 0);
+      setTimeout(() => this.chessBoard()?.api?.redrawAll(), 0);
     });
   }
 
-  ngAfterViewInit(): void {
-    if (this.readonly()) return; // spectators don't send anything
-
-    const el = this.chessBoard.boardElement.nativeElement as HTMLElement;
-    // send shared arrows in gathered mode (left mouse-clear, right mouse-draw)
-    el.addEventListener('mouseup', (e: MouseEvent) => {
-      if (e.button !== 0 && e.button !== 2) return;
-      if (this.isGathered()) {
+  onBoardMouseUp(e: MouseEvent): void {
+    if (e.button !== 0 && e.button !== 2) return; // spectators don't send anything
         setTimeout(() => {
-          const shapes = this.chessBoard.api?.state.drawable.shapes ?? [];
+          const shapes = this.chessBoard()?.api?.state.drawable.shapes ?? [];
           this.store.sendSharedArrows(shapes);
         }, 0);
-      }
-    });
   }
 
   handleMove(): void {
-    this.store.sendTeacherFen(this.chessBoard.api.getFen());
+    if(this.chessBoard()?.api!==undefined){
+    this.store.sendTeacherFen(this.chessBoard()!.api.getFen());
     this.drawingService.clearAllOnFenChange();
+    }
   }
 
   onInterceptorClick(event: MouseEvent): void {
-    const boardEl = this.chessBoard.boardElement.nativeElement as HTMLElement;
+    const boardEl = this.chessBoard()?.boardElement.nativeElement as HTMLElement;
     const square = clientToSquare(event.clientX, event.clientY, boardEl, 'white');
     this.overlayService.onSquareClicked(square);
   }
 
   gather(): void {
-    this.store.sendTeacherFen(this.chessBoard.api.getFen());
+    if(this.chessBoard()?.api!==undefined) this.store.sendTeacherFen(this.chessBoard()!.api.getFen());
     this.drawingService.clearAllOnFenChange();
     this.store.gather();
   }
@@ -152,13 +127,13 @@ export class TeacherDesk implements AfterViewInit {
 
   resetBoard(): void {
     const fen = this.demoExercise()? this.demoExercise()!.fen : STARTING_FEN;
-    this.chessBoard.api?.set({ fen, lastMove: [] });
+    this.chessBoard()?.api?.set({ fen, lastMove: [] });
     this.store.sendTeacherFen(fen);
     this.drawingService.clearAllOnFenChange();
   }
 
   clearBoard(): void {
-    this.chessBoard.api?.set({ fen: EMPTY_BOARD_FEN, lastMove: [] });
+    this.chessBoard()?.api?.set({ fen: EMPTY_BOARD_FEN, lastMove: [] });
     this.store.sendTeacherFen(EMPTY_BOARD_FEN);
     this.drawingService.clearAllOnFenChange();
     this.demoExercise.set(null);

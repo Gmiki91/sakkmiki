@@ -1,0 +1,156 @@
+import { Component, inject, signal, computed, effect, viewChild } from '@angular/core';
+import { Chess, Move } from 'chess.js';
+import { Key } from '@lichess-org/chessground/types';
+import { Config } from '@lichess-org/chessground/config';
+import { ClassroomStore } from '../../../core/services/classroom-store.service';
+import { SoundService } from '../../../core/services/sound.service';
+import { ChessBoard } from '../../../shared/components/chess-board/chess-board';
+import { ChallengePair } from '../../../shared/models/challenge-pair.model';
+import { getValidMoves, loadChess, STARTING_FEN } from '../../../shared/utils/chess.utils';
+
+@Component({
+  selector: 'app-challenge-board',
+  imports: [ChessBoard],
+  templateUrl: './challenge-board.html',
+  styleUrl: './challenge-board.scss',
+})
+export class ChallengeBoard {
+  private chessBoard = viewChild<ChessBoard>('chessBoard');
+  private classroomStore = inject(ClassroomStore);
+  private soundService = inject(SoundService);
+
+  myPair = computed(() =>
+    this.classroomStore.challengePairs().find(
+      p => p.white === this.classroomStore.studentName() ||
+           p.black === this.classroomStore.studentName()
+    ) ?? null
+  );
+
+  myColor = computed<'white' | 'black'>(() =>
+    this.myPair()?.white === this.classroomStore.studentName() ? 'white' : 'black'
+  );
+
+  // Public — read by StudentView for presence broadcastStudentFen
+  challengeFen = signal<string>(STARTING_FEN);
+
+  private challengeLastMove = signal<[Key, Key] | undefined>(undefined);
+  pendingPromotion = signal<{ orig: Key; dest: Key; pair: ChallengePair } | null>(null);
+  private challengeChess = new Chess();
+
+  boardConfig = computed<Config>(() => ({
+    fen: this.challengeFen(),
+    orientation: this.myColor(),
+    turnColor: this.challengeChess.turn() === 'w' ? 'white' : 'black',
+    movable: {
+      free: false,
+      color: this.myColor(),
+      dests: getValidMoves(this.challengeChess),
+      events: { after: (orig, dest) => this.handleChallengeMove(orig, dest) },
+      showDests: true,
+    },
+    check: this.challengeChess.isCheck(),
+    draggable: { enabled: true, showGhost: true },
+    highlight: { lastMove: true, check: true },
+    lastMove: this.challengeLastMove(),
+    drawable: { enabled: true, visible: true },
+  }));
+
+  constructor() {
+    // Reset board when pair is assigned or rematch occurs
+    effect(() => {
+      const pair = this.myPair();
+      if (!pair) return;
+      const exercise = this.classroomStore.droppedExercise()
+        ?? this.classroomStore.assignedExercises()[0]
+        ?? this.classroomStore.loadedExercises()[0]
+        ?? null;
+      if (exercise?.fen) loadChess(this.challengeChess, exercise.fen);
+      else this.challengeChess = new Chess();
+      this.challengeFen.set(this.challengeChess.fen());
+      this.challengeLastMove.set(undefined);
+      this.chessBoard()?.api?.set({ lastMove: [] });
+    });
+
+    // Incoming move from opponent
+    effect(() => {
+      const move = this.classroomStore.challengeMove();
+      if (!move) return;
+      const pair = this.myPair();
+      if (!pair || move.white !== pair.white || move.black !== pair.black) return;
+      if (move.over) {
+        this.challengeChess.move({ ...move, promotion: 'q' });
+        this.soundService.play('lost');
+      } else {
+        loadChess(this.challengeChess, move.fen);
+      }
+      this.challengeFen.set(this.challengeChess.fen());
+      this.challengeLastMove.set([move.from as Key, move.to as Key]);
+    });
+  }
+
+  handleChallengeMove(orig: Key, dest: Key): void {
+    const pair = this.myPair();
+    if (!pair) return;
+    if (this.isPawnPromotion(orig, dest)) {
+      if (this.backrankPawnWins(dest)) {
+        this.classroomStore.sendChallengeMove(pair.white, pair.black, this.challengeChess.fen(), orig, dest, true);
+        this.soundService.playRandomCheering();
+      } else {
+        this.pendingPromotion.set({ orig, dest, pair });
+      }
+    } else {
+      this.executeMove(orig, dest, pair);
+    }
+  }
+
+  completePromotion(role: 'q' | 'r' | 'n' | 'b'): void {
+    const p = this.pendingPromotion();
+    if (!p) return;
+    this.pendingPromotion.set(null);
+    this.executeMove(p.orig, p.dest, p.pair, role);
+  }
+
+  isPawnPromotion(orig: Key, dest: Key): boolean {
+    const piece = this.challengeChess.get(orig as any);
+    return piece?.type === 'p' &&
+      ((piece.color === 'w' && dest[1] === '8') || (piece.color === 'b' && dest[1] === '1'));
+  }
+
+  private executeMove(orig: Key, dest: Key, pair: ChallengePair, promotion?: 'q' | 'r' | 'n' | 'b'): void {
+    try {
+      const move = this.challengeChess.move({ from: orig, to: dest, promotion });
+      if (!move) return;
+      this.challengeFen.set(this.challengeChess.fen());
+      this.challengeLastMove.set([orig, dest]);
+      this.soundService.play(move.captured ? 'take' : 'move');
+      const win = this.checkWinConditions(move);
+      this.classroomStore.sendChallengeMove(pair.white, pair.black, this.challengeChess.fen(), orig, dest, win);
+      if (win) this.soundService.playRandomCheering();
+      if (promotion) this.chessBoard()?.api?.set({ fen: this.challengeChess.fen() });
+    } catch {
+      this.chessBoard()?.api?.set({ fen: this.challengeChess.fen() });
+    }
+  }
+
+  private checkWinConditions(move: Move): boolean {
+    const exercise = this.classroomStore.droppedExercise()
+      ?? this.classroomStore.assignedExercises()[0]
+      ?? this.classroomStore.loadedExercises()[0]
+      ?? null;
+    const normalizedSan = move.san.replace('x','').replace('+','').replace('#','').replace(/=[QRBN]/,'');
+    const conditions = this.myColor() === 'white' ? exercise?.whiteWinConditions : exercise?.blackWinConditions;
+    const captureAllWin = conditions?.includes('capture_all') &&
+      this.challengeChess.board().flat().filter(Boolean)
+        .every(p => p!.color === (this.myColor() === 'white' ? 'w' : 'b'));
+    return !!(captureAllWin || conditions?.includes(normalizedSan));
+  }
+
+  private backrankPawnWins(dest: Key): boolean {
+    const exercise = this.classroomStore.droppedExercise()
+      ?? this.classroomStore.assignedExercises()[0]
+      ?? this.classroomStore.loadedExercises()[0]
+      ?? null;
+    const conditions = this.myColor() === 'white' ? exercise?.whiteWinConditions : exercise?.blackWinConditions;
+    return !!conditions?.includes(dest);
+  }
+}

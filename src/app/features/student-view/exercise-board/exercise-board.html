@@ -1,0 +1,39 @@
+<div class="container">
+<div class="board-wrapper">
+  <div
+    class="overlay-wrapper"
+    [class.locked]="isLocked() && feedback() === ''"
+    (mouseup)="onMouseUp($event)"
+  >
+    <app-chess-board
+      #chessBoard
+      [config]="boardConfig()!"
+      [mushroomMode]="currentExercise()?.exerciseType === 'mushroom'"
+      [style.--mushroom-emoji]='"\"" + (currentExercise()?.mushroomType ?? "🍄") + "\""'
+    ></app-chess-board>
+    <app-piece-overlay #pieceOverlay [orientation]="boardConfig()?.orientation ?? 'white'"></app-piece-overlay>
+    <app-stamp-overlay #stampOverlay></app-stamp-overlay>
+  </div>
+  <div class="file-helper" [class.reversed]="boardConfig()?.orientation === 'black'">
+    <span>🍎</span><span>🍌</span><span>😺</span><span>🥁</span>
+    <span>🐭</span><span>🪥</span><span>🍄</span><span>☃️</span>
+  </div>
+</div>
+
+ <div class="collection" [style.visibility]="stampCollection().length > 0 ? 'visible' : 'hidden'">
+   @for (stamp of stampCollection(); track $index) {
+     <app-stamp-svg  [type]="stamp" [size]="48"></app-stamp-svg>
+   }
+ </div>
+ <div class="collection" [style.visibility]="mushroomCollectionKeys().length > 0 ? 'visible' : 'hidden'">
+   @for (emoji of mushroomCollectionKeys(); track emoji) {
+     @if (mushroomCollection()[emoji] > 0) {
+       <span class="collection-item">{{ mushroomCollection()[emoji] }}x{{ emoji }}</span>
+     }
+   }
+ </div>
+
+@if (feedback()) {
+  <div class="feedback">{{ feedback() }}</div>
+}
+</div>

@@ -1,0 +1,21 @@
+:host { display: contents; }
+
+.board-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.overlay-wrapper {
+  position: relative;
+  width: var(--board-size);
+  height: var(--board-size);
+  overflow: hidden;
+  border-radius: 6px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.25);
+
+  app-chess-board { display: block; width: 100%; height: 100%; }
+  &.stamp-mode { cursor: crosshair; }
+}
+
