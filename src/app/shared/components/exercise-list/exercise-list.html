@@ -1,10 +1,10 @@
 <div class="container">
  @for (exercise of list().exercises; track $index) {
     <div 
-      class="exercise-item"
+      class="exercise-item" [class.selected]="exercise.id===selectedExId"
       draggable="true"
       (dragstart)="onDragStart(exercise, $event)"
-      (click)="selectExercise.emit(exercise)">
+      (click)="onSelect(exercise)">
       {{ exercise.title }}
     </div>
   }
