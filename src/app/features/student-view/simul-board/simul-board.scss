@@ -8,6 +8,9 @@
   display: flex;
   flex-wrap: wrap;
   gap: 15px;
+  flex: 0 0 auto;
+  width: calc(var(--mini-board-size) + 15px);
+  min-height: 0;
   h2 { text-align: center; margin: 0 0 4px; }
 }
 
