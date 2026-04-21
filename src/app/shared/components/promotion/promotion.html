@@ -1,0 +1,13 @@
+
+  @if (color() === 'white') {
+    <div class="piece" (click)="promote.emit('q')">♕</div>
+    <div class="piece" (click)="promote.emit('r')">♖</div>
+    <div class="piece" (click)="promote.emit('n')">♘</div>
+    <div class="piece" (click)="promote.emit('b')">♗</div>
+  } @else {
+    <div class="piece" (click)="promote.emit('q')">♛</div>
+    <div class="piece" (click)="promote.emit('r')">♜</div>
+    <div class="piece" (click)="promote.emit('n')">♞</div>
+    <div class="piece" (click)="promote.emit('b')">♝</div>
+  }
+

@@ -28,10 +28,13 @@
         <div class="peer-board-card">
           <h2>{{ board.name }}</h2>
           <div class="peer-board-wrapper">
-            <app-chess-board [config]="board.config"></app-chess-board>
+            <app-chess-board #chessBoard [config]="board.config"></app-chess-board>
           </div>
         </div>
       }
     }
   </div>
+  @if (pendingPromotion()) {
+    <app-promotion color="black" (promote)="completePromotion($event)"></app-promotion>
+  }
 </div>

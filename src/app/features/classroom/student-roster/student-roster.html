@@ -51,6 +51,9 @@
               <app-chess-board  [config]="store.mode()==='simul' ? simulBoardConfigFor(student.name) : boardConfigFor(student.fen)" #studentBoard></app-chess-board>
             }
           </div>
+          @if (pendingPromotion()) {
+            <app-promotion color="white" (promote)="completePromotion($event)"></app-promotion>
+          } 
           <!-- <div class="student-status">
             <span class="status">{{ student.status }}</span>
             <span class="feedback">{{ student.feedback }}</span>

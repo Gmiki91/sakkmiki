@@ -1,4 +1,4 @@
-import { Injectable,signal } from '@angular/core';
+import { Injectable, signal, untracked } from '@angular/core';
 
 export type SoundEffect = 'move' | 'take' |'stamp'|'gasp'|'bite'| 'fanfare' | 'cheering'|'bravo'|'shield'|'curtain'|
 'homer'|'bite1'|'bite2'|'bite3'|'bite4'|'bite5'|'bite6'|'lost'|'won'|'wrongMove'|'success'|'error'|'jailLocks'|'snoring';
@@ -34,24 +34,24 @@ export class SoundService {
   };
 
   play(sound: SoundEffect): void {
-    if(this.isMute()) return;
+    if(untracked(() => this.isMute())) return; //untracked because studentview calls this from an effect ???
     const audio = this.sounds[sound];
     audio.currentTime = 0; // rewind in case it's still playing
     audio.play().catch(() => {}); // catch needed because browser may block autoplay
   }
   playRandomCheering():void{
-     if(this.isMute()) return;
+     if(untracked(() => this.isMute())) return;
     const cheering = [ 'fanfare' , 'cheering','bravo','homer'];
     this.playRandom(cheering);
   }
     playRandomBite(){
-       if(this.isMute()) return;
+       if(untracked(() => this.isMute())) return;
       const bites =['bite1','bite2','bite3','bite4','bite5','bite6'];
      this.playRandom(bites);
 
   }
   playRandom(arr:string[]){
-     if(this.isMute()) return;
+     if(untracked(() => this.isMute())) return;
     const random =arr[Math.floor(Math.random() * arr.length)] as SoundEffect;
       this.sounds[random].play();
   }

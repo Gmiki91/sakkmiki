@@ -6,11 +6,12 @@ import { ClassroomStore } from '../../../core/services/classroom-store.service';
 import { SoundService } from '../../../core/services/sound.service';
 import { ChessBoard } from '../../../shared/components/chess-board/chess-board';
 import { ChallengePair } from '../../../shared/models/challenge-pair.model';
-import { getValidMoves, loadChess, STARTING_FEN } from '../../../shared/utils/chess.utils';
+import { getValidMoves, isPawnPromotion, loadChess, STARTING_FEN } from '../../../shared/utils/chess.utils';
+import { Promotion } from "../../../shared/components/promotion/promotion";
 
 @Component({
   selector: 'app-challenge-board',
-  imports: [ChessBoard],
+  imports: [ChessBoard, Promotion],
   templateUrl: './challenge-board.html',
   styleUrl: './challenge-board.scss',
 })
@@ -91,7 +92,8 @@ export class ChallengeBoard {
   handleChallengeMove(orig: Key, dest: Key): void {
     const pair = this.myPair();
     if (!pair) return;
-    if (this.isPawnPromotion(orig, dest)) {
+    const piece = this.challengeChess.get(orig as any)!;
+    if (isPawnPromotion(dest,piece)) {
       if (this.backrankPawnWins(dest)) {
         this.classroomStore.sendChallengeMove(pair.white, pair.black, this.challengeChess.fen(), orig, dest, true);
         this.soundService.playRandomCheering();
@@ -110,11 +112,6 @@ export class ChallengeBoard {
     this.executeMove(p.orig, p.dest, p.pair, role);
   }
 
-  isPawnPromotion(orig: Key, dest: Key): boolean {
-    const piece = this.challengeChess.get(orig as any);
-    return piece?.type === 'p' &&
-      ((piece.color === 'w' && dest[1] === '8') || (piece.color === 'b' && dest[1] === '1'));
-  }
 
   private executeMove(orig: Key, dest: Key, pair: ChallengePair, promotion?: 'q' | 'r' | 'n' | 'b'): void {
     try {

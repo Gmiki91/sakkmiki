@@ -1,6 +1,6 @@
 import { Config } from '@lichess-org/chessground/config';
 import { Key } from '@lichess-org/chessground/types';
-import { Chess, SQUARES } from 'chess.js';
+import { Chess, Piece, SQUARES } from 'chess.js';
 import { Exercise } from '../models/exercise.model';
 export const STARTING_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 export const BARE_STARTING_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR'
@@ -62,4 +62,7 @@ export const getPlayerOrientation=(exercise: Exercise): 'white' | 'black' => {
     return exercise.lastMove.color === 'white' ? 'black' : 'white';
   }
   return exercise.fen.split(' ')[1] === 'w' ? 'white' : 'black';
+}
+export const isPawnPromotion=(dest: Key, piece:Piece): boolean=> {
+  return piece?.type === 'p' && ((piece.color === 'w' && dest[1] === '8') || (piece.color === 'b' && dest[1] === '1'));
 }

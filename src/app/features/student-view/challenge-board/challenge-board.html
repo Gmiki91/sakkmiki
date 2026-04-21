@@ -6,19 +6,7 @@
     <span>🍎</span><span>🍌</span><span>😺</span><span>🥁</span>
     <span>🐭</span><span>🪥</span><span>🍄</span><span>☃️</span>
   </div>
-  @if (pendingPromotion()) {
-    <div class="promotion-overlay">
-      @if (myColor() === 'white') {
-        <div class="piece" (click)="completePromotion('q')">♕</div>
-        <div class="piece" (click)="completePromotion('r')">♖</div>
-        <div class="piece" (click)="completePromotion('n')">♘</div>
-        <div class="piece" (click)="completePromotion('b')">♗</div>
-      } @else {
-        <div class="piece" (click)="completePromotion('q')">♛</div>
-        <div class="piece" (click)="completePromotion('r')">♜</div>
-        <div class="piece" (click)="completePromotion('n')">♞</div>
-        <div class="piece" (click)="completePromotion('b')">♝</div>
-      }
-    </div>
-  }
 </div>
+  @if (pendingPromotion()) {
+    <app-promotion [color]="myColor()" (promote)="completePromotion($event)"></app-promotion>
+  }

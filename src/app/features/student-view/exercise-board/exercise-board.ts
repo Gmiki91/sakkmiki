@@ -276,7 +276,7 @@ export class ExerciseBoard {
       this.feedback.set(mistake?.hint ?? ex.defaultHint ?? 'Biztos? 🤔');
       this.isWaitingForRedo.set(true);
       this.isLocked.set(true);
-      setTimeout(() => { this.handleMistake(); this.feedback.set(''); }, 10000);
+      setTimeout(() => { this.handleMistake(); this.feedback.set(''); }, 2000);
     } else {
       this.isWaitingForRedo.set(true);
       this.isLocked.set(true);
