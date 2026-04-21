@@ -136,14 +136,12 @@ export class ExerciseBoard {
     effect(() => {
       const reset = this.classroomStore.reset();
       if (!reset) return;
-      this.classroomStore.reset.set(null);
       this.reset();
     });
 
     effect(() => {
       const resume = this.classroomStore.resume();
       if (!resume) return;
-      this.classroomStore.resume.set(null);
       this.feedback.set('');
       const ex = this.currentExercise();
       if (ex) this.handleMistake();
@@ -152,21 +150,18 @@ export class ExerciseBoard {
     effect(() => {
       const stamp = this.classroomStore.stamp();
       if (!stamp) return;
-      this.classroomStore.stamp.set(null);
       this.progressWithStamp();
     });
 
     effect(() => {
       const lock = this.classroomStore.lock();
       if (!lock) return;
-      this.classroomStore.lock.set(null);
       this.isLocked.set(true);
     });
 
     effect(() => {
       const unlock = this.classroomStore.unlock();
       if (!unlock) return;
-      this.classroomStore.unlock.set(null);
       this.isLocked.set(false);
     });
   }
@@ -183,10 +178,10 @@ export class ExerciseBoard {
     try {
       const move = this.exerciseChess.move({ from: orig, to: dest });
       if (move) {
+        this.exerciseFen.set(this.exerciseChess.fen());
         if(this.currentExercise().exerciseType==='mushroom'){
           this.analyzeMushroom(move);
         }else{
-          this.exerciseFen.set(this.exerciseChess.fen());
           this.pieceOverlay()?.hide();
           this.analyze(move);
         }
@@ -215,6 +210,7 @@ export class ExerciseBoard {
     loadChess(this.exerciseChess,fen);
     this.exerciseLastMove.set(undefined);
     this.moveHistory.set([]);
+    this.feedback.set('');
     this.mushroomCollection.set(mushroomCollectionTemplate)
   }
 
@@ -274,7 +270,6 @@ export class ExerciseBoard {
     if (this.classroomStore.autoRedo()) {
       const mistake = ex.commonMistakes?.find(m => m.move === move.san);
       this.feedback.set(mistake?.hint ?? ex.defaultHint ?? 'Biztos? 🤔');
-      this.isWaitingForRedo.set(true);
       this.isLocked.set(true);
       setTimeout(() => { this.handleMistake(); this.feedback.set(''); }, 2000);
     } else {
@@ -303,7 +298,7 @@ export class ExerciseBoard {
     this.exerciseFen.set(this.exerciseChess.fen());
     this.exerciseLastMove.set(undefined);
     this.isLocked.set(false);
-    this.isWaitingForRedo.set(false);
+    if(this.isWaitingForRedo()) this.isWaitingForRedo.set(false);
   }
 
   private progressWithStamp(): void {
