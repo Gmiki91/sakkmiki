@@ -70,6 +70,9 @@ mat-card-header {
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
     padding-bottom: 6px;
   }
+  mat-card-subtitle{
+    height:25px;
+  }
 }
 
 @media (max-width: 600px) {

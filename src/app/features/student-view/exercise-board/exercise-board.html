@@ -18,6 +18,9 @@
     <span>🍎</span><span>🍌</span><span>😺</span><span>🥁</span>
     <span>🐭</span><span>🪥</span><span>🍄</span><span>☃️</span>
   </div>
+  @if(currentExercise()?.exerciseType==='mushroom'){
+    <button mat-icon-button  (click)="reset()"><mat-icon style="font-size: larger">refresh</mat-icon></button>
+  }
 </div>
 
  <div class="collection" [style.visibility]="stampCollection().length > 0 ? 'visible' : 'hidden'">
@@ -25,13 +28,13 @@
      <app-stamp-svg  [type]="stamp" [size]="48"></app-stamp-svg>
    }
  </div>
- <div class="collection" [style.visibility]="mushroomCollectionKeys().length > 0 ? 'visible' : 'hidden'">
+ <div class="collection" [style.visibility]="hasMushroomCollection() ? 'visible' : 'hidden'">
    @for (emoji of mushroomCollectionKeys(); track emoji) {
      @if (mushroomCollection()[emoji] > 0) {
        <span class="collection-item">{{ mushroomCollection()[emoji] }}x{{ emoji }}</span>
      }
    }
- </div>
+  </div>
 
 @if (feedback()) {
   <div class="feedback">{{ feedback() }}</div>

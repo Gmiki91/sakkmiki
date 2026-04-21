@@ -10,10 +10,11 @@ import { TeachingOverlay } from '../../../shared/components/teaching-overlay/tea
 import { TEACHING_CONCEPTS } from '../../../shared/models/teaching-concept.model';
 import { StampIcon, DrawingTool, Point } from '../../../shared/models/drawing.model';
 import { DEFAULT_BRUSH_COLOR } from '../../../shared/utils/brushes';
+import { WhiteBoard } from '../../../shared/components/white-board/white-board';
 
 @Component({
   selector: 'app-gathered-board',
-  imports: [ChessBoard, DrawingCanvas, DrawingToolbar, TeachingOverlay],
+  imports: [ChessBoard, DrawingCanvas, DrawingToolbar, TeachingOverlay, WhiteBoard],
   templateUrl: './gathered-board.html',
   styleUrl: './gathered-board.scss',
 })

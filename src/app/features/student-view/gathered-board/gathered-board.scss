@@ -1,5 +1,9 @@
 :host { display: contents; }
-
+.container{
+  display:flex;
+  align-items: center;
+  gap:20px;
+}
 .board-wrapper {
   display: flex;
   flex-direction: column;

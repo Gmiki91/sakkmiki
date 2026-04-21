@@ -14,10 +14,14 @@ import { StampSvg } from '../../../shared/components/stamp-svg/stamp-svg';
 import { StampType } from '../../../shared/models/stamp.model';
 import { Exercise } from '../../../shared/models/exercise.model';
 import { getKingSquare, getPlayerOrientation, getValidMoves, loadChess, STARTING_FEN } from '../../../shared/utils/chess.utils';
-
+import { MatButtonModule } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+const mushroomCollectionTemplate = {
+    '🍄':0,'🍫':0,'🍬':0,'🍦':0,'🍔':0,'🥤':0,'🍩':0,'🎃':0,'♥️':0,'🎁':0,'🎈':0,'⭐':0,
+  }
 @Component({
   selector: 'app-exercise-board',
-  imports: [ChessBoard, PieceOverlay, StampOverlay, StampSvg],
+  imports: [ChessBoard, PieceOverlay, StampOverlay, StampSvg,MatButtonModule,MatIcon],
   templateUrl: './exercise-board.html',
   styleUrl: './exercise-board.scss',
 })
@@ -29,15 +33,10 @@ export class ExerciseBoard {
   classroomStore = inject(ClassroomStore);
   private soundService = inject(SoundService);
 
-  
- 
-
   // ── Collections ──────────────────────────────────────────────────
   stampCollection = signal<StampType[]>([]);
-  mushroomCollection = signal<Record<string, number>>({
-    '🍄':0,'🍫':0,'🍬':0,'🍦':0,'🍔':0,'🥤':0,'🍩':0,'🎃':0,'♥️':0,'🎁':0,'🎈':0,'⭐':0,
-  });
-  mushroomCollectionValues = computed(() => Object.values(this.mushroomCollection()).some(c => c > 0));
+  mushroomCollection = signal<Record<string, number>>(mushroomCollectionTemplate);
+  hasMushroomCollection = computed(() => Object.values(this.mushroomCollection()).some(c => c > 0));
   mushroomCollectionKeys = computed(() => Object.keys(this.mushroomCollection()));
 
   loadedList = computed(() =>
@@ -88,7 +87,7 @@ export class ExerciseBoard {
   });
 
   constructor() {
-    // presence sync - 
+    // presence sync
     effect(() => {
       const exIndex = this.exIndex();
       const awaitingStamp = this.isWaitingForStamp();
@@ -135,12 +134,19 @@ export class ExerciseBoard {
 
     // Teacher commands
     effect(() => {
+      const reset = this.classroomStore.reset();
+      if (!reset) return;
+      this.classroomStore.reset.set(null);
+      this.reset();
+    });
+
+    effect(() => {
       const resume = this.classroomStore.resume();
       if (!resume) return;
       this.classroomStore.resume.set(null);
       this.feedback.set('');
       const ex = this.currentExercise();
-      if (ex) this.handleMistake(ex);
+      if (ex) this.handleMistake();
     });
 
     effect(() => {
@@ -177,9 +183,13 @@ export class ExerciseBoard {
     try {
       const move = this.exerciseChess.move({ from: orig, to: dest });
       if (move) {
-        this.exerciseFen.set(this.exerciseChess.fen());
-        this.pieceOverlay()?.hide();
-        this.analyze(move);
+        if(this.currentExercise().exerciseType==='mushroom'){
+          this.analyzeMushroom(move);
+        }else{
+          this.exerciseFen.set(this.exerciseChess.fen());
+          this.pieceOverlay()?.hide();
+          this.analyze(move);
+        }
       }
     } catch {
       this.chessBoard()?.api?.set({ fen: this.exerciseChess.fen() });
@@ -199,6 +209,15 @@ export class ExerciseBoard {
     }
   }
 
+  reset():void{
+    const fen = this.currentExercise().fen;
+    this.exerciseFen.set(fen);
+    loadChess(this.exerciseChess,fen);
+    this.exerciseLastMove.set(undefined);
+    this.moveHistory.set([]);
+    this.mushroomCollection.set(mushroomCollectionTemplate)
+  }
+
   private analyze(move: Move): void {
     const ex = this.currentExercise();
     if (!ex) return;
@@ -207,47 +226,60 @@ export class ExerciseBoard {
 
     if (solution) {
       this.isLocked.set(false);
-      if (ex.exerciseType === 'mushroom') {
-        this.soundService.play('success');
-        const type = ex.mushroomType as string;
-        this.mushroomCollection.update(c => ({ ...c, [type]: (c[type] ?? 0) + 1 }));
-      } else {
-        this.playSound(move);
-      }
+      this.playSound(move);
       this.updateStatus();
       this.moveHistory.set(newHistory);
       const isSolved = solution.length === newHistory.length;
       if (isSolved) {
-        if (this.classroomStore.autoProgress()) this.progressAuto();
-        else { this.isWaitingForStamp.set(true); this.isLocked.set(true); }
+        this.exerciseSolved();
       } else {
-        if (ex.exerciseType === 'mushroom') {
-          this.exerciseChess.setTurn('w');
+        const nextIndex = newHistory.length;
+        setTimeout(() => {
+          const computerMove = this.exerciseChess.move(solution[nextIndex]);
+          this.playSound(computerMove);
           this.exerciseFen.set(this.exerciseChess.fen());
-        } else {
-          const nextIndex = newHistory.length;
-          setTimeout(() => {
-            const computerMove = this.exerciseChess.move(solution[nextIndex]);
-            this.playSound(computerMove);
-            this.exerciseFen.set(this.exerciseChess.fen());
-            this.exerciseLastMove.set([computerMove.from as Key, computerMove.to as Key]);
-            this.moveHistory.set([...newHistory, solution[nextIndex]]);
-            this.pieceOverlay()?.hide();
-          }, 250);
-        }
+          this.exerciseLastMove.set([computerMove.from as Key, computerMove.to as Key]);
+          this.moveHistory.set([...newHistory, solution[nextIndex]]);
+          this.pieceOverlay()?.hide();
+        }, 250);
       }
     } else {
-      this.soundService.play('error');
-      if (this.classroomStore.autoRedo()) {
-        const mistake = ex.commonMistakes?.find(m => m.move === move.san);
-        this.feedback.set(mistake?.hint ?? ex.defaultHint ?? 'Biztos? 🤔');
-        this.isWaitingForRedo.set(true);
-        this.isLocked.set(true);
-        setTimeout(() => { this.handleMistake(ex); this.feedback.set(''); }, 10000);
-      } else {
-        this.isWaitingForRedo.set(true);
-        this.isLocked.set(true);
-      }
+      this.badMove(ex,move);
+    }
+  }
+
+  private analyzeMushroom(move:Move):void{
+    const ex = this.currentExercise();
+    const newHistory = [...this.moveHistory(), move.san];
+    if(move.captured){
+      this.soundService.play('success');
+      const type = ex.mushroomType as string;
+      this.mushroomCollection.update(c => ({ ...c, [type]: (c[type] ?? 0) + 1 }));
+      this.moveHistory.set(newHistory);
+      this.exerciseChess.setTurn('w');
+      this.exerciseFen.set(this.exerciseChess.fen());
+      if(ex.numberOfMushrooms === newHistory.length) this.exerciseSolved();
+    } else {
+      this.badMove(ex,move);
+    }
+  }
+
+  private exerciseSolved():void{
+    if (this.classroomStore.autoProgress()) this.progressAuto();
+    else { this.isWaitingForStamp.set(true); this.isLocked.set(true); }
+  }
+
+  private badMove(ex:Exercise,move:Move):void{
+    this.soundService.play('error');
+    if (this.classroomStore.autoRedo()) {
+      const mistake = ex.commonMistakes?.find(m => m.move === move.san);
+      this.feedback.set(mistake?.hint ?? ex.defaultHint ?? 'Biztos? 🤔');
+      this.isWaitingForRedo.set(true);
+      this.isLocked.set(true);
+      setTimeout(() => { this.handleMistake(); this.feedback.set(''); }, 10000);
+    } else {
+      this.isWaitingForRedo.set(true);
+      this.isLocked.set(true);
     }
   }
 
@@ -265,9 +297,9 @@ export class ExerciseBoard {
     }
   }
 
-  private handleMistake(ex: Exercise): void {
+  private handleMistake(): void {
     this.exerciseChess.undo();
-    if (ex.exerciseType === 'mushroom') this.exerciseChess.setTurn('w');
+    if (this.currentExercise().exerciseType === 'mushroom') this.exerciseChess.setTurn('w');
     this.exerciseFen.set(this.exerciseChess.fen());
     this.exerciseLastMove.set(undefined);
     this.isLocked.set(false);

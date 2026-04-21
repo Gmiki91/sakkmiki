@@ -233,6 +233,7 @@ export class SupabaseService {
       mushroomType: raw.mushroom_type,
       position: raw.position,
       listId: raw.list_id,
+      numberOfMushrooms:raw.mushroom_number
     };
   }
 
@@ -255,6 +256,7 @@ export class SupabaseService {
       mushroom_type: exercise.mushroomType,
       position: exercise.position,
       list_id: exercise.listId,
+      mushroom_number:exercise.numberOfMushrooms
     };
   }
 

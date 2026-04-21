@@ -108,6 +108,7 @@ export class BoardCreator implements OnInit, AfterViewInit {
       events: { change: () => this.boardChange() },
       movable: { events: { after: (orig: Key, dest: Key) => this.handleMove(orig, dest) } },
     });
+    this.updateCastlingRights();
   }
 
   setFen(value: string) {
@@ -124,16 +125,19 @@ export class BoardCreator implements OnInit, AfterViewInit {
   resetBoard() {
     this.lastMove.set(null);
     this.currentFen.set(BARE_STARTING_FEN);
+    this.updateCastlingRights();
   }
 
   clearBoard() {
     this.lastMove.set(null);
     this.currentFen.set(EMPTY_BOARD_FEN);
+    this.updateCastlingRights();
   }
 
   async save(): Promise<void> {
     const fen = this.currentFen().split(' ')[0] + this.fenAppendix();
-
+    let numberOfMushrooms = undefined;
+    if(this.mushroomType())numberOfMushrooms = this.countBlackPawns(fen);
     if (this.isEditMode()) {
       const existing = this.exerciseService.exerciseLists()
         .flatMap(l => l.exercises)
@@ -148,6 +152,7 @@ export class BoardCreator implements OnInit, AfterViewInit {
           fen,
           lastMove: this.lastMove() ?? undefined,
           mushroomType: this.mushroomType() || undefined,
+          numberOfMushrooms
         });
       } catch (e) {
         this.snackbar.open((e as Error).message, '', { duration: 2000 });
@@ -172,6 +177,7 @@ export class BoardCreator implements OnInit, AfterViewInit {
         position: position || 1,
         lastMove: this.lastMove() ?? undefined,
         mushroomType: this.mushroomType() || undefined,
+        numberOfMushrooms
       };
       const ex = await this.exerciseService.addExercise(listId, exercise);
       if (!ex) return;
@@ -197,7 +203,7 @@ export class BoardCreator implements OnInit, AfterViewInit {
           this.move(orig, dest);
         } catch (err) {
           this.turnOrder.update(value => value === 'b' ? 'w' : 'b');
-          this.snackbar.open((err as Error).message, '', { duration: 2000 });
+          this.snackbar.open((err as Error).message+" mi a fasz", '', { duration: 2000 });
           this.chessBoard.api.set({ fen: this.currentFen() });
         }
       } finally {
@@ -213,8 +219,8 @@ export class BoardCreator implements OnInit, AfterViewInit {
   private navigateNext(exerciseId: string, type: ExerciseType): void {
     switch (type) {
       case 'challenge': this.router.navigate([`/exercises/challenge/${exerciseId}`]); break;
-      case 'puzzle':
-      case 'mushroom':  this.router.navigate([`/exercises/edit/${exerciseId}`]); break;
+      case 'puzzle':this.router.navigate([`/exercises/edit/${exerciseId}`]); break;
+      case 'mushroom':  
       case 'demo':      this.router.navigate(['/exercises']); break;
     }
   }
@@ -226,13 +232,9 @@ export class BoardCreator implements OnInit, AfterViewInit {
     const fenParts = exercise.fen.split(' ');
     this.currentFen.set(fenParts[0] ?? BARE_STARTING_FEN);
     this.turnOrder.set((fenParts[1] as 'w' | 'b') ?? 'w');
-    const castling = fenParts[2] ?? '-';
-    this.whiteCastlingKingSide.set(castling.includes('K'));
-    this.whiteCastlingQueenSide.set(castling.includes('Q'));
-    this.blackCastlingKingSide.set(castling.includes('k'));
-    this.blackCastlingQueenSide.set(castling.includes('q'));
     this.lastMove.set(exercise.lastMove ?? null);
     if (exercise.mushroomType) this.mushroomType.set(exercise.mushroomType);
+    this.updateCastlingRights();
   }
 
   private move(from: Key, to: Key) {
@@ -247,7 +249,38 @@ export class BoardCreator implements OnInit, AfterViewInit {
     if (!this.isRecordingLastMove()) {
       this.lastMove.set(null);
       this.currentFen.set(this.chessBoard.api.getFen());
+      this.updateCastlingRights();
     }
+  }
+
+  private updateCastlingRights() {
+    const pieces = this.chessBoard.api.state.pieces;
+    // White king side: king on e1, rook on h1
+    const whiteKing = pieces.get('e1');
+    const whiteRookH = pieces.get('h1');
+    this.whiteCastlingKingSide.set(
+      whiteKing?.role === 'king' && whiteKing.color === 'white' &&
+      whiteRookH?.role === 'rook' && whiteRookH.color === 'white'
+    );
+    // White queen side: king on e1, rook on a1
+    const whiteRookA = pieces.get('a1');
+    this.whiteCastlingQueenSide.set(
+      whiteKing?.role === 'king' && whiteKing.color === 'white' &&
+      whiteRookA?.role === 'rook' && whiteRookA.color === 'white'
+    );
+    // Black king side: king on e8, rook on h8
+    const blackKing = pieces.get('e8');
+    const blackRookH = pieces.get('h8');
+    this.blackCastlingKingSide.set(
+      blackKing?.role === 'king' && blackKing.color === 'black' &&
+      blackRookH?.role === 'rook' && blackRookH.color === 'black'
+    );
+    // Black queen side: king on e8, rook on a8
+    const blackRookA = pieces.get('a8');
+    this.blackCastlingQueenSide.set(
+      blackKing?.role === 'king' && blackKing.color === 'black' &&
+      blackRookA?.role === 'rook' && blackRookA.color === 'black'
+    );
   }
 
   private onDrop(event: DragEvent) {
@@ -267,6 +300,18 @@ export class BoardCreator implements OnInit, AfterViewInit {
   private addDropListener(el: HTMLElement) {
     el.addEventListener('drop', (e: DragEvent) => this.onDrop(e));
   }
+
+  private countBlackPawns(fen:string):number {
+    // 1. Get the board layout (everything before the first space)
+    const boardLayout = fen.split(' ')[0];
+
+    // 2. Use a Global Regex match to find all 'p' characters.
+    // The 'g' flag ensures we find all occurrences, not just the first one.
+    // If no pawns are found, match() returns null, so we default to an empty array.
+    const matches = boardLayout.match(/p/g) || [];
+
+    return matches.length;
+}
 
   private fenAppendix(): string {
     const turn = this.lastMove()

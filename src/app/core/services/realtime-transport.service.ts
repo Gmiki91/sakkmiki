@@ -39,6 +39,7 @@ export type BroadcastEvent =
   | { type: 'challenge_move'; white: string; black: string; fen: string; from: string; to: string; over?: boolean }
   | { type: 'resume'; studentName: string }
   | { type: 'stamp'; studentName: string }
+  | { type: 'reset'; studentName: string }
   | { type: 'set_auto_redo'; value: boolean; studentName?: string }
   | { type: 'set_auto_progress'; value: boolean; studentName?: string }
   | { type: 'lock'; studentName: string }

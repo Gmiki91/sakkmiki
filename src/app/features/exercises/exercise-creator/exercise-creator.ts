@@ -124,13 +124,7 @@ export class ExerciseCreator implements OnInit {
     try {
       const move = this.chess.move({ from: orig, to: dest });
       if (move) {
-        // Update board
-        if (this.exercise().exerciseType === 'mushroom') {
-          this.chess.setTurn(this.playerColor);
-        }
         this.chessBoard.api?.set(boardConfig(this.chess));
-
-        // Record if recording
         if (this.isRecording()) {
           this.solutions.update((moves) => [...moves, move.san]);
         }
@@ -221,10 +215,7 @@ export class ExerciseCreator implements OnInit {
 
   private saveRecording() {
     if (this.solutions().length > 0) {
-      const error =
-        this.exercise().exerciseType === 'mushroom'
-          ? null
-          : this.validateSolution(this.solutions());
+      const error = this.validateSolution(this.solutions());
       if (error) {
         this.snackbar.open(error, '', { duration: 3000 });
         return;

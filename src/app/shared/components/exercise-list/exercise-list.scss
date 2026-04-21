@@ -1,15 +1,18 @@
-.container{
-    .exercise-item {
-  padding: 8px 16px;
-  cursor: grab;
-  border-radius: 4px;
-  
-  &:hover {
-    background: var(--mat-sys-surface-container-high);
+.container {
+  .exercise-item {
+    padding: 8px 16px;
+    cursor: grab;
+    border-radius: 4px;
+    &.selected {
+      color: var(--mat-sys-on-secondary-container);
+      background-color: var(--mat-sys-secondary-container);
+    }
+    &:hover {
+      background: var(--mat-sys-surface-container-high);
+    }
+
+    &:active {
+      cursor: grabbing;
+    }
   }
-  
-  &:active {
-    cursor: grabbing;
-  }
-}
 }
