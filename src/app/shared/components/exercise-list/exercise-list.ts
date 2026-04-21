@@ -20,6 +20,6 @@ export class ExerciseList {
   }
   onSelect(exercise:Exercise){
     this.selectExercise.emit(exercise);
-    this.selectedExId = exercise.id;
+    this.selectedExId === exercise.id ? this.selectedExId = '' : this.selectedExId = exercise.id;
   }
 }

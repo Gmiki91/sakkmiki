@@ -4,7 +4,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { ClassroomStore } from '../../../core/services/classroom-store.service';
 import { SoundService } from '../../../core/services/sound.service';
-import { WhiteBoard } from '../../../shared/components/white-board/white-board';
 import { ExerciseBoard } from '../exercise-board/exercise-board';
 import { ChallengeBoard } from '../challenge-board/challenge-board';
 import { SimulBoard } from '../simul-board/simul-board';
@@ -12,7 +11,7 @@ import { GatheredBoard } from '../gathered-board/gathered-board';
 
 @Component({
   selector: 'app-student-view',
-  imports: [MatCardModule, MatIconModule, MatButtonModule, WhiteBoard, ExerciseBoard, ChallengeBoard, SimulBoard, GatheredBoard],
+  imports: [MatCardModule, MatIconModule, MatButtonModule,  ExerciseBoard, ChallengeBoard, SimulBoard, GatheredBoard],
   templateUrl: './student-view.html',
   styleUrl: './student-view.scss',
 })
@@ -32,6 +31,8 @@ export class StudentView implements OnDestroy {
   );
 
   title = computed(() => {
+    if(this.classroomStore.mode() === 'gathered')return 'Achtung!';
+    if(this.classroomStore.mode()==='simul')return 'Szimultán a tanár ellen 😱'
     if (this.myPair()) return `${this.myPair()!.white} vs ${this.myPair()!.black}`;
     return `Szia ${this.classroomStore.studentName()}! ${this.emoji()}`;
   });
