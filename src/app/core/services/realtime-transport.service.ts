@@ -7,15 +7,11 @@ import { ChallengePair } from '../../shared/models/challenge-pair.model';
 import { Exercise } from '../../shared/models/exercise.model';
 import { Point, StampAnnotation } from '../../shared/models/drawing.model';
 import { TeachingConceptListItem } from '../../shared/models/teaching-concept.model';
+import { StudentState } from './classroom-store.service';
 
 export type StudentPresence = {
   role: 'student';
   name: string;
-  exIndex: number;
-  locked:boolean;
-  awaitingRedo:boolean;
-  awaitingStamp: boolean;
-  fen?: string;
 };
 
 export type SpectatorPresence = {
@@ -24,6 +20,8 @@ export type SpectatorPresence = {
 };
 
 export type BroadcastEvent =
+  | { type: 'request_student_states' }
+  | { type: 'student_state'; studentState:StudentState}
   | { type: 'gather' }
   | { type: 'disperse' }
   | { type: 'teacher_fen'; fen: string }
@@ -112,7 +110,7 @@ export class RealtimeTransport implements OnDestroy {
 
   joinAsStudent(
     channelId: string,
-    initialPresence: Omit<StudentPresence, 'fen'>,
+    name: string,  
     onJoined: () => void,
   ): void {
     this.cleanup();
@@ -125,12 +123,8 @@ export class RealtimeTransport implements OnDestroy {
         console.log("status: ",status);
         if (this.cleaningUp) return;
         if (status === 'SUBSCRIBED') {
-          const presence = this.lastPresence ?? initialPresence;
+          const presence = { role: 'student' as const, name };
           await this.channel.track(presence);
-          // force a local read 
-          setTimeout(() => {
-            this.channel.presenceState();
-          }, 0);
           this.lastPresence = presence;
           onJoined();
         }
@@ -143,7 +137,7 @@ export class RealtimeTransport implements OnDestroy {
 
         const preservedPresence = this.lastPresence;
         this.cleanup();
-        this.joinAsStudent(channelId, preservedPresence ?? initialPresence, onJoined);
+        this.joinAsStudent(channelId, preservedPresence ? preservedPresence.name : name, onJoined);
 
       }, 5000); // wait 5s for auto-reconnect
     }
@@ -152,10 +146,6 @@ export class RealtimeTransport implements OnDestroy {
       });
   }
 
-  async updatePresence(state: Omit<StudentPresence, 'name' | 'role'>): Promise<void> {
-    this.lastPresence = { ...this.lastPresence!, ...state };
-    await this.channel.track(this.lastPresence);
-  }
 
   send(event: BroadcastEvent): void {
     this.channel.send({ type: 'broadcast', event: 'classroom', payload: event });
@@ -170,7 +160,6 @@ export class RealtimeTransport implements OnDestroy {
     this.lastPresence = null;
     if (this.channel) {
       this.supabase.realtimeClient.removeChannel(this.channel);
-      this.channel.unsubscribe();
     }
     this.cleaningUp = false
   }
@@ -194,9 +183,7 @@ export class RealtimeTransport implements OnDestroy {
       .filter(p => p.role === 'student')
       .map(p => ({
         role: 'student' as const,
-        name: p.name, exIndex: p.exIndex, locked:p.locked,
-        awaitingRedo: p.awaitingRedo, awaitingStamp: p.awaitingStamp,
-      }));
+        name: p.name}));
     const spectators: SpectatorPresence[] = all
       .filter(p => p.role === 'spectator')
       .map(p => ({ role: 'spectator' as const, displayName: p.displayName }));

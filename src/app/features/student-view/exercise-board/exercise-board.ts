@@ -2,6 +2,7 @@ import {
   Component, inject, signal, computed, effect, viewChild, linkedSignal,
   untracked
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Chess, Move } from 'chess.js';
 import { Key } from '@lichess-org/chessground/types';
 import { Config } from '@lichess-org/chessground/config';
@@ -25,7 +26,7 @@ const mushroomCollectionTemplate = {
   templateUrl: './exercise-board.html',
   styleUrl: './exercise-board.scss',
 })
-export class ExerciseBoard {
+export class ExerciseBoard  {
   private chessBoard = viewChild<ChessBoard>('chessBoard');
   private pieceOverlay = viewChild<PieceOverlay>('pieceOverlay');
   private stampOverlay = viewChild<StampOverlay>('stampOverlay');
@@ -87,13 +88,13 @@ export class ExerciseBoard {
   });
 
   constructor() {
-    // presence sync
+    // state sync
     effect(() => {
       const exIndex = this.exIndex();
       const awaitingStamp = this.isWaitingForStamp();
       const awaitingRedo = this.isWaitingForRedo();
       const locked = untracked(()=>this.isLocked())
-      this.classroomStore.updatePresence({  exIndex,locked, awaitingRedo, awaitingStamp });
+      this.classroomStore.broadcastStudentState({  exIndex,locked, awaitingRedo, awaitingStamp });
     });
 
     // Reset board when exercise changes
@@ -133,37 +134,29 @@ export class ExerciseBoard {
     });
 
     // Teacher commands
-    effect(() => {
-      const reset = this.classroomStore.reset();
-      if (!reset) return;
-      this.reset();
-    });
+    this.classroomStore.reset$
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.reset());
 
-    effect(() => {
-      const resume = this.classroomStore.resume();
-      if (!resume) return;
-      this.feedback.set('');
-      const ex = this.currentExercise();
-      if (ex) this.handleMistake();
-    });
+    this.classroomStore.resume$
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => {
+        this.feedback.set('');
+        const ex = this.currentExercise();
+        if (ex) this.handleMistake();
+      });
 
-    effect(() => {
-      const stamp = this.classroomStore.stamp();
-      if (!stamp) return;
-      this.progressWithStamp();
-    });
+    this.classroomStore.stamp$
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.progressWithStamp());
 
-    effect(() => {
-      const lock = this.classroomStore.lock();
-      if (!lock) return;
-      this.isLocked.set(true);
-    });
+    this.classroomStore.lock$
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.isLocked.set(true));
 
-    effect(() => {
-      const unlock = this.classroomStore.unlock();
-      if (!unlock) return;
-      this.isLocked.set(false);
-    });
+    this.classroomStore.unlock$
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.isLocked.set(false));
   }
 
   onMouseUp(e: MouseEvent): void {

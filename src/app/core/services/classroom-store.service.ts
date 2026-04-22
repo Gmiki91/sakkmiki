@@ -1,8 +1,9 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject } from 'rxjs';
 import { DrawShape } from '@lichess-org/chessground/draw';
 import { RealtimeChannel } from '@supabase/supabase-js';
-import { RealtimeTransport, BroadcastEvent, StudentPresence, SpectatorPresence } from './realtime-transport.service';
+import { RealtimeTransport, BroadcastEvent, SpectatorPresence } from './realtime-transport.service';
 import { SupabaseService } from './supabase.service';
 import { ChallengePair } from '../../shared/models/challenge-pair.model';
 import { Exercise } from '../../shared/models/exercise.model';
@@ -11,9 +12,16 @@ import { STARTING_FEN } from '../../shared/utils/chess.utils';
 import { Point, StampAnnotation } from '../../shared/models/drawing.model';
 import { TeachingConceptListItem } from '../../shared/models/teaching-concept.model';
 
-export type { StudentPresence, SpectatorPresence };
+export type { SpectatorPresence };
 export type ClassroomMode = 'normal' | 'gathered' | 'simul';
-
+export type StudentState = {
+  name: string;
+  exIndex: number;
+  locked: boolean;
+  awaitingRedo: boolean;
+  awaitingStamp: boolean;
+  fen?: string;
+};
 @Injectable({ providedIn: 'root' })
 export class ClassroomStore {
   private transport = inject(RealtimeTransport);
@@ -46,7 +54,8 @@ export class ClassroomStore {
   readonly curtainClosed = signal(true);
 
   // Teacher-side
-  readonly students = signal<StudentPresence[]>([]);
+  readonly requestStudentState = signal(0); 
+  readonly students = signal<StudentState[]>([]);
   readonly spectators = signal<SpectatorPresence[]>([]);
   readonly assignedLists = signal<Record<string, Exercise[]>>({});
   readonly miniboardArrows = signal<{ name: string; shapes: DrawShape[] } | null>(null);
@@ -69,18 +78,18 @@ export class ClassroomStore {
   readonly loadedExercises = signal<Exercise[]>([]);
   readonly assignedExercises = signal<Exercise[]>([]);
   readonly droppedExercise = signal<Exercise | null>(null);
-  readonly reset = signal<string | null>(null);
-  readonly resume = signal<string | null>(null);
-  readonly stamp = signal<string | null>(null);
-  readonly lock = signal<string | null>(null);
-  readonly unlock = signal<string | null>(null);
+  readonly reset$ = new Subject<string>();
+  readonly resume$ = new Subject<string>();
+  readonly stamp$ = new Subject<string>();
+  readonly lock$ = new Subject<string>();
+  readonly unlock$ = new Subject<string>();
   readonly mushroomType = signal<string|null>(null);
   readonly whiteBoardText = signal<string>('');
 
   private previousStudentNames = new Set<string>();
 
   // Callback for classroom component to react to presence sync
-  onStudentsUpdate: ((students: StudentPresence[]) => void) | null = null;
+  onStudentsUpdate: ((students: StudentState[]) => void) | null = null;
 
   // Lobby presence channel — tracks this user as a participant for the lobby's counts
   private lobbyChannel: RealtimeChannel | null = null;
@@ -93,15 +102,10 @@ export class ClassroomStore {
     this.transport.presenceSync$
       .pipe(takeUntilDestroyed())
       .subscribe((presenceStudents) => {
-        // Merge presence data with existing students, preserving FEN from broadcasts
-        this.students.update((current) => {
-          const merged = presenceStudents.map(p => ({
-            ...p,
-            fen: current.find(s => s.name === p.name)?.fen,
-          }));
-          return merged;
-        });
         const hasNewJoiner = presenceStudents.some(s => !this.previousStudentNames.has(s.name));
+        this.previousStudentNames = new Set(presenceStudents.map(s => s.name));
+        this.students.update(current => 
+           presenceStudents.map(p => (  current.find(s => s.name === p.name) ?? { name: p.name, exIndex: 0, locked: false, awaitingRedo: false, awaitingStamp: false})));    
         if (hasNewJoiner) this.resyncEphemeralState();
         this.onStudentsUpdate?.(this.students());
       });
@@ -135,7 +139,7 @@ export class ClassroomStore {
     this.isSpectator.set(false);
     this.transport.joinAsStudent(
       classroomId,
-      { role: 'student', name,  exIndex: 0, locked:false, awaitingRedo: false, awaitingStamp: false },
+      name,
       () => {
         this.isJoined.set(true);
         this.supabase.touchClassroom(classroomId).catch(() => {});
@@ -145,9 +149,9 @@ export class ClassroomStore {
     );
   }
 
-  async updatePresence(state: Omit<StudentPresence, 'name' | 'role'>): Promise<void> {
-    await this.transport.updatePresence(state);
-  }
+  broadcastStudentState(state: Omit<StudentState, 'name' | 'fen'>): void {
+    this.transport.send({ type: 'student_state', studentState:{name: this.studentName(),...state} });
+}
 
   leave(): void {
     this.transport.cleanup();
@@ -159,6 +163,7 @@ export class ClassroomStore {
   private resyncEphemeralState(): void {
     this.transport.send({ type: 'curtain', closed: this.curtainClosed() });
     this.transport.send({ type: 'mushroom_type', mType: this.mushroomType() ?? '' });
+    this.transport.send({ type: 'request_student_states' });
     const mode = this.mode();
     if (mode === 'gathered') this.transport.send({ type: 'gather' });
     else if (mode === 'simul') this.transport.send({ type: 'simul_start' });
@@ -332,6 +337,15 @@ export class ClassroomStore {
 
   private handleTeacherEvents(event: BroadcastEvent): void {
     switch (event.type) {
+      case 'student_state':
+        this.students.update(list =>{
+          const state = event.studentState;
+          return list.map(s => s.name === state.name
+            ? { ...s, exIndex: state.exIndex, locked: state.locked, awaitingRedo: state.awaitingRedo, awaitingStamp: state.awaitingStamp }
+            : s
+          )}
+        );
+        break;
       case 'student_fen':
         this.students.update((list) =>
           list.map((s) => (s.name === event.studentName ? { ...s, fen: event.fen } : s)));
@@ -355,6 +369,9 @@ export class ClassroomStore {
   private handleStudentEvents(event: BroadcastEvent): void {
     const myName = this.studentName();
     switch (event.type) {
+      case 'request_student_states':
+        this.requestStudentState.update(n => n + 1);
+        break;
       case 'gather':
         this.sharedArrows.set(null); this.miniboardArrows.set(null); this.mode.set('gathered'); break;
       case 'disperse':
@@ -375,11 +392,11 @@ export class ClassroomStore {
       case 'dropped_exercise':
         if (event.studentName === myName) this.droppedExercise.set(event.exercise); break;
       case 'reset':
-        if (event.studentName === myName) this.reset.set(event.studentName); break;
+        if (event.studentName === myName) this.reset$.next(event.studentName); break;
       case 'resume':
-        if (event.studentName === myName) this.resume.set(event.studentName); break;
+        if (event.studentName === myName) this.resume$.next(event.studentName); break;
       case 'stamp':
-        if (event.studentName === myName) this.stamp.set(event.studentName); break;
+        if (event.studentName === myName) this.stamp$.next(event.studentName); break;
       case 'set_auto_redo':
         if (!event.studentName || event.studentName === myName) this.autoRedo.set(event.value);
         break;
@@ -387,9 +404,9 @@ export class ClassroomStore {
         if (!event.studentName || event.studentName === myName) this.autoProgress.set(event.value);
         break;
       case 'lock':
-        if (event.studentName === myName) this.lock.set(event.studentName); break;
+        if (event.studentName === myName) this.lock$.next(event.studentName); break;
       case 'unlock':
-        if (event.studentName === myName) this.unlock.set(event.studentName); break;
+        if (event.studentName === myName) this.unlock$.next(event.studentName); break;
       case 'sync_challenge_pair': {
         const { pair } = event;
         if (pair.white === myName || pair.black === myName)
