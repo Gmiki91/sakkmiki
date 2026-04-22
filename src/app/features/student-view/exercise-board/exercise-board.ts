@@ -202,6 +202,7 @@ export class ExerciseBoard  {
     this.exerciseFen.set(fen);
     loadChess(this.exerciseChess,fen);
     this.exerciseLastMove.set(undefined);
+    this.isLocked.set(false);
     this.moveHistory.set([]);
     this.feedback.set('');
     this.mushroomCollection.set(mushroomCollectionTemplate)

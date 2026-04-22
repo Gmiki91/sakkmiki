@@ -82,7 +82,7 @@ export class StudentRoster {
       if (!update) return;
       const index = this.store.students().findIndex(s => s.name === update.name);
       if (index === -1) return;
-      this.studentBoards.get(index)?.api?.set({ drawable: { shapes: update.shapes } });
+      this.studentBoards?.get(index)?.api?.set({ drawable: { shapes: update.shapes } });
     });
 
     // Reset timer when student advances to a new exercise

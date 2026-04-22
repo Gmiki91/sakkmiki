@@ -135,7 +135,7 @@ export class BoardCreator implements OnInit, AfterViewInit {
   }
 
   async save(): Promise<void> {
-    const fen = this.currentFen().split(' ')[0] + this.fenAppendix();
+    const fen = this.currentFen().split(' ')[0] + this.fenAppendix(this.mushroomType()!==''); // skip castling if mushroom mode, so getValidMoves does not throw error
     let numberOfMushrooms = undefined;
     if(this.mushroomType())numberOfMushrooms = this.countBlackPawns(fen);
     if (this.isEditMode()) {
@@ -313,7 +313,7 @@ export class BoardCreator implements OnInit, AfterViewInit {
     return matches.length;
 }
 
-  private fenAppendix(): string {
+  private fenAppendix(mushroomMode?:boolean): string {
     const turn = this.lastMove()
       ? this.lastMove()!.color === 'white' ? 'w' : 'b'
       : this.turnOrder();
@@ -322,6 +322,6 @@ export class BoardCreator implements OnInit, AfterViewInit {
       (this.whiteCastlingQueenSide() ? 'Q' : '') +
       (this.blackCastlingKingSide() ? 'k' : '') +
       (this.blackCastlingQueenSide() ? 'q' : '') || '-';
-    return ` ${turn} ${castling} - 0 1`;
+      return mushroomMode ?` ${turn} - - 0 1` :` ${turn} ${castling} - 0 1`;
   }
 }
