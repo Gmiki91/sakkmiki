@@ -11,7 +11,26 @@
   overflow: hidden;
   background-color: var(--mat-sys-surface);
   mat-card-header{display:flex; justify-content: center;}
-  mat-card-title { text-align: center; }
+  mat-card-title { 
+    text-align: center;
+
+    .status-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+  
+    .status-dot.online {
+      background: #22c55e;
+    }
+  
+    .status-dot.offline {
+      background: #9ca3af;
+    }
+  }
   mat-card-actions { justify-content: center; min-height: 48px; padding: 4px 8px 8px; }
 
   .resume-btn { color: white; background-color: var(--mat-sys-error); }

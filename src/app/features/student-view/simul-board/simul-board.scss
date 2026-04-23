@@ -9,7 +9,7 @@
   flex-wrap: wrap;
   gap: 15px;
   flex: 0 0 auto;
-  width: calc(var(--mini-board-size) + 15px);
+  width: var(--mini-board-size);
   min-height: 0;
   h2 { text-align: center; margin: 0 0 4px; }
 }
