@@ -74,6 +74,7 @@ export class ClassroomStore {
   readonly incomingSimulStudentMove = signal<{ studentName: string; fen: string; from: string; to: string } | null>(null);
 
   // Student-side
+  readonly currentStudentFen = signal<string>(STARTING_FEN);
   readonly teacherFen = signal(STARTING_FEN);
   readonly loadedExercises = signal<Exercise[]>([]);
   readonly assignedExercises = signal<Exercise[]>([]);
@@ -144,6 +145,10 @@ export class ClassroomStore {
         this.isJoined.set(true);
         this.supabase.touchClassroom(classroomId).catch(() => {});
         this.trackLobbyPresence(classroomId);
+        // Broadcast current FEN on reconnect
+        if (this.currentStudentFen() !== STARTING_FEN) {
+          this.broadcastStudentFen(name, this.currentStudentFen());
+        }
         onJoined();
       },
     );
@@ -154,7 +159,7 @@ export class ClassroomStore {
 }
 
   leave(): void {
-    this.transport.cleanup();
+    this.transport.leave();
     this.untrackLobbyPresence();
     this.isJoined.set(false);
     this.isSpectator.set(false);

@@ -16,13 +16,12 @@ import { StampType } from '../../../shared/models/stamp.model';
 import { Exercise } from '../../../shared/models/exercise.model';
 import { getKingSquare, getPlayerOrientation, getValidMoves, loadChess, STARTING_FEN } from '../../../shared/utils/chess.utils';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
 const mushroomCollectionTemplate = {
     '🍄':0,'🍫':0,'🍬':0,'🍦':0,'🍔':0,'🥤':0,'🍩':0,'🎃':0,'♥️':0,'🎁':0,'🎈':0,'⭐':0,
   }
 @Component({
   selector: 'app-exercise-board',
-  imports: [ChessBoard, PieceOverlay, StampOverlay, StampSvg,MatButtonModule,MatIcon],
+  imports: [ChessBoard, PieceOverlay, StampOverlay, StampSvg,MatButtonModule],
   templateUrl: './exercise-board.html',
   styleUrl: './exercise-board.scss',
 })
@@ -130,7 +129,9 @@ export class ExerciseBoard  {
 
     // Broadcast FEN to teacher miniboard
     effect(() => {
-      this.classroomStore.broadcastStudentFen(this.classroomStore.studentName(), this.exerciseFen());
+      const fen = this.exerciseFen();
+      this.classroomStore.currentStudentFen.set(fen);  // Store for reconnect
+      this.classroomStore.broadcastStudentFen(this.classroomStore.studentName(),fen);
     });
 
     // Teacher commands
