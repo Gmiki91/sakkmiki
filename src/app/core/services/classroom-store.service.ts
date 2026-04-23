@@ -159,7 +159,7 @@ export class ClassroomStore {
 }
 
   leave(): void {
-    this.transport.leave();
+    this.transport.cleanup();
     this.untrackLobbyPresence();
     this.isJoined.set(false);
     this.isSpectator.set(false);
