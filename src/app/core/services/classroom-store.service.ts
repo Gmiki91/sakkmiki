@@ -16,6 +16,8 @@ export type { SpectatorPresence };
 export type ClassroomMode = 'normal' | 'gathered' | 'simul';
 export type StudentState = {
   name: string;
+  online: boolean;
+  lastSeen: number;
   exIndex: number;
   locked: boolean;
   awaitingRedo: boolean;
@@ -105,8 +107,27 @@ export class ClassroomStore {
       .subscribe((presenceStudents) => {
         const hasNewJoiner = presenceStudents.some(s => !this.previousStudentNames.has(s.name));
         this.previousStudentNames = new Set(presenceStudents.map(s => s.name));
-        this.students.update(current => 
-           presenceStudents.map(p => (  current.find(s => s.name === p.name) ?? { name: p.name, exIndex: 0, locked: false, awaitingRedo: false, awaitingStamp: false})));    
+this.students.update(current => {
+  const map = new Map(current.map(s => [s.name, s]));
+
+  for (const p of presenceStudents) {
+    const existing = map.get(p.name);
+
+    map.set(p.name, {
+      ...(existing ??{ name: p.name, exIndex: 0, locked: false, awaitingRedo: false, awaitingStamp: false}),
+      online: true,
+      lastSeen: Date.now()
+    });
+  }
+
+  for (const [name, student] of map) {
+    if (!presenceStudents.some(p => p.name === name)) {
+      map.set(name, { ...student, online: false });
+    }
+  }
+
+  return [...map.values()];
+});
         if (hasNewJoiner) this.resyncEphemeralState();
         this.onStudentsUpdate?.(this.students());
       });
@@ -159,7 +180,7 @@ export class ClassroomStore {
 }
 
   leave(): void {
-    this.transport.cleanup();
+    this.transport.leave();
     this.untrackLobbyPresence();
     this.isJoined.set(false);
     this.isSpectator.set(false);
@@ -368,6 +389,7 @@ export class ClassroomStore {
         this.incomingDrawingColor.set({ studentName: event.studentName, color: event.color }); break;
       case 'stamp_annotation': this.incomingStampAnnotation.set(event.annotation); break;
       case 'simul_student_move': this.incomingSimulStudentMove.set(event); break;     
+      case 'student_ready': this.transport.send({ type:'request_fen',target:event.name}); 
     }
   }
 
@@ -435,8 +457,8 @@ export class ClassroomStore {
         this.incomingSimulTeacherMove.set({ studentName: event.studentName, fen: event.fen, from: event.from, to: event.to });
         break;
       case 'white_board_text': this.whiteBoardText.set(event.text);break;
-      case 'request_fen':
-        this.requestFen.set(true); break;
+      case 'request_fen':if (event.target === this.studentName()) 
+        this.broadcastStudentFen(this.studentName(),this.currentStudentFen());break;
       case 'curtain': this.curtainClosed.set(event.closed); break;
     }
   }

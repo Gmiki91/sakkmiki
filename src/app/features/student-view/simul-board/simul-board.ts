@@ -78,7 +78,8 @@ export class SimulBoard {
         loadChess(this.simulChess, move.fen);
         this.simulFen.set(this.simulChess.fen());
         this.simulLastMove.set([move.from as Key, move.to as Key]);
-        this.soundService.play('move');
+        const capture = this.simulChess.move({ from: move.from, to: move.to });
+        this.soundService.play(capture ? 'take' : 'move');
       } catch {
         /* ignore */
       }

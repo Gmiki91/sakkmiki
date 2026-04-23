@@ -1,23 +1,24 @@
-import { Injectable, inject, OnDestroy } from '@angular/core';
+import { inject, Injectable, OnDestroy } from '@angular/core';
 import { Subject } from 'rxjs';
-import { RealtimeChannel } from '@supabase/supabase-js';
-import { DrawShape } from '@lichess-org/chessground/draw';
 import { SupabaseService } from './supabase.service';
+import { DrawShape } from '@lichess-org/chessground/draw';
 import { ChallengePair } from '../../shared/models/challenge-pair.model';
-import { Exercise } from '../../shared/models/exercise.model';
 import { Point, StampAnnotation } from '../../shared/models/drawing.model';
+import { Exercise } from '../../shared/models/exercise.model';
 import { TeachingConceptListItem } from '../../shared/models/teaching-concept.model';
 import { StudentState } from './classroom-store.service';
 
-export type StudentPresence = {
+
+interface StudentPresence {
   role: 'student';
   name: string;
-};
+}
 
-export type SpectatorPresence = {
-  role: 'spectator';
+export type SpectatorPresence ={
+  role: 'spectator'; 
   displayName: string;
-};
+}
+
 
 export type BroadcastEvent =
   | { type: 'request_student_states' }
@@ -43,7 +44,7 @@ export type BroadcastEvent =
   | { type: 'lock'; studentName: string }
   | { type: 'unlock'; studentName: string }
   | { type: 'student_fen'; studentName: string; fen: string }
-  | { type: 'request_fen' }
+  | { type: 'request_fen'; target:string }
   | { type: 'drawing_points'; studentName: string; strokeId: string; color: string; points: Point[] }
   | { type: 'drawing_commit'; strokeId: string }
   | { type: 'drawing_color'; studentName: string; color: string }
@@ -59,135 +60,267 @@ export type BroadcastEvent =
   | { type: 'simul_student_move'; studentName: string; fen: string; from: string; to: string }
   | { type: 'white_board_text', text:string}
   | { type: 'curtain'; closed: boolean }
+  | { type: 'student_ready'; name: string }
 
 @Injectable({ providedIn: 'root' })
 export class RealtimeTransport implements OnDestroy {
   private supabase = inject(SupabaseService);
-  private channel!: RealtimeChannel;
-  private lastPresence: StudentPresence | null = null;
-  private cleaningUp = false;
-  private reconnectTimer: any;
+  private channel: any = null;
+  private reconnectTimer: any = null;
+  private connectionId = 0;
+  private destroyed = false;
+
+  private lastJoin:
+    | {
+        mode: 'teacher';
+        channelId: string;
+      }
+    | {
+        mode: 'student';
+        channelId: string;
+        name: string;
+        onJoined: () => void;
+      }
+    | {
+        mode: 'spectator';
+        channelId: string;
+        displayName: string;
+      }
+    | null = null;
 
   readonly events$ = new Subject<BroadcastEvent>();
   readonly presenceSync$ = new Subject<StudentPresence[]>();
   readonly spectatorSync$ = new Subject<SpectatorPresence[]>();
 
-  // ----------------------------------------------------------------
-  // Connection
-  // ----------------------------------------------------------------
+  // =====================================================
+  // PUBLIC
+  // =====================================================
 
   joinAsTeacher(channelId: string): void {
-    this.cleanup();
-    this.channel = this.supabase.realtimeClient
-      .channel(channelId)
-      .on('broadcast', { event: 'classroom' }, ({ payload }: { payload: BroadcastEvent }) => {
-        this.events$.next(payload);
-      })
-      .on('presence', { event: 'sync' }, () => this.handlePresence())
-      .subscribe(status=>{
-        if(status==='SUBSCRIBED'){
-          this.handlePresence(); // read presence state to check if students already joined
-          this.send({ type: 'request_fen' }); // request current FENs from students
-        }
-      });
+    this.lastJoin = { mode: 'teacher', channelId };
+    void this.connectTeacher(channelId);
   }
 
-  joinAsSpectator(channelId: string, displayName: string): void {
-    this.cleanup();
-    this.channel = this.supabase.realtimeClient
-      .channel(channelId)
-      .on('broadcast', { event: 'classroom' }, ({ payload }: { payload: BroadcastEvent }) => {
-        this.events$.next(payload);
-      })
-      .on('presence', { event: 'sync' }, () => this.handlePresence())
-      .subscribe(async status => {
-        if (status === 'SUBSCRIBED') {
-          this.handlePresence(); // read presence state to check if students already joined
-          await this.channel.track({ role: 'spectator', displayName });
-        }
-      });
-  }
+
+
 
   joinAsStudent(
     channelId: string,
-    name: string,  
-    onJoined: () => void,
+    name: string,
+    onJoined: () => void
   ): void {
-    this.cleanup();
-    this.channel = this.supabase.realtimeClient
-      .channel(channelId)
-      .on('broadcast', { event: 'classroom' }, ({ payload }: { payload: BroadcastEvent }) => {
-        this.events$.next(payload);
-      })
-      .subscribe(async (status) => {
-        console.log("status: ",status);
-        if (this.cleaningUp) return;
-        if (status === 'SUBSCRIBED') {
-          const presence = { role: 'student' as const, name };
-          await this.channel.track(presence);
-          this.lastPresence = presence;
-          onJoined();
-        }
-          if (status === 'CLOSED') {
-            
-    // start recovery timer
-    if (!this.reconnectTimer) {
-      this.reconnectTimer = setTimeout(() => {
-        console.log('FORCE RECONNECT');
+    this.lastJoin = { mode: 'student', channelId, name, onJoined };
+    void this.connectStudent(channelId, name, onJoined);
+  }
 
-        const preservedPresence = this.lastPresence;
-        this.cleanup();
-        this.joinAsStudent(channelId, preservedPresence ? preservedPresence.name : name, onJoined);
+  joinAsSpectator(channelId: string, displayName: string): void {
+    this.lastJoin = { mode: 'spectator', channelId, displayName };
+    void this.connectSpectator(channelId, displayName);
+  }
 
-      }, 5000); // wait 5s for auto-reconnect
+  async send(event: BroadcastEvent): Promise<void> {
+    if (!this.channel) return;
+
+    const result = await this.channel.send({
+      type: 'broadcast',
+      event: 'classroom',
+      payload: event
+    });
+
+    if (result !== 'ok') {
+      console.warn('Broadcast failed:', result);
     }
   }
 
-      });
-  }
-
-
-  send(event: BroadcastEvent): void {
-    this.channel.send({ type: 'broadcast', event: 'classroom', payload: event });
-  }
-
- cleanup(): void {
-    this.cleaningUp = true;
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-    }
-    this.lastPresence = null;
-    if (this.channel) {
-      this.supabase.realtimeClient.removeChannel(this.channel);
-    }
-    this.cleaningUp = false
+  async leave(): Promise<void> {
+    this.lastJoin = null;
+    await this.cleanup();
   }
 
   ngOnDestroy(): void {
-    this.cleanup();
+    this.destroyed = true;
+    void this.cleanup();
     this.events$.complete();
     this.presenceSync$.complete();
     this.spectatorSync$.complete();
   }
 
-  // ----------------------------------------------------------------
-  // Private
-  // ----------------------------------------------------------------
+  // =====================================================
+  // CONNECT
+  // =====================================================
 
+  private async connectTeacher(channelId: string): Promise<void> {
+    await this.cleanup();
 
-  private handlePresence(){
-    const state = this.channel.presenceState<any>();
+    const id = ++this.connectionId;
+
+    this.channel = this.supabase.realtimeClient
+      .channel(channelId)
+      .on('broadcast', { event: 'classroom' }, ({ payload }: any) => {
+        if (id !== this.connectionId) return;
+        this.events$.next(payload);
+      })
+      .on('presence', { event: 'sync' }, () => {
+        if (id !== this.connectionId) return;
+        this.handlePresence();
+      });
+
+    this.channel.subscribe(async (status: string) => {
+      if (id !== this.connectionId) return;
+
+      if (status === 'SUBSCRIBED') {
+        await this.channel.track({ role: 'teacher' });
+      }
+
+      if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+        this.scheduleReconnect(id);
+      }
+    });
+  }
+
+  private async connectStudent(
+    channelId: string,
+    name: string,
+    onJoined: () => void
+  ): Promise<void> {
+    await this.cleanup();
+
+    const id = ++this.connectionId;
+
+    this.channel = this.supabase.realtimeClient
+      .channel(channelId)
+      .on('broadcast', { event: 'classroom' }, ({ payload }: any) => {
+        if (id !== this.connectionId) return;
+        this.events$.next(payload);
+      });
+
+    this.channel.subscribe(async (status: string) => {
+      if (id !== this.connectionId) return;
+
+      if (status === 'SUBSCRIBED') {
+        await this.channel.track({
+          role: 'student',
+          name
+        });
+
+        await this.send({
+          type: 'student_ready',
+          name
+        });
+
+        onJoined();
+      }
+
+      if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+        this.scheduleReconnect(id);
+      }
+    });
+  }
+
+  private async connectSpectator(
+    channelId: string,
+    displayName: string
+  ): Promise<void> {
+    await this.cleanup();
+
+    const id = ++this.connectionId;
+
+    this.channel = this.supabase.realtimeClient
+      .channel(channelId)
+      .on('broadcast', { event: 'classroom' }, ({ payload }: any) => {
+        if (id !== this.connectionId) return;
+        this.events$.next(payload);
+      })
+      .on('presence', { event: 'sync' }, () => {
+        if (id !== this.connectionId) return;
+        this.handlePresence();
+      });
+
+    this.channel.subscribe(async (status: string) => {
+      if (id !== this.connectionId) return;
+
+      if (status === 'SUBSCRIBED') {
+        await this.channel.track({ role: 'spectator', displayName });
+      }
+
+      if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+        this.scheduleReconnect(id);
+      }
+    });
+  }
+
+  // =====================================================
+  // RECONNECT
+  // ======================================================
+
+  private scheduleReconnect(id: number): void {
+    if (this.reconnectTimer || this.destroyed) return;
+    if (id !== this.connectionId) return;
+
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+
+      if (!this.lastJoin) return;
+
+      if (this.lastJoin.mode === 'teacher') {
+        void this.connectTeacher(this.lastJoin.channelId);
+      } else if (this.lastJoin.mode === 'student') {
+        void this.connectStudent(
+          this.lastJoin.channelId,
+          this.lastJoin.name,
+          this.lastJoin.onJoined
+        );
+      } else if (this.lastJoin.mode === 'spectator') {
+        void this.connectSpectator(
+          this.lastJoin.channelId,
+          this.lastJoin.displayName
+        );
+      }
+    }, 3000);
+  }
+
+  // =====================================================
+  // CLEANUP
+  // =====================================================
+
+  private async cleanup(): Promise<void> {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+
+    if (this.channel) {
+      const old = this.channel;
+      this.channel = null;
+      await this.supabase.realtimeClient.removeChannel(old);
+    }
+  }
+
+  // =====================================================
+  // PRESENCE
+  // =====================================================
+
+  private handlePresence(): void {
+    if (!this.channel) return;
+
+    const state = this.channel.presenceState();
     const all = Object.values(state).flat() as any[];
+
     const students: StudentPresence[] = all
       .filter(p => p.role === 'student')
       .map(p => ({
-        role: 'student' as const,
-        name: p.name}));
+        role: 'student',
+        name: p.name
+      }));
+
     const spectators: SpectatorPresence[] = all
       .filter(p => p.role === 'spectator')
-      .map(p => ({ role: 'spectator' as const, displayName: p.displayName }));
+      .map(p => ({
+        role: 'spectator',
+        displayName: p.displayName
+      }));
+
+    this.presenceSync$.next(students);
     this.spectatorSync$.next(spectators);
-    this.presenceSync$.next(students); 
   }
 }

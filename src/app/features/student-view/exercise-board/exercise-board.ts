@@ -93,7 +93,7 @@ export class ExerciseBoard  {
       const awaitingStamp = this.isWaitingForStamp();
       const awaitingRedo = this.isWaitingForRedo();
       const locked = untracked(()=>this.isLocked())
-      this.classroomStore.broadcastStudentState({  exIndex,locked, awaitingRedo, awaitingStamp });
+      this.classroomStore.broadcastStudentState({online:true,lastSeen:Date.now(),  exIndex,locked, awaitingRedo, awaitingStamp });
     });
 
     // Reset board when exercise changes
