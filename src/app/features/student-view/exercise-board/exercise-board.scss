@@ -103,6 +103,7 @@
 .collection {
   display: flex;
   flex-wrap: wrap;
+  max-width: var(--board-size);
   justify-content: center;
   height:60px; 
 }
