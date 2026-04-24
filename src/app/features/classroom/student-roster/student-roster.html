@@ -35,11 +35,11 @@
         (drop)="onDrop(student.name, $event)">
         <mat-card-header>
             <mat-card-title>{{ student.name }}  
-              <span
+              <!-- <span
                 class="status-dot"
                 [class.online]="student.online"
                 [class.offline]="!student.online">
-              </span> 
+              </span>  -->
             </mat-card-title>
           <mat-card-subtitle>
             {{ exerciseTitles()[student.name] ?? 'No exercise loaded' }} -

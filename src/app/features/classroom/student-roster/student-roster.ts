@@ -37,7 +37,7 @@ export class StudentRoster {
   pendingPair = signal<string | null>(null);
 
   // Simul
-  private simulChessMap = new Map<string, Chess>();
+  simulChessMap = this.store.simulChessMap;
   simulConfigs = signal<Record<string, Config>>({});
   pendingPromotion = signal<{ orig: Key; dest: Key, studentName:string } | null>(null);
 
@@ -331,7 +331,7 @@ export class StudentRoster {
       const move = chess.move({ from: orig, to: dest,promotion });
       if (!move) return;
       this.simulConfigs.update(c => ({ ...c, [studentName]: this.buildSimulConfig(studentName, chess) }));
-      this.store.sendSimulTeacherMove(studentName, chess.fen(), orig, dest);
+      this.store.sendSimulTeacherMove(studentName, chess.fen(), orig, dest,!!move.captured);
     } catch {
       this.simulConfigs.update(c => ({ ...c, [studentName]: this.buildSimulConfig(studentName, chess) }));
     }
