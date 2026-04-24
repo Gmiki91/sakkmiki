@@ -56,7 +56,7 @@ export type BroadcastEvent =
   | { type: 'stamp_annotation_clear_all' }
   | { type: 'simul_start' }
   | { type: 'simul_end' }
-  | { type: 'simul_teacher_move'; studentName: string; fen: string; from: string; to: string }
+  | { type: 'simul_teacher_move'; studentName: string; fen: string; from: string; to: string,capture:boolean }
   | { type: 'simul_student_move'; studentName: string; fen: string; from: string; to: string }
   | { type: 'white_board_text', text:string}
   | { type: 'curtain'; closed: boolean }

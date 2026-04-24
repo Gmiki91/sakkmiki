@@ -11,6 +11,7 @@ import { ExerciseList as List } from '../../shared/models/exercise-list.model';
 import { STARTING_FEN } from '../../shared/utils/chess.utils';
 import { Point, StampAnnotation } from '../../shared/models/drawing.model';
 import { TeachingConceptListItem } from '../../shared/models/teaching-concept.model';
+import { Chess } from 'chess.js';
 
 export type { SpectatorPresence };
 export type ClassroomMode = 'normal' | 'gathered' | 'simul';
@@ -72,8 +73,9 @@ export class ClassroomStore {
   readonly incomingStampAnnotationClear = signal<{ studentName: string } | null>(null);
 
   // Simul
-  readonly incomingSimulTeacherMove = signal<{ studentName: string; fen: string; from: string; to: string } | null>(null);
+  readonly incomingSimulTeacherMove = signal<{ studentName: string; fen: string; from: string; to: string,capture:boolean } | null>(null);
   readonly incomingSimulStudentMove = signal<{ studentName: string; fen: string; from: string; to: string } | null>(null);
+  simulChessMap = new Map<string, Chess>();
 
   // Student-side
   readonly currentStudentFen = signal<string>(STARTING_FEN);
@@ -197,6 +199,45 @@ this.students.update(current => {
 
   }
 
+  private resyncStudentGameState(studentName: string): void {
+    // student is in challenge mode
+    const pair = this.challengePairs().find(
+      p => p.white === studentName || p.black === studentName
+    );
+    if (pair) {
+      const { fen, from, to } = this.getChallengeFen(pair); 
+      if (fen) this.transport.send({ 
+        type: 'challenge_move', 
+        white: pair.white, black: pair.black, fen, from: from ?? '', to: to ?? '' 
+      });
+      return;
+    }
+  
+    // student is in simul mode
+    const simulChess = this.simulChessMap.get(studentName);
+    if (simulChess && this.mode() === 'simul') {
+      this.transport.send({
+        type: 'simul_teacher_move',
+        studentName, fen: simulChess.fen(), from: '', to: '',capture:false
+      });
+      return;
+    }
+    if(this.mode()==='normal'){
+         this.transport.send({ type:'request_fen',target:studentName}); 
+    }
+  }
+
+ 
+  //duplicate from student roster
+      getChallengeFen(pair: ChallengePair): { fen: string; from?: string; to?: string } {
+    const move = this.challengeMove();
+    if (move && move.white === pair.white && move.black === pair.black)
+      return { fen: move.fen, from: move.from, to: move.to };
+    const whiteFen = this.students().find(s => s.name === pair.white)?.fen;
+    return whiteFen ? { fen: whiteFen } : { fen: STARTING_FEN };
+
+  }
+
   // ----------------------------------------------------------------
   // Send methods (teacher)
   // ----------------------------------------------------------------
@@ -288,8 +329,8 @@ this.students.update(current => {
     this.mode.set('normal');
     this.transport.send({ type: 'simul_end' });
   }
-  sendSimulTeacherMove(studentName: string, fen: string, from: string, to: string): void {
-    this.transport.send({ type: 'simul_teacher_move', studentName, fen, from, to });
+  sendSimulTeacherMove(studentName: string, fen: string, from: string, to: string,capture:boolean): void {
+    this.transport.send({ type: 'simul_teacher_move', studentName, fen, from, to,capture });
   }
   sendSimulStudentMove(fen: string, from: string, to: string): void {
     this.transport.send({ type: 'simul_student_move', studentName: this.studentName(), fen, from, to });
@@ -389,7 +430,10 @@ this.students.update(current => {
         this.incomingDrawingColor.set({ studentName: event.studentName, color: event.color }); break;
       case 'stamp_annotation': this.incomingStampAnnotation.set(event.annotation); break;
       case 'simul_student_move': this.incomingSimulStudentMove.set(event); break;     
-      case 'student_ready': this.transport.send({ type:'request_fen',target:event.name}); 
+      case 'student_ready': 
+        this.resyncStudentGameState(event.name);
+        break;
+      
     }
   }
 
@@ -454,7 +498,7 @@ this.students.update(current => {
       case 'simul_start': this.mode.set('simul'); break;
       case 'simul_end': this.mode.set('normal'); break;
       case 'simul_teacher_move':
-        this.incomingSimulTeacherMove.set({ studentName: event.studentName, fen: event.fen, from: event.from, to: event.to });
+        this.incomingSimulTeacherMove.set({ studentName: event.studentName, fen: event.fen, from: event.from, to: event.to,capture:event.capture });
         break;
       case 'white_board_text': this.whiteBoardText.set(event.text);break;
       case 'request_fen':if (event.target === this.studentName()) 
