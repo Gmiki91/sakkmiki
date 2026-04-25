@@ -43,6 +43,7 @@ export type BroadcastEvent =
   | { type: 'set_auto_progress'; value: boolean; studentName?: string }
   | { type: 'lock'; studentName: string }
   | { type: 'unlock'; studentName: string }
+  | { type: 'kick'; studentName: string }
   | { type: 'student_fen'; studentName: string; fen: string }
   | { type: 'request_fen'; target:string }
   | { type: 'drawing_points'; studentName: string; strokeId: string; color: string; points: Point[] }

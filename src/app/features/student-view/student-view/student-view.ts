@@ -8,6 +8,8 @@ import { ExerciseBoard } from '../exercise-board/exercise-board';
 import { ChallengeBoard } from '../challenge-board/challenge-board';
 import { SimulBoard } from '../simul-board/simul-board';
 import { GatheredBoard } from '../gathered-board/gathered-board';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-student-view',
@@ -20,7 +22,7 @@ export class StudentView implements OnDestroy {
 
   classroomStore = inject(ClassroomStore);
   soundService = inject(SoundService);
-
+  router = inject(Router);
   readonly emoji = signal(this.pickEmoji());
 
   myPair = computed(() =>
@@ -41,10 +43,14 @@ export class StudentView implements OnDestroy {
   private curtainInitialized = false;
   
   constructor(){
-      effect(() => {
+    effect(() => {
       this.classroomStore.curtainClosed();
       if (!this.curtainInitialized) { this.curtainInitialized = true; return; }
       this.soundService.play('curtain');
+    });
+    this.classroomStore.kick$.pipe(takeUntilDestroyed()).subscribe(() => {
+      this.classroomStore.leave();
+      this.router.navigate([`/bye`]);
     });
   }
 

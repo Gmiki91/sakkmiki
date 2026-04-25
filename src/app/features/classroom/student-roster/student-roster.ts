@@ -205,6 +205,11 @@ export class StudentRoster {
     this.store.sendReset(studentName);
   }
 
+  kick(studentName:string):void{
+    this.store.kickStudent(studentName);
+    this.store.students.update(s => s.filter(x =>  x.name !==studentName));
+  }
+
   toggleStudentAutoRedo(name: string): void { this.store.sendAutoRedo(!this.effectiveAutoRedo()(name), name); }
   toggleStudentAutoProgress(name: string): void { this.store.sendAutoProgress(!this.effectiveAutoProgress()(name), name); }
 

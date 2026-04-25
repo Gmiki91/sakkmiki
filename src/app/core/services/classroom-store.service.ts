@@ -88,6 +88,7 @@ export class ClassroomStore {
   readonly stamp$ = new Subject<string>();
   readonly lock$ = new Subject<string>();
   readonly unlock$ = new Subject<string>();
+  readonly kick$ = new Subject<string>();
   readonly mushroomType = signal<string|null>(null);
   readonly whiteBoardText = signal<string>('');
 
@@ -316,6 +317,9 @@ this.students.update(current => {
     this.curtainClosed.set(closed);
     this.transport.send({ type: 'curtain', closed });
   }
+  kickStudent(studentName:string){
+    this.transport.send({type:'kick',studentName})
+  }
 
   // ----------------------------------------------------------------
   // Simul
@@ -468,6 +472,8 @@ this.students.update(current => {
         if (event.studentName === myName) this.resume$.next(event.studentName); break;
       case 'stamp':
         if (event.studentName === myName) this.stamp$.next(event.studentName); break;
+      case 'kick':
+        if( event.studentName === myName)this.kick$.next(event.studentName); break;
       case 'set_auto_redo':
         if (!event.studentName || event.studentName === myName) this.autoRedo.set(event.value);
         break;
