@@ -25,8 +25,8 @@ export class SimulBoard {
   private chessBoard = viewChild<ChessBoard>('chessBoard');
   private classroomStore = inject(ClassroomStore);
   private soundService = inject(SoundService);
-  // Public — read by StudentView for presence
-  simulFen = signal<string>(STARTING_FEN);
+
+  private simulFen = signal<string>(STARTING_FEN);
 
   private simulChess = new Chess();
   private simulLastMove = signal<[Key, Key] | undefined>(undefined);
@@ -78,8 +78,7 @@ export class SimulBoard {
         loadChess(this.simulChess, move.fen);
         this.simulFen.set(this.simulChess.fen());
         this.simulLastMove.set([move.from as Key, move.to as Key]);
-        const capture = this.simulChess.move({ from: move.from, to: move.to });
-        this.soundService.play(capture ? 'take' : 'move');
+        this.soundService.play(move.capture ? 'take' : 'move');
       } catch {
         /* ignore */
       }

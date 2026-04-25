@@ -31,8 +31,7 @@ export class ChallengeBoard {
     this.myPair()?.white === this.classroomStore.studentName() ? 'white' : 'black'
   );
 
-  // Public — read by StudentView for presence broadcastStudentFen
-  challengeFen = signal<string>(STARTING_FEN);
+  private challengeFen = signal<string>(STARTING_FEN);
 
   private challengeLastMove = signal<[Key, Key] | undefined>(undefined);
   pendingPromotion = signal<{ orig: Key; dest: Key; pair: ChallengePair } | null>(null);
