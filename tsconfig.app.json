@@ -7,7 +7,7 @@
     "types": []
   },
   "include": [
-    "src/**/*.ts", "vitest.config.ts"  ],
+    "src/**/*.ts", "vitest.integration.config.ts","vitest.unit.config.ts"  ],
   "exclude": [
     "src/**/*.spec.ts"
   ]
