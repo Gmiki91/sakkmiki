@@ -53,7 +53,6 @@ export class ClassroomStore {
   readonly loadedListTitle = signal<string>('');
   readonly droppedExercises = signal<Record<string, Exercise>>({});
   readonly sharedArrows = signal<{name:string, arrows:DrawShape[]}|null>(null);
-  readonly requestFen = signal(false);
   readonly curtainClosed = signal(true);
 
   // Teacher-side
@@ -75,14 +74,15 @@ export class ClassroomStore {
   // Simul
   readonly incomingSimulTeacherMove = signal<{ studentName: string; fen: string; from: string; to: string,capture:boolean } | null>(null);
   readonly incomingSimulStudentMove = signal<{ studentName: string; fen: string; from: string; to: string } | null>(null);
-  simulChessMap = new Map<string, Chess>();
 
   // Student-side
   readonly currentStudentFen = signal<string>(STARTING_FEN);
+
   readonly teacherFen = signal(STARTING_FEN);
   readonly loadedExercises = signal<Exercise[]>([]);
   readonly assignedExercises = signal<Exercise[]>([]);
   readonly droppedExercise = signal<Exercise | null>(null);
+  readonly resync$ = new Subject<string>();
   readonly reset$ = new Subject<string>();
   readonly resume$ = new Subject<string>();
   readonly stamp$ = new Subject<string>();
@@ -200,49 +200,13 @@ this.students.update(current => {
 
   }
 
-  private resyncStudentGameState(studentName: string): void {
-    // student is in challenge mode
-    const pair = this.challengePairs().find(
-      p => p.white === studentName || p.black === studentName
-    );
-    if (pair) {
-      const { fen, from, to } = this.getChallengeFen(pair); 
-      if (fen) this.transport.send({ 
-        type: 'challenge_move', 
-        white: pair.white, black: pair.black, fen, from: from ?? '', to: to ?? '' 
-      });
-      return;
-    }
-  
-    // student is in simul mode
-    const simulChess = this.simulChessMap.get(studentName);
-    if (simulChess && this.mode() === 'simul') {
-      this.transport.send({
-        type: 'simul_teacher_move',
-        studentName, fen: simulChess.fen(), from: '', to: '',capture:false
-      });
-      return;
-    }
-    if(this.mode()==='normal'){
-         this.transport.send({ type:'request_fen',target:studentName}); 
-    }
-  }
-
- 
-  //duplicate from student roster
-      getChallengeFen(pair: ChallengePair): { fen: string; from?: string; to?: string } {
-    const move = this.challengeMove();
-    if (move && move.white === pair.white && move.black === pair.black)
-      return { fen: move.fen, from: move.from, to: move.to };
-    const whiteFen = this.students().find(s => s.name === pair.white)?.fen;
-    return whiteFen ? { fen: whiteFen } : { fen: STARTING_FEN };
-
-  }
-
   // ----------------------------------------------------------------
   // Send methods (teacher)
   // ----------------------------------------------------------------
 
+  requestFen(studentName:string){
+    this.transport.send({ type: 'request_fen', target: studentName });
+  }
   gather(): void {
     this.mode.set('gathered');
     this.transport.send({ type: 'gather' });
@@ -435,7 +399,8 @@ this.students.update(current => {
       case 'stamp_annotation': this.incomingStampAnnotation.set(event.annotation); break;
       case 'simul_student_move': this.incomingSimulStudentMove.set(event); break;     
       case 'student_ready': 
-        this.resyncStudentGameState(event.name);
+        this.resyncEphemeralState();
+        this.resync$.next(event.name);
         break;
       
     }

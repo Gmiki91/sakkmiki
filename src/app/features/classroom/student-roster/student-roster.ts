@@ -16,6 +16,7 @@ import { STARTING_FEN, getValidMoves, isPawnPromotion, loadChess } from '../../.
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Chess } from 'chess.js';
 import { Promotion } from "../../../shared/components/promotion/promotion";
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-student-roster',
@@ -37,7 +38,7 @@ export class StudentRoster {
   pendingPair = signal<string | null>(null);
 
   // Simul
-  simulChessMap = this.store.simulChessMap;
+  simulChessMap = new Map<string, Chess>();
   simulConfigs = signal<Record<string, Config>>({});
   pendingPromotion = signal<{ orig: Key; dest: Key, studentName:string } | null>(null);
 
@@ -76,6 +77,25 @@ export class StudentRoster {
   private lastExIndex: Record<string, number> = {};
 
   constructor() {
+    // resync student state on (re)connect
+    this.store.resync$.pipe(takeUntilDestroyed()).subscribe(studentName => {
+    const pair = this.getPair(studentName);
+      if (pair) {
+        const { fen, from, to } = this.getChallengeFen(pair);
+        if (fen) this.store.sendChallengeMove(pair.white, pair.black, fen, from ?? '', to ?? '');
+        return;
+      }
+    
+      const simulChess = this.simulChessMap.get(studentName);
+      if (simulChess && this.store.mode() === 'simul') {
+        this.store.sendSimulTeacherMove(studentName, simulChess.fen(), '', '', false);
+        return;
+      }
+    
+      if (this.store.mode() === 'normal') {
+        this.store.requestFen(studentName);
+      }
+    });
     // Push incoming arrows into a specific student's miniboard
     effect(() => {
       const update = this.store.miniboardArrows();
