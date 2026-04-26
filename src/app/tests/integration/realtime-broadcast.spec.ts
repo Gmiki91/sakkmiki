@@ -1,4 +1,3 @@
-import { describe, it, expect, afterEach } from 'vitest';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { makeClient, uniqueChannel, subscribe, waitFor, cleanup } from './helpers'
 
