@@ -8,4 +8,4 @@ import { Navigation } from "./core/navigation/navigation";
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
-export class App {}
+export class App {} 
