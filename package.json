@@ -6,8 +6,8 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "vitest run --config vitest.unit.config.ts",
-    "test:integration": "vitest run --config vitest.integration.config.ts"
+    "test": "ng test --watch=false",
+    "test:integration": "vitest run --config vitest.config.ts"
   },
   "prettier": {
     "printWidth": 100,
