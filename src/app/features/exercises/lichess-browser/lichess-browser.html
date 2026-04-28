@@ -5,13 +5,6 @@
     <div class="filter-section">
       <span class="filter-label">Rating</span>
       <div class="rating-row">
-        <div class="preset-buttons">
-          @for (preset of presets; track preset.label) {
-            <button mat-stroked-button (click)="applyPreset(preset)">
-              {{ preset.label }}
-            </button>
-          }
-        </div>
         <mat-form-field appearance="outline" class="rating-field">
           <mat-label>Min</mat-label>
           <input matInput type="number" [ngModel]="minRating()" (ngModelChange)="minRating.set($event)" />
@@ -22,7 +15,7 @@
           <input matInput type="number" [ngModel]="maxRating() === 9999 ? '' : maxRating()"
             (ngModelChange)="maxRating.set($event || 9999)" />
         </mat-form-field>
-        <button mat-raised-button color="primary" (click)="search()">Search</button>
+        
       </div>
     </div>
 
@@ -37,6 +30,9 @@
           </button>
         }
       </div>
+    </div>
+    <div class="btn-wrapper">
+      <button mat-raised-button (click)="search()">Search</button>
     </div>
   </div>
 
@@ -98,9 +94,6 @@
           </span>
           <button mat-icon-button [disabled]="!canStepNext()" (click)="stepForward()">
             <mat-icon>arrow_forward</mat-icon>
-          </button>
-          <button mat-icon-button matTooltip="Reset" (click)="resetPreview()">
-            <mat-icon>replay</mat-icon>
           </button>
         </div>
 

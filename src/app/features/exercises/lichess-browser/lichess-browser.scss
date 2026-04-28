@@ -39,11 +39,6 @@
   flex-wrap: wrap;
 }
 
-.preset-buttons {
-  display: flex;
-  gap: 4px;
-}
-
 .rating-field {
   width: 90px;
 }
@@ -78,7 +73,7 @@
 // ── Main area ────────────────────────────────────────────────────
 .main-area {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 4fr;
   flex: 1;
   overflow: hidden;
 }
@@ -155,8 +150,8 @@
 }
 
 .preview-board-wrapper {
-  width: var(--mini-board-size);
-  height: var(--mini-board-size);
+  width: var(--board-size);
+  height: var(--board-size);
   max-width: 100%;
 
   app-chess-board {
