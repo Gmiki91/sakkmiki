@@ -206,7 +206,7 @@ export class SupabaseService {
       id: raw.id,
       name: raw.name,
       teacherId: raw.teacher_id,
-      teacherName: raw.profiles?.display_name ?? raw.teacher_id,
+      teacherName: raw.profiles?.display_name ?? '',
       lastActiveAt: raw.last_active_at,
       createdAt: raw.created_at,
     };
