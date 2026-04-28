@@ -9,6 +9,14 @@ import { authGuard, redirectIfAuthenticatedGuard } from './core/guards/auth.guar
 export const routes: Routes = [
   { path: '', loadComponent: () => import('./features/lobby/lobby').then((m) => m.Lobby) },
   {
+    path: 'auth/confirm',
+    loadComponent: () => import('./features/auth/confirm/auth-confirm').then(m => m.AuthConfirm),
+  },
+  {
+    path: 'auth/set-password',
+    loadComponent: () => import('./features/auth/set-password/set-password').then(m => m.SetPassword),
+  },
+  {
     path: 'login',
     loadComponent: () => import('./features/auth/login/login').then((m) => m.Login),
     canActivate: [redirectIfAuthenticatedGuard],

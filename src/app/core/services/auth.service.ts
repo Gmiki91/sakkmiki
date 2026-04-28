@@ -64,6 +64,10 @@ export class AuthService {
     });
   }
 
+  async refreshProfile(userId: string): Promise<void> {
+    await this.loadProfile(userId);
+  }
+
   private async loadProfile(userId: string): Promise<void> {
     const { data } = await this.supabase.client
       .from('profiles')
