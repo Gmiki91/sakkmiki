@@ -183,14 +183,13 @@ export class SupabaseService {
     limit?: number;
     offset?: number;
   }): Promise<{ puzzles: LichessPuzzle[]; count: number }> {
-    let query = this.client.from('lichess_puzzles').select('*', { count: 'exact' });
+    let query = this.client.from('lichess_puzzles').select('*', { count: 'planned' });
 
     if (opts.themes?.length) query = query.overlaps('themes', opts.themes);
     if (opts.minRating !== undefined) query = query.gte('rating', opts.minRating);
     if (opts.maxRating !== undefined) query = query.lte('rating', opts.maxRating);
 
     query = query
-      .order('rating', { ascending: true })
       .range(opts.offset ?? 0, (opts.offset ?? 0) + (opts.limit ?? 20) - 1);
 
     const { data, error, count } = await query;

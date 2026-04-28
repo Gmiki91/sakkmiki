@@ -36,7 +36,7 @@ export const THEME_LABELS: Record<string, string> = {
   trappedPiece:      'Trapped Piece',
   hangingPiece:      'Hanging Piece',
   clearance:         'Clearance',
-  overloading:       'Overloading',
+  // overloading:       'Overloading', //lichess themes do not include overloading :O
   // Endgame
   pawnEndgame:       'Pawn Endgame',
   rookEndgame:       'Rook Endgame',
@@ -48,10 +48,10 @@ export const THEME_LABELS: Record<string, string> = {
   underPromotion:    'Underpromotion',
   enPassant:         'En Passant',
   // Strategy
+  advancedPawn:      'Advanced Pawn',
   kingsideAttack:    'Kingside Attack',
   queensideAttack:   'Queenside Attack',
   exposedKing:       'Exposed King',
-  advancedPawn:      'Advanced Pawn'
 };
 
 /** Returns a human-readable label, falling back to the raw key if unknown. */
