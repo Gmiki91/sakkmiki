@@ -21,13 +21,6 @@ import { loadChess } from '../../../shared/utils/chess.utils';
 
 const PAGE_SIZE = 20;
 
-// Rating range presets
-const PRESETS = [
-  { label: 'Beginner',     min: 0,    max: 1000 },
-  { label: 'Intermediate', min: 1000, max: 1800 },
-  { label: 'Advanced',     min: 1800, max: 9999 },
-];
-
 @Component({
   selector: 'app-lichess-browser',
   imports: [
@@ -46,9 +39,8 @@ export class LichessBrowser implements OnInit {
 
   // --- Filter state ---
   selectedThemes = signal<string[]>([]);
-  minRating = signal<number>(0);
-  maxRating = signal<number>(9999);
-  readonly presets = PRESETS;
+  minRating = signal<number>(399);
+  maxRating = signal<number>(3999);
   readonly allThemes = Object.keys(THEME_LABELS);
   readonly themeLabel = themeLabel;
 
@@ -96,12 +88,6 @@ export class LichessBrowser implements OnInit {
     }
   }
 
-  applyPreset(preset: typeof PRESETS[0]): void {
-    this.minRating.set(preset.min);
-    this.maxRating.set(preset.max === 9999 ? 9999 : preset.max);
-    this.search();
-  }
-
   toggleTheme(theme: string): void {
     this.selectedThemes.update(t =>
       t.includes(theme) ? t.filter(x => x !== theme) : [...t, theme]
@@ -145,13 +131,6 @@ export class LichessBrowser implements OnInit {
     this.refreshBoard(true);
   }
 
-  resetPreview(): void {
-    const puzzle = this.selected();
-    if (!puzzle) return;
-    loadChess(this.previewChess, puzzle.fen);
-    this.solutionStep.set(0);
-    this.refreshBoard(false);
-  }
 
   async addToList(): Promise<void> {
     const puzzle = this.selected();
