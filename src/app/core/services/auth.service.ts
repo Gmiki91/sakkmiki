@@ -64,16 +64,12 @@ export class AuthService {
     });
   }
 
-  async refreshProfile(userId: string): Promise<void> {
-    await this.loadProfile(userId);
-  }
-
   private async loadProfile(userId: string): Promise<void> {
     const { data } = await this.supabase.client
       .from('profiles')
       .select('role, display_name')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
     this.userRole.set(data?.role ?? null);
     this.displayName.set(data?.display_name ?? null);
     if (data?.role) this.exerciseService.loadExerciseLists();
