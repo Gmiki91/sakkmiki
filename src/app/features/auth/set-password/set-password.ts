@@ -6,7 +6,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { SupabaseService } from '../../../core/services/supabase.service';
-import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-set-password',
@@ -16,7 +15,6 @@ import { AuthService } from '../../../core/services/auth.service';
 })
 export class SetPassword {
   private supabase = inject(SupabaseService);
-  private auth = inject(AuthService);
   private router = inject(Router);
 
   password = signal('');
@@ -37,7 +35,7 @@ export class SetPassword {
     this.isLoading.set(true);
     this.error.set(null);
 
-    const { data, error } = await this.supabase.client.auth.updateUser({
+    const { error } = await this.supabase.client.auth.updateUser({
       password: this.password(),
     });
 
@@ -47,16 +45,8 @@ export class SetPassword {
       return;
     }
 
-    // Insert teacher profile row — safe to ignore if already exists
-    if (data.user) {
-      await this.supabase.client
-        .from('profiles')
-        .upsert({ id: data.user.id, role: 'teacher' });
-      await this.auth.refreshProfile(data.user.id);
-    }
-
     this.isLoading.set(false);
-    this.router.navigate(['/exercises']);
+    this.router.navigate(['/']);
   }
 
   onKeydown(event: KeyboardEvent): void {
