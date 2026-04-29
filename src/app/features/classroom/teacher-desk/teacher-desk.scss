@@ -21,10 +21,48 @@
   }
 }
 .exercise-column{
-  height:80vh;
-  width: 200px;
+  width: 300px;
+  
+}
+app-exercise-list{
+  display:flex;
+  max-height:66vh;
   overflow-y: auto;
-  overflow-x: hidden;
+  
+}
+
+.list-header {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  cursor: grab;
+  border-radius: 4px;
+  transition: background 0.15s;
+  overflow: hidden;
+
+  &:hover { background: var(--mat-sys-surface-container-high); }
+  &:active { cursor: grabbing; }
+
+  .drag-handle {
+    font-size: 18px;
+    color: var(--mat-sys-on-surface-variant);
+    opacity: 0.5;
+    flex-shrink: 0;
+  }
+
+  h3 {
+    flex: 1;
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--mat-sys-on-surface-variant);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 .board-wrapper {
   width: var(--board-size);
@@ -85,50 +123,6 @@
   }
 }
 
-// ── Exercises column (gathered) ──────────────────────────────────
-
-.exercises-column {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 200px;
-  max-height: var(--board-size);
-  overflow-y: auto;
-}
-
-.list-header {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 0;
-  cursor: grab;
-  border-radius: 4px;
-  transition: background 0.15s;
-  overflow-x: hidden;
-
-  &:hover { background: var(--mat-sys-surface-container-high); }
-  &:active { cursor: grabbing; }
-
-  .drag-handle {
-    font-size: 18px;
-    color: var(--mat-sys-on-surface-variant);
-    opacity: 0.5;
-    flex-shrink: 0;
-  }
-
-  h3 {
-    flex: 1;
-    margin: 0;
-    font-size: 0.85rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--mat-sys-on-surface-variant);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-}
 
 // ── Right column (gathered) ──────────────────────────────────────
 

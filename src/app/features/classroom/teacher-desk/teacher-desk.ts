@@ -24,12 +24,12 @@ import { Exercise } from '../../../shared/models/exercise.model';
 import { ExerciseList as List } from '../../../shared/models/exercise-list.model';
 import { DEFAULT_BRUSH_COLOR } from '../../../shared/utils/brushes';
 import { WhiteBoard } from "../../../shared/components/white-board/white-board";
-
+import {MatExpansionModule} from '@angular/material/expansion';
 @Component({
   selector: 'app-teacher-desk',
   imports: [
     ChessBoard, DrawingCanvas, TeachingOverlay, ExerciseList,
-    MatButtonModule, MatIconModule, MatTooltipModule,
+    MatButtonModule, MatIconModule, MatTooltipModule,MatExpansionModule,
     WhiteBoard
 ],
   templateUrl: './teacher-desk.html',
