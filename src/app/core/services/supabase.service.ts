@@ -159,7 +159,8 @@ export class SupabaseService {
     const { data, error } = await this.client
       .from('exercise_lists')
       .select(`*,exercises (*)`)
-      .order('position', { referencedTable: 'exercises' });
+      .order('title') // exercise_lists ordered by title
+      .order('position', { referencedTable: 'exercises' }); // nested exercises ordered by position
     if (error) throw error;
     return data.map((list) => ({
       id: list.id,
@@ -167,7 +168,6 @@ export class SupabaseService {
       type: list.type,
       teacherId: list.teacher_id,
       exercises: list.exercises
-        .sort((a: { position: number }, b: { position: number }) => a.position - b.position)
         .map((item: { exercises: any }) => this.fromDbExercise(item)),
     }));
   }

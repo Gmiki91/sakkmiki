@@ -165,26 +165,36 @@
     <div class="row">
       <button style="width: 100%" mat-raised-button (click)="openPicker()">Load exercises</button>
     </div>
+    <mat-accordion 
+      style="
+        display:flex;
+        flex-direction: column;
+        padding:5px;">
     @for (list of loadedLists(); track list.id) {
-      <div class="list-header" draggable="true" (dragstart)="onListDragStart(list, $event)">
-        <mat-icon class="drag-handle">drag_indicator</mat-icon>
-        <h3 [matTooltip]="list.title" matTooltipShowDelay="500">{{ list.title }}</h3>
-        <button mat-icon-button (click)="removeList(list)"><mat-icon>close</mat-icon></button>
-        @if (!this.isGathered()) {
-          <button
-            mat-icon-button
-            (click)="loadListToAll(list)"
-            matTooltip="Load list to all students"
-          >
-            <mat-icon>arrow_forward</mat-icon>
-          </button>
-        }
-      </div>
+      <mat-expansion-panel hideToggle>
+        <mat-expansion-panel-header>
+        <div class="list-header" draggable="true" (dragstart)="onListDragStart(list, $event)">
+          <h3 [matTooltip]="list.title" matTooltipShowDelay="500">{{ list.title }}</h3>
+          <button mat-icon-button (click)="removeList(list)"><mat-icon>close</mat-icon></button>
+          @if (!this.isGathered()) {
+            <button
+              mat-icon-button
+              (click)="loadListToAll(list)"
+              matTooltip="Load list to all students"
+            >
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
+          }
+        </div>
+      </mat-expansion-panel-header>
       <app-exercise-list
         [list]="list"
         (selectExercise)="demoExercise.set($event)"
       ></app-exercise-list>
+      
+      </mat-expansion-panel>
     }
+  </mat-accordion>
   </div>
 
   <!-- Spectators — always visible when anyone is watching -->
