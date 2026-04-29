@@ -57,7 +57,7 @@
     }
     @if (selectedList()!.type === 'puzzle' && isOwner()) {
       <button mat-button (click)="importFromLichess(selectedList()!.id)">
-        <mat-icon>cloud_download</mat-icon> New exercise from Lichess
+        + New exercise from Lichess
       </button>
     }
     <mat-divider></mat-divider>

@@ -26,13 +26,14 @@ import { ExerciseList } from '../../shared/models/exercise-list.model';
 import { Exercise } from '../../shared/models/exercise.model';
 import { ExerciseService } from '../../core/services/exercise.service';
 import { SoundService } from '../../core/services/sound.service';
-import { getPlayerOrientation, getValidMoves, loadChess, STARTING_FEN } from '../../shared/utils/chess.utils';
+import { getPlayerOrientation, getValidMoves, isPawnPromotion, loadChess, STARTING_FEN } from '../../shared/utils/chess.utils';
+import { Promotion } from '../../shared/components/promotion/promotion';
 
 type Phase = 'idle' | 'running' | 'finished';
 
 @Component({
   selector: 'app-puzzle-rush',
-  imports: [MatButtonModule, MatIconModule, MatInputModule, MatCardModule, FormsModule, ChessBoard],
+  imports: [MatButtonModule, MatIconModule, MatInputModule, MatCardModule, FormsModule, ChessBoard,Promotion],
   templateUrl: './puzzle-rush.html',
   styleUrl: './puzzle-rush.scss',
 })
@@ -60,6 +61,7 @@ export class PuzzleRush implements OnInit, OnDestroy {
   currentFen = signal<string>(STARTING_FEN);
   moveHistory = signal<string[]>([]);
   lastMove = signal<[Key, Key] | []>([]); // for computer move highlight
+  pendingPromotion = signal<{ orig: Key; dest: Key } | null>(null);
 
   private puzzleQueue: Exercise[] = [];
   private currentIndex = 0;
@@ -138,6 +140,13 @@ export class PuzzleRush implements OnInit, OnDestroy {
     this.moveHistory.set([]);
   }
 
+  completePromotion(role: 'q' | 'r' | 'n' | 'b'): void {
+    const p = this.pendingPromotion();
+    if (!p) return;
+    this.pendingPromotion.set(null);
+    this.executeMove(p.orig, p.dest, role);
+  }
+
   private loadPuzzle(index: number): void {
     if (index >= this.puzzleQueue.length) {
       this.finish();
@@ -161,8 +170,17 @@ export class PuzzleRush implements OnInit, OnDestroy {
   }
 
   private handleMove(orig: Key, dest: Key): void {
+    const piece = this.chess.get(orig as any)!;
+    if (isPawnPromotion(dest, piece)) {
+      this.pendingPromotion.set({ orig, dest });
+    } else {
+      this.executeMove(orig,dest);
+    }
+  }
+
+  private executeMove(orig: Key, dest: Key,role?: 'q' | 'r' | 'n' | 'b'): void {
     try {
-      const move = this.chess.move({ from: orig, to: dest });
+      const move = this.chess.move({ from: orig, to: dest,promotion:role });
       if (!move) return;
       this.analyze(move);
     } catch {
