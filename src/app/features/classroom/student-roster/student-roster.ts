@@ -238,9 +238,9 @@ export class StudentRoster {
   onDrop(targetName: string, event: DragEvent): void {
     if (this.readonly()) return;
     const type = event.dataTransfer?.getData('type');
-    if (type === 'exercise') this.handleExerciseDrop(targetName, event);
+    if (type === 'single') this.handleExerciseDrop(targetName, event);
     else if (type === 'list') this.handleListDrop(targetName, event);
-    else this.handleChallengeDrop(targetName);
+    else this.handleChallengeCreation(targetName);
   }
 
   handleListDrop(targetName: string, event: DragEvent): void {
@@ -265,7 +265,7 @@ export class StudentRoster {
     }
   }
 
-  handleChallengeDrop(targetName: string): void {
+  handleChallengeCreation(targetName: string): void {
     const source = this.pendingPair();
     if (!source || source === targetName) { this.pendingPair.set(null); return; }
     const pair: ChallengePair = { white: source, black: targetName };
