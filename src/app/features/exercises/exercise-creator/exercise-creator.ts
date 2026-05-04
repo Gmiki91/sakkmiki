@@ -52,7 +52,7 @@ export class ExerciseCreator implements OnInit {
   recordingText = computed(() => this.solutions().join(', '));
   exercise!: WritableSignal<Exercise>;
   private originalDefaultHint = signal<string|undefined>('');
-  defaultHint = model<string|undefined>('');
+  defaultHint = model<string|undefined>('Biztos? 🤔');
   boardConfig = signal<Config | undefined>(undefined);
   playerColor: Color = 'w';
   saveState = signal<'idle' | 'saving' | 'saved'>('idle');

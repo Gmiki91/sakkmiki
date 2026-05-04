@@ -152,7 +152,8 @@ export class TeacherDesk {
   stopSimul(): void { this.store.stopSimul(); }
 
 
-  loadListToAll(list: List): void {
+  loadListToAll(list: List,e:MouseEvent): void {
+    e.stopPropagation();
     this.store.loadListToAll(list);
   }
 
