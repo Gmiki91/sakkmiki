@@ -11,7 +11,8 @@ import {
   loadChess,
   STARTING_FEN,
 } from '../../../shared/utils/chess.utils';
-import { Promotion } from '../../../shared/components/promotion/promotion';
+import { Promotion, PromotionPiece } from '../../../shared/components/promotion/promotion';
+import { PromotionService } from '../../../core/services/promotion.service';
 
 type PeerBoard = { name: string; config: Config };
 
@@ -25,13 +26,13 @@ export class SimulBoard {
   private chessBoard = viewChild<ChessBoard>('chessBoard');
   private classroomStore = inject(ClassroomStore);
   private soundService = inject(SoundService);
+  promotionService = inject(PromotionService);
 
   private simulFen = signal<string>(STARTING_FEN);
 
   private simulChess = new Chess();
   private simulLastMove = signal<[Key, Key] | undefined>(undefined);
   peerBoards = signal<PeerBoard[]>([]);
-  pendingPromotion = signal<{ orig: Key; dest: Key } | null>(null);
 
   boardConfig = computed<Config>(() => {
     const isBlackTurn = this.simulChess.turn() === 'b';
@@ -94,25 +95,18 @@ export class SimulBoard {
     });
   }
 
-  handleSimulMove(orig: Key, dest: Key): void {
+  async handleSimulMove(orig: Key, dest: Key): Promise<void> {
     if (this.simulChess.turn() !== 'b') return;
-
     const piece = this.simulChess.get(orig as any)!;
     if (isPawnPromotion(dest, piece)) {
-      this.pendingPromotion.set({ orig, dest });
-    } else {
-      this.executeMove(orig, dest);
+      const role = await this.promotionService.requestPromotion(orig,dest);
+      this.executeMove(orig,dest,role);
+      return;
     }
+    this.executeMove(orig, dest);
   }
 
-  completePromotion(role: 'q' | 'r' | 'n' | 'b'): void {
-    const p = this.pendingPromotion();
-    if (!p) return;
-    this.pendingPromotion.set(null);
-    this.executeMove(p.orig, p.dest, role);
-  }
-
-  private executeMove(orig: Key, dest: Key, promotion?: 'q' | 'r' | 'n' | 'b'): void {
+  private executeMove(orig: Key, dest: Key, promotion?: PromotionPiece): void {
     try {
       const move = this.simulChess.move({ from: orig, to: dest, promotion });
       if (!move) return;

@@ -15,8 +15,9 @@ import { Exercise } from '../../../shared/models/exercise.model';
 import { STARTING_FEN, getValidMoves, isPawnPromotion, loadChess } from '../../../shared/utils/chess.utils';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Chess } from 'chess.js';
-import { Promotion } from "../../../shared/components/promotion/promotion";
+import { Promotion, PromotionPiece } from "../../../shared/components/promotion/promotion";
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { PromotionService } from '../../../core/services/promotion.service';
 
 @Component({
   selector: 'app-student-roster',
@@ -32,6 +33,7 @@ export class StudentRoster {
 
   store = inject(ClassroomStore);
   drawingService = inject(DrawingService);
+  promotionService = inject(PromotionService);
   snackBar = inject(MatSnackBar);
 
   isLoadingList = signal(false);
@@ -40,7 +42,6 @@ export class StudentRoster {
   // Simul
   simulChessMap = new Map<string, Chess>();
   simulConfigs = signal<Record<string, Config>>({});
-  pendingPromotion = signal<{ orig: Key; dest: Key, studentName:string } | null>(null);
 
   exerciseTitles = computed(() => {
     const globalList = this.store.loadedList();
@@ -308,13 +309,6 @@ export class StudentRoster {
     return whiteFen ? { fen: whiteFen } : { fen: STARTING_FEN };
   }
 
-  completePromotion(role: 'q' | 'r' | 'n' | 'b'): void {
-    const p = this.pendingPromotion();
-    if (!p) return;
-    this.pendingPromotion.set(null);
-    this.executeMove(p.orig, p.dest, p.studentName,role);
-  }
-
   // ── Timers ───────────────────────────────────────────────────────
 
   freezeTimers(): void { this.timers.forEach(t => t.stop()); }
@@ -342,15 +336,19 @@ export class StudentRoster {
     };
   }
 
-  private onSimulTeacherMove(studentName: string, orig: Key, dest: Key): void {
+  private async onSimulTeacherMove(studentName: string, orig: Key, dest: Key):Promise<void> {
     const chess = this.simulChessMap.get(studentName);
     if (!chess || chess.turn() !== 'w') return;
     const piece = chess.get(orig as any)!;
-    if (isPawnPromotion(dest, piece)) this.pendingPromotion.set({ orig, dest,studentName });
-    else this.executeMove(orig, dest,studentName);
+    if (isPawnPromotion(dest, piece)){
+      const role = await this.promotionService.requestPromotion(orig, dest);
+      this.executeMove(orig, dest,studentName, role);
+      return;
+    } 
+     this.executeMove(orig, dest,studentName);
   }
 
-  private executeMove(orig:Key, dest:Key,studentName:string, promotion?:'q' | 'r' | 'n' | 'b'):void{
+  private executeMove(orig:Key, dest:Key,studentName:string, promotion?:PromotionPiece):void{
     const chess = this.simulChessMap.get(studentName);
     if (!chess || chess.turn() !== 'w') return;
     try {

@@ -7,6 +7,6 @@
     <span>🐭</span><span>🪥</span><span>🍄</span><span>☃️</span>
   </div>
 </div>
-  @if (pendingPromotion()) {
-    <app-promotion [color]="myColor()" (promote)="completePromotion($event)"></app-promotion>
+  @if (promotionService.pending()) {
+    <app-promotion [color]="myColor()" (promote)="promotionService.completePromotion($event)"></app-promotion>
   }

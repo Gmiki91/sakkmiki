@@ -34,7 +34,7 @@
       }
     }
   </div>
-  @if (pendingPromotion()) {
-    <app-promotion color="black" (promote)="completePromotion($event)"></app-promotion>
+  @if (promotionService.pending()) {
+    <app-promotion color="black" (promote)="promotionService.completePromotion($event)"></app-promotion>
   }
 </div>

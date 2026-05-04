@@ -8,6 +8,7 @@ import { ChessBoard } from '../../../shared/components/chess-board/chess-board';
 import { ChallengePair } from '../../../shared/models/challenge-pair.model';
 import { getValidMoves, isPawnPromotion, loadChess, STARTING_FEN } from '../../../shared/utils/chess.utils';
 import { Promotion } from "../../../shared/components/promotion/promotion";
+import { PromotionService } from '../../../core/services/promotion.service';
 
 @Component({
   selector: 'app-challenge-board',
@@ -19,6 +20,7 @@ export class ChallengeBoard {
   private chessBoard = viewChild<ChessBoard>('chessBoard');
   private classroomStore = inject(ClassroomStore);
   private soundService = inject(SoundService);
+  promotionService = inject(PromotionService);
 
   myPair = computed(() =>
     this.classroomStore.challengePairs().find(
@@ -34,7 +36,6 @@ export class ChallengeBoard {
   private challengeFen = signal<string>(STARTING_FEN);
 
   private challengeLastMove = signal<[Key, Key] | undefined>(undefined);
-  pendingPromotion = signal<{ orig: Key; dest: Key; pair: ChallengePair } | null>(null);
   private challengeChess = new Chess();
 
   boardConfig = computed<Config>(() => ({
@@ -94,7 +95,7 @@ export class ChallengeBoard {
     });
   }
 
-  handleChallengeMove(orig: Key, dest: Key): void {
+  async handleChallengeMove(orig: Key, dest: Key): Promise<void> {
     const pair = this.myPair();
     if (!pair) return;
     const piece = this.challengeChess.get(orig as any)!;
@@ -103,19 +104,15 @@ export class ChallengeBoard {
         this.classroomStore.sendChallengeMove(pair.white, pair.black, this.challengeChess.fen(), orig, dest, true);
         this.soundService.playRandomCheering();
       } else {
-        this.pendingPromotion.set({ orig, dest, pair });
+        const role = await this.promotionService.requestPromotion(orig,dest);
+        this.executeMove(orig,dest,pair,role);
+        return;
       }
     } else {
       this.executeMove(orig, dest, pair);
     }
   }
 
-  completePromotion(role: 'q' | 'r' | 'n' | 'b'): void {
-    const p = this.pendingPromotion();
-    if (!p) return;
-    this.pendingPromotion.set(null);
-    this.executeMove(p.orig, p.dest, p.pair, role);
-  }
 
 
   private executeMove(orig: Key, dest: Key, pair: ChallengePair, promotion?: 'q' | 'r' | 'n' | 'b'): void {
