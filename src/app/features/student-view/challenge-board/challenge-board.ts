@@ -71,6 +71,12 @@ export class ChallengeBoard {
       this.chessBoard()?.api?.set({ lastMove: [] });
     });
 
+    effect(() => {
+      const fen = this.challengeFen();
+      this.classroomStore.currentStudentFen.set(fen);
+      this.classroomStore.broadcastStudentFen(this.classroomStore.studentName(), fen);
+    });
+
     // Incoming move from opponent
     effect(() => {
       const move = this.classroomStore.challengeMove();

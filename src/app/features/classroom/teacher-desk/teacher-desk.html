@@ -179,7 +179,7 @@
           @if (!this.isGathered()) {
             <button
               mat-icon-button
-              (click)="loadListToAll(list)"
+              (click)="loadListToAll(list,$event)"
               matTooltip="Load list to all students"
             >
               <mat-icon>arrow_forward</mat-icon>

@@ -193,6 +193,7 @@ this.students.update(current => {
     this.transport.send({ type: 'curtain', closed: this.curtainClosed() });
     this.transport.send({ type: 'mushroom_type', mType: this.mushroomType() ?? '' });
     this.transport.send({ type: 'request_student_states' });
+    this.transport.send({ type: 'sync_all_challenge_pairs', pairs: this.challengePairs() });
     const mode = this.mode();
     if (mode === 'gathered') this.transport.send({ type: 'gather' });
     else if (mode === 'simul') this.transport.send({ type: 'simul_start' });
@@ -430,7 +431,11 @@ this.students.update(current => {
         }
         break;
       case 'dropped_exercise':
-        if (event.studentName === myName) this.droppedExercise.set(event.exercise); break;
+        if (event.studentName === myName){
+          this.droppedExercise.set(event.exercise);
+          this.challengeMove.set(null);
+          }
+        break;
       case 'reset':
         if (event.studentName === myName) this.reset$.next(event.studentName); break;
       case 'resume':
@@ -455,6 +460,12 @@ this.students.update(current => {
           this.challengePairs.update((pairs) => [...pairs, pair]);
         break;
       }
+      // ensure a reconnecting student gets their current pair state
+      case 'sync_all_challenge_pairs':
+        this.challengePairs.set(
+          event.pairs.filter(p => p.white === myName || p.black === myName)
+        );
+        break;
       case 'challenge_remove':
         this.challengePairs.update((pairs) =>
           pairs.filter((p) => p.white !== event.pair.white || p.black !== event.pair.black)); break;
