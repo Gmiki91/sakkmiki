@@ -257,6 +257,7 @@ export class StudentRoster {
     const exercise = JSON.parse(event.dataTransfer?.getData('exercise') ?? '{}') as Exercise;
     const pair = this.getPair(targetName);
     if (pair) {
+      this.store.challengeMove.set(null);
       this.store.sendDroppedExercise(pair.white, exercise);
       this.store.sendDroppedExercise(pair.black, exercise);
     } else {

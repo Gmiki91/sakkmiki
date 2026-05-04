@@ -431,7 +431,11 @@ this.students.update(current => {
         }
         break;
       case 'dropped_exercise':
-        if (event.studentName === myName) this.droppedExercise.set(event.exercise); break;
+        if (event.studentName === myName){
+          this.droppedExercise.set(event.exercise);
+          this.challengeMove.set(null);
+          }
+        break;
       case 'reset':
         if (event.studentName === myName) this.reset$.next(event.studentName); break;
       case 'resume':
