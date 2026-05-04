@@ -33,6 +33,7 @@ export type BroadcastEvent =
   | { type: 'list_assigned'; studentName: string; exercises: Exercise[] }
   | { type: 'dropped_exercise'; studentName: string; exercise: Exercise }
   | { type: 'sync_challenge_pair'; pair: ChallengePair }
+  | { type: 'sync_all_challenge_pairs'; pairs: ChallengePair[] }
   | { type: 'challenge_remove'; pair: ChallengePair }
   | { type: 'challenge_rematch'; pair: ChallengePair }
   | { type: 'challenge_move'; white: string; black: string; fen: string; from: string; to: string; over?: boolean }
