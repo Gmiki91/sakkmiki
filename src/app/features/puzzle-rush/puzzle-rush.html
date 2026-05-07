@@ -74,8 +74,8 @@
         [class.flash-correct]="flashState() === 'correct'"
         [class.flash-incorrect]="flashState() === 'incorrect'">
         <app-chess-board #chessBoard [config]="boardConfig()!"></app-chess-board>
-        @if (pendingPromotion()) {
-          <app-promotion color="black" (promote)="completePromotion($event)"></app-promotion>
+        @if (promotionService.pending()) {
+          <app-promotion color="black" (promote)="promotionService.completePromotion($event)"></app-promotion>
         }
       </div>
     

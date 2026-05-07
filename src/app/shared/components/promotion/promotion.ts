@@ -1,5 +1,5 @@
 import { Component, input, output } from '@angular/core';
-
+export type PromotionPiece = 'q' | 'r' | 'n' | 'b';
 @Component({
   selector: 'app-promotion',
   imports: [],
@@ -8,5 +8,5 @@ import { Component, input, output } from '@angular/core';
 })
 export class Promotion {
   color = input<'white' | 'black'>('white');
-  promote = output<'q' | 'r' | 'n' | 'b'>();
+  promote = output<PromotionPiece>();
 }

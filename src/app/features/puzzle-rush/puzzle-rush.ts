@@ -27,7 +27,8 @@ import { Exercise } from '../../shared/models/exercise.model';
 import { ExerciseService } from '../../core/services/exercise.service';
 import { SoundService } from '../../core/services/sound.service';
 import { getPlayerOrientation, getValidMoves, isPawnPromotion, loadChess, STARTING_FEN } from '../../shared/utils/chess.utils';
-import { Promotion } from '../../shared/components/promotion/promotion';
+import { Promotion, PromotionPiece } from '../../shared/components/promotion/promotion';
+import { PromotionService } from '../../core/services/promotion.service';
 
 type Phase = 'idle' | 'running' | 'finished';
 
@@ -42,6 +43,7 @@ export class PuzzleRush implements OnInit, OnDestroy {
 
   exerciseService = inject(ExerciseService);
   soundService = inject(SoundService);
+  promotionService = inject(PromotionService);
   dialog = inject(MatDialog);
 
   // Settings
@@ -61,7 +63,6 @@ export class PuzzleRush implements OnInit, OnDestroy {
   currentFen = signal<string>(STARTING_FEN);
   moveHistory = signal<string[]>([]);
   lastMove = signal<[Key, Key] | []>([]); // for computer move highlight
-  pendingPromotion = signal<{ orig: Key; dest: Key } | null>(null);
 
   private puzzleQueue: Exercise[] = [];
   private currentIndex = 0;
@@ -140,13 +141,6 @@ export class PuzzleRush implements OnInit, OnDestroy {
     this.moveHistory.set([]);
   }
 
-  completePromotion(role: 'q' | 'r' | 'n' | 'b'): void {
-    const p = this.pendingPromotion();
-    if (!p) return;
-    this.pendingPromotion.set(null);
-    this.executeMove(p.orig, p.dest, role);
-  }
-
   private loadPuzzle(index: number): void {
     if (index >= this.puzzleQueue.length) {
       this.finish();
@@ -169,16 +163,17 @@ export class PuzzleRush implements OnInit, OnDestroy {
     }
   }
 
-  private handleMove(orig: Key, dest: Key): void {
+  private async handleMove(orig: Key, dest: Key): Promise<void> {
     const piece = this.chess.get(orig as any)!;
     if (isPawnPromotion(dest, piece)) {
-      this.pendingPromotion.set({ orig, dest });
-    } else {
-      this.executeMove(orig,dest);
-    }
+      const role = await this.promotionService.requestPromotion(orig, dest);
+      this.executeMove(orig, dest, role);
+      return;
+    } 
+    this.executeMove(orig,dest);
   }
 
-  private executeMove(orig: Key, dest: Key,role?: 'q' | 'r' | 'n' | 'b'): void {
+  private executeMove(orig: Key, dest: Key,role?:PromotionPiece): void {
     try {
       const move = this.chess.move({ from: orig, to: dest,promotion:role });
       if (!move) return;
