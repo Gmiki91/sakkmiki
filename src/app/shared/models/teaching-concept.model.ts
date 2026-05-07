@@ -78,4 +78,18 @@ export const TEACHING_CONCEPTS: TeachingConcept[] = [
     duration: 'persistent',
     sound: undefined,
   },
+  {
+    id: 'spanish',
+    label: 'Spanish hint',
+    squaresNeeded: 0,
+    duration: 'persistent',
+    sound: undefined,
+  },
+  {
+    id: 'poison',
+    label: 'Poison',
+    squaresNeeded: 1,
+    duration: 'persistent',
+    sound: 'poison',
+  },
 ];
