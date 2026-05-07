@@ -156,7 +156,7 @@ export class RealtimeTransport implements OnDestroy {
 
     const id = ++this.connectionId;
 
-    this.channel = this.supabase.realtimeClient
+    this.channel = this.supabase.client
       .channel(channelId)
       .on('broadcast', { event: 'classroom' }, ({ payload }: any) => {
         if (id !== this.connectionId) return;
@@ -189,7 +189,7 @@ export class RealtimeTransport implements OnDestroy {
 
     const id = ++this.connectionId;
 
-    this.channel = this.supabase.realtimeClient
+    this.channel = this.supabase.client
       .channel(channelId)
       .on('broadcast', { event: 'classroom' }, ({ payload }: any) => {
         if (id !== this.connectionId) return;
@@ -227,7 +227,7 @@ export class RealtimeTransport implements OnDestroy {
 
     const id = ++this.connectionId;
 
-    this.channel = this.supabase.realtimeClient
+    this.channel = this.supabase.client
       .channel(channelId)
       .on('broadcast', { event: 'classroom' }, ({ payload }: any) => {
         if (id !== this.connectionId) return;
@@ -294,7 +294,7 @@ export class RealtimeTransport implements OnDestroy {
     if (this.channel) {
       const old = this.channel;
       this.channel = null;
-      await this.supabase.realtimeClient.removeChannel(old);
+      await this.supabase.client.removeChannel(old);
     }
   }
 
