@@ -48,6 +48,13 @@
       width="4" height="4"
     />
   }
+  @if (conceptId() === 'spanish') {
+     <image
+      href="/images/spanish.png"
+      x="2" y="2"
+      width="4" height="4"
+    />
+  }
   @if (conceptId() === 'surprise') {
      <image
       href="/images/surprise.png"
@@ -74,7 +81,17 @@
     />
     }
   }
-
+  @if (conceptId() === 'poison') {
+    @let coord = squareCoord();
+    @if (coord) {
+     <image
+      href="/images/poison.png"
+      [attr.x]="coord.x"
+      [attr.y]="coord.y"
+      width="1" height="1"
+    />
+    }
+  }
   @if (conceptId() === 'happy') {
     @let coord = squareCoord();
     @if (coord) {
