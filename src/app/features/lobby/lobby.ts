@@ -49,7 +49,7 @@ export class Lobby implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.lobbyChannel) {
-      this.supabase.realtimeClient.removeChannel(this.lobbyChannel).catch(() => {});
+      this.supabase.client.removeChannel(this.lobbyChannel).catch(() => {});
     }
   }
 

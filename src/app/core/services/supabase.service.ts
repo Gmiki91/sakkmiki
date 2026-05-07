@@ -8,14 +8,9 @@ import { Classroom } from '../../shared/models/classroom.model';
 @Injectable({ providedIn: 'root' })
 export class SupabaseService {
   readonly client: SupabaseClient;
-  readonly realtimeClient: SupabaseClient;
 
   constructor() {
     this.client = createClient(environment.supabaseUrl, environment.supabaseKey);
-    // Separate client for realtime — WebSocket teardown cannot block HTTP queries
-    this.realtimeClient = createClient(environment.supabaseUrl, environment.supabaseKey, {
-      auth: { persistSession: false },
-    });
   }
 
   // ----------------------------------------------------------------
@@ -69,7 +64,7 @@ export class SupabaseService {
   // ----------------------------------------------------------------
 
   createLobbyChannel(): RealtimeChannel {
-    return this.realtimeClient.channel('lobby');
+    return this.client.channel('lobby');
   }
 
   // ----------------------------------------------------------------
