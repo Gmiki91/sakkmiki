@@ -14,14 +14,16 @@ import { StampOverlay } from '../../../shared/components/stamp-overlay/stamp-ove
 import { StampSvg } from '../../../shared/components/stamp-svg/stamp-svg';
 import { StampType } from '../../../shared/models/stamp.model';
 import { Exercise } from '../../../shared/models/exercise.model';
-import { getKingSquare, getPlayerOrientation, getValidMoves, loadChess, STARTING_FEN } from '../../../shared/utils/chess.utils';
+import { getKingSquare, getPlayerOrientation, getValidMoves, isPawnPromotion, loadChess, STARTING_FEN } from '../../../shared/utils/chess.utils';
 import { MatButtonModule } from '@angular/material/button';
+import { PromotionService } from '../../../core/services/promotion.service';
+import { Promotion, PromotionPiece } from '../../../shared/components/promotion/promotion';
 const mushroomCollectionTemplate = {
     '🍄':0,'🍫':0,'🍬':0,'🍦':0,'🍔':0,'🥤':0,'🍩':0,'🎃':0,'♥️':0,'🎁':0,'🎈':0,'⭐':0,
   }
 @Component({
   selector: 'app-exercise-board',
-  imports: [ChessBoard, PieceOverlay, StampOverlay, StampSvg,MatButtonModule],
+  imports: [ChessBoard, PieceOverlay, StampOverlay, StampSvg,Promotion,MatButtonModule],
   templateUrl: './exercise-board.html',
   styleUrl: './exercise-board.scss',
 })
@@ -31,6 +33,7 @@ export class ExerciseBoard  {
   private stampOverlay = viewChild<StampOverlay>('stampOverlay');
 
   classroomStore = inject(ClassroomStore);
+  promotionService = inject(PromotionService);
   private soundService = inject(SoundService);
 
   // ── Collections ──────────────────────────────────────────────────
@@ -168,9 +171,19 @@ export class ExerciseBoard  {
     }, 0);
   }
 
-  handleMove(orig: Key, dest: Key): void {
+  async handleMove(orig: Key, dest: Key): Promise<void> {
+    const piece = this.exerciseChess.get(orig as any)!;
+    if (isPawnPromotion(dest,piece)) {
+      const role = await this.promotionService.requestPromotion(orig,dest);
+      this.executeMove(orig,dest,role);
+      return;
+    }
+    this.executeMove(orig, dest);
+  }
+
+  private executeMove(orig: Key, dest: Key,role?:PromotionPiece): void {
     try {
-      const move = this.exerciseChess.move({ from: orig, to: dest });
+      const move = this.exerciseChess.move({ from: orig, to: dest,promotion:role });
       if (move) {
         this.exerciseFen.set(this.exerciseChess.fen());
         if(this.currentExercise().exerciseType==='mushroom'){
@@ -266,7 +279,13 @@ export class ExerciseBoard  {
       const mistake = ex.commonMistakes?.find(m => m.move === move.san);
       this.feedback.set(mistake?.hint ?? ex.defaultHint ?? 'Biztos? 🤔');
       this.isLocked.set(true);
-      setTimeout(() => { this.handleMistake(); this.feedback.set(''); }, 2000);
+      setTimeout(() => { 
+        // Re-check autoRedo in case it was toggled off while waiting
+        if (this.classroomStore.autoRedo()) {
+          this.handleMistake(); 
+        }
+        this.feedback.set(''); 
+      }, 2000);
     } else {
       this.isWaitingForRedo.set(true);
       this.isLocked.set(true);
@@ -314,6 +333,11 @@ export class ExerciseBoard  {
     this.feedback.set('Ügyes! 🥳');
     this.isLocked.set(true);
     setTimeout(() => {
+      // Re-check autoProgress in case it was toggled off while waiting
+      if (!this.classroomStore.autoProgress()) {
+        this.isWaitingForStamp.set(true);
+        return;
+      }
       this.isLocked.set(false);
       if (!this.classroomStore.droppedExercise()) this.nextExercise();
     }, 2000);

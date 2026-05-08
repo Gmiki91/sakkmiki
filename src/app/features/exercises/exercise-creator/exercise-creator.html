@@ -5,7 +5,9 @@
       [config]="boardConfig()" 
       #chessBoard>
     </app-chess-board>
-
+    @if (promotionService.pending()) {
+      <app-promotion [color]="boardConfig()?.orientation ?? 'black'" (promote)="promotionService.completePromotion($event)"></app-promotion>
+    }
     <div class="column">
       <div class="solutions">
         @for (solution of exercise().solutions; track $index; let i = $index) {

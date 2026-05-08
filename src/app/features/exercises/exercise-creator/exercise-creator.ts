@@ -17,7 +17,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FormsModule } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
-import { boardConfig, getValidMoves, loadChess } from '../../../shared/utils/chess.utils';
+import { boardConfig, getValidMoves, isPawnPromotion, loadChess } from '../../../shared/utils/chess.utils';
 import { CommonMistake, Exercise } from '../../../shared/models/exercise.model';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ExerciseService } from '../../../core/services/exercise.service';
@@ -26,10 +26,13 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { validateSolution } from '../../../shared/utils/validation';
+import { Promotion, PromotionPiece } from '../../../shared/components/promotion/promotion';
+import { PromotionService } from '../../../core/services/promotion.service';
 @Component({
   selector: 'app-exercise-creator',
   imports: [
     ChessBoard,
+    Promotion,
     MatRadioModule,
     MatButtonModule,
     MatCheckboxModule,
@@ -45,6 +48,8 @@ import { validateSolution } from '../../../shared/utils/validation';
 export class ExerciseCreator implements OnInit {
   @ViewChild('chessBoard') chessBoard!: ChessBoard;
   exerciseService = inject(ExerciseService);
+  promotionService = inject(PromotionService);
+
   isRecording = signal(false);
 
   solutions = signal<string[]>([]);
@@ -121,9 +126,19 @@ export class ExerciseCreator implements OnInit {
     });
   }
 
-  handleMove(orig: Key, dest: Key) {
+  async handleMove(orig: Key, dest: Key): Promise<void> {
+    const piece = this.chess.get(orig as any)!;
+    if (isPawnPromotion(dest,piece)) {
+      const role = await this.promotionService.requestPromotion(orig,dest);
+      this.executeMove(orig,dest,role);
+      return;
+    }
+    this.executeMove(orig, dest);
+  }
+
+  executeMove(from: Key, to: Key, promotion?:PromotionPiece) {
     try {
-      const move = this.chess.move({ from: orig, to: dest });
+      const move = this.chess.move({ from, to, promotion });
       if (move) {
         this.chessBoard.api?.set(boardConfig(this.chess));
         if (this.isRecording()) {
