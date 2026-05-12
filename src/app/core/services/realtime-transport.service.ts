@@ -172,6 +172,7 @@ export class RealtimeTransport implements OnDestroy {
 
       if (status === 'SUBSCRIBED') {
         await this.channel.track({ role: 'teacher' });
+        this.handlePresence();
       }
 
       if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {

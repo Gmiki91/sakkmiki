@@ -132,7 +132,7 @@ export class StudentRoster {
       const newConfigs = untracked(() => ({ ...this.simulConfigs() }));
       students.forEach(student => {
         if (!this.simulChessMap.has(student.name)) {
-          const chess = new Chess();
+          const chess = student.fen ? new Chess(student.fen,{skipValidation:true}) : new Chess();
           this.simulChessMap.set(student.name, chess);
           newConfigs[student.name] = this.buildSimulConfig(student.name, chess);
           changed = true;

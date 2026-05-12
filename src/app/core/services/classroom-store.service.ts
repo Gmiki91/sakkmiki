@@ -293,6 +293,9 @@ this.students.update(current => {
 
   startSimul(): void {
     this.mode.set('simul');
+    for (const student of this.students()) {
+      this.transport.send({ type: 'request_fen', target: student.name });
+    }
     this.transport.send({ type: 'simul_start' });
   }
   stopSimul(): void {
