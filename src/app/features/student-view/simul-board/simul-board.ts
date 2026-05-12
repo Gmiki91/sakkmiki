@@ -35,20 +35,24 @@ export class SimulBoard {
   peerBoards = signal<PeerBoard[]>([]);
 
   boardConfig = computed<Config>(() => {
-    const isBlackTurn = this.simulChess.turn() === 'b';
+    const color = this.classroomStore.isDuelActive()
+      ? this.classroomStore.duelColor()
+      : 'b';
+    const isMyTurn = this.simulChess.turn() === color;
+    const myColor = color === 'w' ? 'white' : 'black';
     return {
       fen: this.simulFen(),
-      orientation: 'black',
-      turnColor: isBlackTurn ? 'black' : 'white',
+      orientation: myColor,
+      turnColor: isMyTurn ? myColor : (myColor === 'white' ? 'black' : 'white'),
       movable: {
         free: false,
-        color: isBlackTurn ? 'black' : undefined,
-        dests: isBlackTurn ? getValidMoves(this.simulChess) : new Map(),
+        color: isMyTurn ? myColor : undefined,
+        dests: isMyTurn ? getValidMoves(this.simulChess) : new Map(),
         events: { after: (orig: Key, dest: Key) => this.handleSimulMove(orig, dest) },
         showDests: true,
       },
       check: this.simulChess.isCheck(),
-      draggable: { enabled: isBlackTurn, showGhost: true },
+      draggable: { enabled: isMyTurn, showGhost: true },
       highlight: { lastMove: true, check: true },
       lastMove: this.simulLastMove(),
       drawable: { enabled: true, visible: true },
@@ -56,13 +60,19 @@ export class SimulBoard {
   });
 
   constructor() {
-    // Reset on simul start
+    // Initialize on simul or duel start
     effect(() => {
-      if (this.classroomStore.mode() !== 'simul') return;
-      this.simulChess.reset();
-      this.simulFen.set(this.simulChess.fen());
-      this.simulLastMove.set(undefined);
-      this.peerBoards.set([]);
+      if (this.classroomStore.mode() === 'simul') {
+        this.simulChess.reset();
+        this.simulFen.set(this.simulChess.fen());
+        this.simulLastMove.set(undefined);
+        this.peerBoards.set([]);
+      } else if (this.classroomStore.isDuelActive()) {
+        loadChess(this.simulChess, this.classroomStore.currentStudentFen());
+        this.simulFen.set(this.classroomStore.currentStudentFen());
+        this.simulLastMove.set(undefined);
+        this.peerBoards.set([]);
+      }
     });
 
     // Receive teacher's move
@@ -96,7 +106,10 @@ export class SimulBoard {
   }
 
   async handleSimulMove(orig: Key, dest: Key): Promise<void> {
-    if (this.simulChess.turn() !== 'b') return;
+    const color = this.classroomStore.isDuelActive()
+      ? this.classroomStore.duelColor()
+      : 'b';
+    if (this.simulChess.turn() !== color) return;
     const piece = this.simulChess.get(orig as any)!;
     if (isPawnPromotion(dest, piece)) {
       const role = await this.promotionService.requestPromotion(orig,dest);

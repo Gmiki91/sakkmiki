@@ -1,7 +1,8 @@
 .student-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(calc(var(--mini-board-size) + 48px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(calc(var(--mini-board-size)), 1fr));
   gap: 16px;
+  margin:5px;
   align-content: start;
   background: var(--mat-sys-surface);
 }
@@ -37,6 +38,11 @@
   .stamp-btn  { color: white; background-color: #4caf50; }
 
   .active-toggle mat-icon, .active-toggle .mat-icon { color: var(--mat-sys-primary); }
+
+  &.duel-active {
+    box-shadow: 0 0 0 3px #e91e63, 0 0 12px rgba(233, 30, 99, 0.5);
+
+  }
   .mini-board {
     width: var(--mini-board-size);
     height: var(--mini-board-size);

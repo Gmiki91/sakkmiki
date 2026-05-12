@@ -33,6 +33,7 @@ export class StudentView implements OnDestroy {
   );
 
   title = computed(() => {
+    if(this.classroomStore.isDuelActive()) return 'Párbaj a tanár ellen';
     if(this.classroomStore.mode() === 'gathered')return 'Achtung!';
     if(this.classroomStore.mode()==='simul')return 'Szimultán a tanár ellen 😱'
     if (this.myPair()) return `${this.myPair()!.white} vs ${this.myPair()!.black}`;

@@ -75,6 +75,10 @@ export class ClassroomStore {
   readonly incomingSimulTeacherMove = signal<{ studentName: string; fen: string; from: string; to: string; capture: boolean } | null>(null);
   readonly incomingSimulStudentMove = signal<{ studentName: string; fen: string; from: string; to: string } | null>(null);
 
+  // Duel
+  readonly isDuelActive = signal(false);
+  readonly duelColor = signal<'w' | 'b'>('b');
+
   // Student-side
   readonly currentStudentFen = signal<string>(STARTING_FEN);
 
@@ -283,6 +287,13 @@ this.students.update(current => {
     this.curtainClosed.set(closed);
     this.transport.send({ type: 'curtain', closed });
   }
+
+  sendDuelStart(studentName: string, fen: string, studentColor: 'w' | 'b'): void {
+    this.transport.send({ type: 'duel_start', studentName, fen, studentColor });
+  }
+  sendDuelEnd(studentName: string): void {
+    this.transport.send({ type: 'duel_end', studentName });
+  }
   kickStudent(studentName:string){
     this.transport.send({type:'kick',studentName})
   }
@@ -490,6 +501,18 @@ this.students.update(current => {
       case 'request_fen':if (event.target === this.studentName()) 
         this.broadcastStudentFen(this.studentName(),this.currentStudentFen());break;
       case 'curtain': this.curtainClosed.set(event.closed); break;
+      case 'duel_start':
+        if (event.studentName === this.studentName()) {
+          this.isDuelActive.set(true);
+          this.duelColor.set(event.studentColor);
+          this.currentStudentFen.set(event.fen);
+        }
+        break;
+      case 'duel_end':
+        if (event.studentName === this.studentName()) {
+          this.isDuelActive.set(false);
+        }
+        break;
     }
   }
 

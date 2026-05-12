@@ -63,6 +63,8 @@ export type BroadcastEvent =
   | { type: 'white_board_text', text:string}
   | { type: 'curtain'; closed: boolean }
   | { type: 'student_ready'; name: string }
+  | { type: 'duel_start'; studentName: string; fen: string; studentColor: 'w' | 'b' }
+  | { type: 'duel_end'; studentName: string }
 
 @Injectable({ providedIn: 'root' })
 export class RealtimeTransport implements OnDestroy {

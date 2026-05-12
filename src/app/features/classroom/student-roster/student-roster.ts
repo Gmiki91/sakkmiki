@@ -39,6 +39,10 @@ export class StudentRoster {
   isLoadingList = signal(false);
   pendingPair = signal<string | null>(null);
 
+  duelStudents = signal<Set<string>>(new Set());
+  duelColors = signal<Record<string, 'w' | 'b'>>({});
+  duelOriginalFens = signal<Record<string, string>>({});
+
   // Simul
   simulChessMap = new Map<string, Chess>();
   simulConfigs = signal<Record<string, Config>>({});
@@ -89,6 +93,12 @@ export class StudentRoster {
     
       const simulChess = this.simulChessMap.get(studentName);
       if (simulChess && this.store.mode() === 'simul') {
+        this.store.sendSimulTeacherMove(studentName, simulChess.fen(), '', '', false);
+        return;
+      }
+      if (simulChess && this.duelColors()[studentName] !== undefined) {
+        const teacherColor = this.duelColors()[studentName];
+        this.store.sendDuelStart(studentName, simulChess.fen(), teacherColor === 'w' ? 'b' : 'w');
         this.store.sendSimulTeacherMove(studentName, simulChess.fen(), '', '', false);
         return;
       }
@@ -152,9 +162,10 @@ export class StudentRoster {
       const chess = this.simulChessMap.get(move.studentName);
       if (!chess) return;
       loadChess(chess, move.fen);
+      const teacherColor = this.duelColors()[move.studentName] ?? 'w';
       this.simulConfigs.update(c => ({
         ...c,
-        [move.studentName]: this.buildSimulConfig(move.studentName, chess, move.from, move.to),
+        [move.studentName]: this.buildSimulConfig(move.studentName, chess, move.from, move.to, teacherColor),
       }));
     });
   }
@@ -192,7 +203,7 @@ export class StudentRoster {
   }
 
   simulBoardConfigFor(studentName: string): Config {
-    return this.simulConfigs()[studentName] ?? { fen: STARTING_FEN, orientation: 'white', movable: { free: false } };
+    return this.simulConfigs()[studentName] ?? { fen: STARTING_FEN, orientation: 'white', movable: { free: false } ,coordinates: false,};
   }
 
   isAwaitingTeacher(studentName: string): boolean {
@@ -234,6 +245,45 @@ export class StudentRoster {
 
   toggleStudentAutoRedo(name: string): void { this.store.sendAutoRedo(!this.effectiveAutoRedo()(name), name); }
   toggleStudentAutoProgress(name: string): void { this.store.sendAutoProgress(!this.effectiveAutoProgress()(name), name); }
+
+  toggleDuel(studentName: string): void {
+    if (this.duelStudents().has(studentName)) {
+      this.duelStudents.update(s => { s.delete(studentName); return new Set(s); });
+      this.duelColors.update(c => { const { [studentName]: _, ...r } = c; return r; });
+      this.duelOriginalFens.update(f => { const { [studentName]: _, ...r } = f; return r; });
+      this.simulChessMap.delete(studentName);
+      this.simulConfigs.update(c => {
+        const { [studentName]: _, ...rest } = c;
+        return rest;
+      });
+      this.store.sendDuelEnd(studentName);
+    } else {
+      const student = this.store.students().find(s => s.name === studentName);
+      const fen = student?.fen ?? STARTING_FEN;
+      const chess = new Chess(fen, { skipValidation: true });
+      this.simulChessMap.set(studentName, chess);
+      this.duelColors.update(c => ({ ...c, [studentName]: 'w' }));
+      this.duelOriginalFens.update(f => ({ ...f, [studentName]: fen }));
+      this.simulConfigs.update(c => ({ ...c, [studentName]: this.buildSimulConfig(studentName, chess, undefined, undefined, 'w') }));
+      this.duelStudents.update(s => { s.add(studentName); return new Set(s); });
+      this.store.sendDuelStart(studentName, chess.fen(), 'b');
+    }
+  }
+
+  switchDuelSides(studentName: string): void {
+    const currentColor = this.duelColors()[studentName];
+    const originalFen = this.duelOriginalFens()[studentName];
+    if (!currentColor || !originalFen) return;
+    const newColor: 'w' | 'b' = currentColor === 'w' ? 'b' : 'w';
+    const chess = new Chess(originalFen, { skipValidation: true });
+    this.simulChessMap.set(studentName, chess);
+    this.duelColors.update(c => ({ ...c, [studentName]: newColor }));
+    this.simulConfigs.update(c => ({
+      ...c,
+      [studentName]: this.buildSimulConfig(studentName, chess, undefined, undefined, newColor),
+    }));
+    this.store.sendDuelStart(studentName, chess.fen(), newColor === 'w' ? 'b' : 'w');
+  }
 
   // ── Drag & drop ──────────────────────────────────────────────────
 
@@ -317,29 +367,28 @@ export class StudentRoster {
 
   // ── Private ──────────────────────────────────────────────────────
 
-  private buildSimulConfig(studentName: string, chess: Chess, orig?: string, dest?: string): Config {
-    const isWhiteTurn = chess.turn() === 'w';
+  private buildSimulConfig(studentName: string, chess: Chess, orig?: string, dest?: string, teacherColor: 'w' | 'b' = 'w'): Config {
+    const canMove = chess.turn() === teacherColor;
     return {
       fen: chess.fen(),
-      orientation: 'white',
-      coordinates: false,
-      turnColor: isWhiteTurn ? 'white' : 'black',
+      orientation: teacherColor === 'w' ? 'white' : 'black',
+      turnColor: teacherColor === 'w' ? (canMove ? 'white' : 'black') : (canMove ? 'black' : 'white'),
       movable: {
         free: false,
-        color: isWhiteTurn ? 'white' : undefined,
-        dests: isWhiteTurn ? getValidMoves(chess) : new Map(),
+        color: canMove ? (teacherColor === 'w' ? 'white' : 'black') : undefined,
+        dests: canMove ? getValidMoves(chess) : new Map(),
         events: { after: (o: Key, d: Key) => this.onSimulTeacherMove(studentName, o, d) },
       },
-      draggable: { enabled: isWhiteTurn, showGhost: true },
+      draggable: { enabled: canMove, showGhost: true },
       highlight: { lastMove: true, check: true },
-      drawable: { enabled: true, visible: true },
       lastMove: orig && dest ? [orig as Key, dest as Key] : undefined,
     };
   }
 
   private async onSimulTeacherMove(studentName: string, orig: Key, dest: Key):Promise<void> {
     const chess = this.simulChessMap.get(studentName);
-    if (!chess || chess.turn() !== 'w') return;
+    const color = this.duelColors()[studentName] ?? 'w';
+    if (!chess || chess.turn() !== color) return;
     const piece = chess.get(orig as any)!;
     if (isPawnPromotion(dest, piece)){
       const role = await this.promotionService.requestPromotion(orig, dest);
@@ -351,14 +400,15 @@ export class StudentRoster {
 
   private executeMove(orig:Key, dest:Key,studentName:string, promotion?:PromotionPiece):void{
     const chess = this.simulChessMap.get(studentName);
-    if (!chess || chess.turn() !== 'w') return;
+    const color = this.duelColors()[studentName] ?? 'w';
+    if (!chess || chess.turn() !== color) return;
     try {
       const move = chess.move({ from: orig, to: dest,promotion });
       if (!move) return;
-      this.simulConfigs.update(c => ({ ...c, [studentName]: this.buildSimulConfig(studentName, chess) }));
+      this.simulConfigs.update(c => ({ ...c, [studentName]: this.buildSimulConfig(studentName, chess, undefined, undefined, color) }));
       this.store.sendSimulTeacherMove(studentName, chess.fen(), orig, dest,!!move.captured);
     } catch {
-      this.simulConfigs.update(c => ({ ...c, [studentName]: this.buildSimulConfig(studentName, chess) }));
+      this.simulConfigs.update(c => ({ ...c, [studentName]: this.buildSimulConfig(studentName, chess, undefined, undefined, color) }));
     }
   }
 
