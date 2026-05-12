@@ -106,7 +106,7 @@ export class StudentRoster {
       this.studentBoards?.get(index)?.api?.set({ drawable: { shapes: update.shapes } });
     });
 
-    // Reset timer when student advances to a new exercise
+    // Reset timer and arrows when student advances to a new exercise
     effect(() => {
       const students = this.store.students();
       students.forEach(student => {
@@ -115,6 +115,7 @@ export class StudentRoster {
         if (prev !== student.exIndex) {
           this.lastExIndex[student.name] = student.exIndex;
           this.resetTimer(student.name);
+          this.store.miniboardArrows.set({ name: student.name, shapes: [] });
         }
       });
     });

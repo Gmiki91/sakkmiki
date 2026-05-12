@@ -263,6 +263,7 @@ this.students.update(current => {
     this.loadedListTitle.set(list.title);
     this.droppedExercises.set({});
     this.assignedLists.set({});
+    this.miniboardArrows.set(null);
     this.transport.send({ type: 'list_loaded', exercises: list.exercises });
   }
 
