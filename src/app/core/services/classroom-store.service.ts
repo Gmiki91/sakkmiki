@@ -11,7 +11,7 @@ import { ExerciseList as List } from '../../shared/models/exercise-list.model';
 import { STARTING_FEN } from '../../shared/utils/chess.utils';
 import { Point, StampAnnotation } from '../../shared/models/drawing.model';
 import { TeachingConceptListItem } from '../../shared/models/teaching-concept.model';
-import { Chess } from 'chess.js';
+
 
 export type { SpectatorPresence };
 export type ClassroomMode = 'normal' | 'gathered' | 'simul';
@@ -72,7 +72,7 @@ export class ClassroomStore {
   readonly incomingStampAnnotationClear = signal<{ studentName: string } | null>(null);
 
   // Simul
-  readonly incomingSimulTeacherMove = signal<{ studentName: string; fen: string; from: string; to: string,capture:boolean } | null>(null);
+  readonly incomingSimulTeacherMove = signal<{ studentName: string; fen: string; from: string; to: string; capture: boolean } | null>(null);
   readonly incomingSimulStudentMove = signal<{ studentName: string; fen: string; from: string; to: string } | null>(null);
 
   // Student-side
@@ -191,7 +191,7 @@ this.students.update(current => {
 
   private resyncEphemeralState(): void {
     this.transport.send({ type: 'curtain', closed: this.curtainClosed() });
-    this.transport.send({ type: 'mushroom_type', mType: this.mushroomType() ?? '' });
+    if (this.mushroomType()) this.transport.send({ type: 'mushroom_type', mType: this.mushroomType()! });
     this.transport.send({ type: 'request_student_states' });
     this.transport.send({ type: 'sync_all_challenge_pairs', pairs: this.challengePairs() });
     const mode = this.mode();
@@ -263,6 +263,7 @@ this.students.update(current => {
     this.loadedListTitle.set(list.title);
     this.droppedExercises.set({});
     this.assignedLists.set({});
+    this.miniboardArrows.set(null);
     this.transport.send({ type: 'list_loaded', exercises: list.exercises });
   }
 
@@ -498,11 +499,13 @@ this.students.update(current => {
           from: event.from, to: event.to, over: event.over,
         }); break;
       case 'challenge_rematch':
-        this.challengePairs.update((pairs) =>
-          pairs.map((p) =>
-            (p.white === event.pair.white && p.black === event.pair.black) ||
-            (p.white === event.pair.black && p.black === event.pair.white)
-              ? event.pair : p));
+        if(event.pair.black===this.studentName()||event.pair.white===this.studentName()){
+          this.challengePairs.update((pairs) =>
+            pairs.map((p) =>
+              (p.white === event.pair.white && p.black === event.pair.black) ||
+              (p.white === event.pair.black && p.black === event.pair.white)
+                ? event.pair : p));
+        }
         this.challengeMove.set(null); break;
     }
   }
