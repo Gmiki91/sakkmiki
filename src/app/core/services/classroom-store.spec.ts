@@ -15,12 +15,14 @@ describe('resyncStudentGameState', () => {
     teacherTransport.presenceSync$.next([{ role: 'student', name: 'Alice' }]);
   });
 
-  it('student_ready emits the student name on resync$', (done) => {
-    teacherStore.resync$.subscribe(name => {
-      expect(name).toBe('Alice');
-      done;
+  it('student_ready emits the student name on resync$', () => {
+    return new Promise<void>((resolve) => {
+      teacherStore.resync$.subscribe(name => {
+        expect(name).toBe('Alice');
+        resolve();
+      });
+      teacherTransport.events$.next({ type: 'student_ready', name: 'Alice' });
     });
-    teacherTransport.events$.next({ type: 'student_ready', name: 'Alice' });
   });
 
   it('student_ready also triggers ephemeral resync (sends curtain state)', () => {
@@ -244,10 +246,12 @@ describe('student name filtering', () => {
     expect(aliceStore.droppedExercise()).toEqual(exercise);
   });
 
-  it('lock fires only for the named student', (done) => {
-    aliceStore.lock$.subscribe(() => done);
+  it('lock fires only for the named student', () => {
+    let count = 0;
+    aliceStore.lock$.subscribe(() => count++);
     aliceTransport.events$.next({ type: 'lock', studentName: 'Bob' }); // should not fire
     aliceTransport.events$.next({ type: 'lock', studentName: 'Alice' }); // should fire
+    expect(count).toBe(1);
   });
 
   it('set_auto_redo with no studentName applies globally', () => {
@@ -348,26 +352,34 @@ describe('wired teacher-student scenarios', () => {
     expect(aliceStore.mode()).toBe('normal');
   });
 
-  it('teacher sendLock → student lock$ fires', (done) => {
-    aliceStore.lock$.subscribe(() => done);
-    teacherStore.sendLock('Alice');
-  });
-
-  it('teacher sendLock for Bob → Alice lock$ does NOT fire', (done) => {
+  it('teacher sendLock → student lock$ fires', () => {
     let fired = false;
     aliceStore.lock$.subscribe(() => fired = true);
-    teacherStore.sendLock('Bob');
-    setTimeout(() => { expect(fired).toBe(false); done; }, 50);
+    teacherStore.sendLock('Alice');
+    expect(fired).toBe(true);
   });
 
-  it('teacher sendStamp → student stamp$ fires', (done) => {
-    aliceStore.stamp$.subscribe(() => done);
+  it('teacher sendLock for Bob → Alice lock$ does NOT fire', () => {
+    return new Promise<void>((resolve) => {
+      let fired = false;
+      aliceStore.lock$.subscribe(() => fired = true);
+      teacherStore.sendLock('Bob');
+      setTimeout(() => { expect(fired).toBe(false); resolve(); }, 50);
+    });
+  });
+
+  it('teacher sendStamp → student stamp$ fires', () => {
+    let fired = false;
+    aliceStore.stamp$.subscribe(() => fired = true);
     teacherStore.sendStamp('Alice');
+    expect(fired).toBe(true);
   });
 
-  it('teacher sendReset → student reset$ fires', (done) => {
-    aliceStore.reset$.subscribe(() => done);
+  it('teacher sendReset → student reset$ fires', () => {
+    let fired = false;
+    aliceStore.reset$.subscribe(() => fired = true);
     teacherStore.sendReset('Alice');
+    expect(fired).toBe(true);
   });
 
   it('teacher loadListToAll → student receives exercises', () => {
@@ -393,8 +405,10 @@ describe('wired teacher-student scenarios', () => {
     expect(aliceStore.mode()).toBe('normal');
   });
 
-  it('teacher kick → student kick$ fires', (done) => {
-    aliceStore.kick$.subscribe(() => done);
+  it('teacher kick → student kick$ fires', () => {
+    let fired = false;
+    aliceStore.kick$.subscribe(() => fired = true);
     teacherStore.kickStudent('Alice');
+    expect(fired).toBe(true);
   });
 });
