@@ -6,6 +6,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { ExerciseType } from '../../models/exercise.model';
+import { MatChipsModule } from '@angular/material/chips';
+import { FormsModule } from '@angular/forms';
 
 export type ExerciseListPickerData = {
   multiSelect: boolean;
@@ -15,7 +17,7 @@ export type ExerciseListPickerData = {
 
 @Component({
   selector: 'app-exercise-list-picker',
-  imports: [MatButtonModule, MatInputModule, MatIconModule, MatDialogModule],
+  imports: [MatButtonModule, MatInputModule, MatIconModule, MatDialogModule, MatChipsModule, FormsModule],
   templateUrl: './exercise-list-picker.html',
   styleUrl: './exercise-list-picker.scss',
 })
@@ -37,6 +39,33 @@ export class ExerciseListPicker {
   computedAlreadySelected = computed(() => this.dialogData?.alreadySelected ?? this.alreadySelected());
 
   pendingSelection = signal<ExerciseList[]>([]);
+
+  // Search, filter
+  searchQuery = signal(''); 
+  filterType = signal<ExerciseType | ''>('');
+
+  readonly types: ExerciseType[] = ['puzzle', 'mushroom', 'challenge', 'demo'];
+
+  filteredLists = computed(() => {
+    let lists = this.exerciseService.exerciseLists();
+
+    // Filter by type
+    if (this.filterType()) {
+      lists = lists.filter((l) => l.type === this.filterType());
+    }
+
+    // Search by title
+    const query = this.searchQuery().toLowerCase().trim();
+    if (query) {
+      lists = lists.filter((l) => l.title.toLowerCase().includes(query));
+    }
+
+    return lists;
+  });
+
+  setFilterType(type: ExerciseType | ''): void {
+    this.filterType.set(type === this.filterType() ? '' : type);
+  }
 
   isAlreadySelected(list: ExerciseList): boolean {
     return this.computedAlreadySelected().some((l) => l.id === list.id);

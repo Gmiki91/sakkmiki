@@ -9,11 +9,37 @@
   width: 100%;
 }
 
+.filter-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.filter-chip {
+  border: 1px solid var(--mat-sys-outline);
+  background: transparent;
+  border-radius: 16px;
+  padding: 4px 14px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  text-transform: capitalize;
+
+  &.active {
+    background: var(--mat-sys-primary-container);
+    border-color: var(--mat-sys-primary);
+  }
+
+  &:hover:not(.active) {
+    background: var(--mat-sys-surface-container-high);
+  }
+}
+
 .list-items {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  max-height:50vh;
+  max-height: 50vh;
 }
 
 .list-item {
@@ -42,11 +68,15 @@
 .list-title {
   flex: 1;
   font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .list-meta {
   font-size: 0.75rem;
   color: var(--mat-sys-on-surface-variant);
+  text-transform: capitalize;
 }
 
 .already-label {
@@ -58,6 +88,13 @@
 .check-icon {
   color: var(--mat-sys-primary);
   font-size: 18px;
+}
+
+.empty {
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+  padding: 24px 0;
+  font-size: 0.9rem;
 }
 
 .actions {

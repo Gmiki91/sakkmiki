@@ -159,8 +159,8 @@ export class TeacherDesk {
 
   openPicker(): void {
     this.dialog.open(ExerciseListPicker, {
-      width: '360px',
-      height:'70vh',
+      width: '500px',
+      height:'80vh',
       data: { multiSelect: true, alreadySelected: this.loadedLists() } satisfies ExerciseListPickerData,
     })
     .afterClosed()

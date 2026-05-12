@@ -1,16 +1,29 @@
 <div class="picker-container">
-  <!-- Placeholder for search/sort -->
+  <!-- Search -->
   <mat-form-field appearance="outline" class="search-field">
-    <mat-label>Coming soon...</mat-label>
-    <input matInput disabled placeholder="Coming soon..." />
+    <mat-label>Search lists</mat-label>
+    <input matInput [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" placeholder="Search by title..." />
     <mat-icon matSuffix>search</mat-icon>
   </mat-form-field>
 
+  <!-- Filter chips -->
+   @if(!isPuzzleRush()){
+    <div class="filter-row">
+      <button class="filter-chip"
+        [class.active]="!filterType()"
+        (click)="setFilterType('')">All</button>
+      @for (type of types; track type) {
+        <button class="filter-chip"
+          [class.active]="filterType() === type"
+          (click)="setFilterType(type)">{{ type }}</button>
+      }
+    </div>
+    }
+
   <!-- List items -->
   <div class="list-items">
-    @for (list of exerciseService.exerciseLists(); track list.id) {
-      <!-- mutliselect  is used by classroom, single select is puzzlerush -->
-      @if(isPuzzleRush() && list.type==='puzzle'  || isPuzzleRush()===undefined){
+    @for (list of filteredLists(); track list.id) {
+      @if (isPuzzleRush() && list.type === 'puzzle' || !isPuzzleRush()) {
       <div
         class="list-item"
         [class.disabled]="isAlreadySelected(list)"
@@ -18,15 +31,17 @@
         (click)="toggleList(list)"
       >
         <span class="list-title">{{ list.title }}</span>
-        <span class="list-meta">{{ list.exercises.length }} exercises</span>
+        <span class="list-meta">{{ list.type }} — {{ list.exercises.length }}</span>
         @if (isAlreadySelected(list)) {
-          <span class="already-label">already loaded</span>
+          <span class="already-label">loaded</span>
         } @else if (isPending(list)) {
           <mat-icon class="check-icon">check</mat-icon>
         }
       </div>
+      }
+    } @empty {
+      <p class="empty">No lists match your search.</p>
     }
-  }
   </div>
 
   <!-- Actions: only shown in multiSelect mode -->
