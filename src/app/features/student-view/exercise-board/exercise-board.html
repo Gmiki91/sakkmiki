@@ -14,10 +14,6 @@
     <app-piece-overlay #pieceOverlay [orientation]="boardConfig()?.orientation ?? 'white'"></app-piece-overlay>
     <app-stamp-overlay #stampOverlay></app-stamp-overlay>
   </div>
-  <div class="file-helper" [class.reversed]="boardConfig()?.orientation === 'black'">
-    <span>🍎</span><span>🍌</span><span>😺</span><span>🥁</span>
-    <span>🐭</span><span>🪥</span><span>🍄</span><span>☃️</span>
-  </div>
   <!-- @if(currentExercise()?.exerciseType==='mushroom'){
     <button mat-icon-button  (click)="reset()"><mat-icon style="font-size: larger">refresh</mat-icon></button>
   } -->

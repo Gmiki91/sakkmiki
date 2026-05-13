@@ -71,18 +71,6 @@
   &.open { transform: translateY(-100%); }
 }
 
-.file-helper {
-  background-color: rgba(255, 255, 255, 0.95);
-  padding: 10px;
-  border-radius: 20px;
-  display: flex;
-  font-size: 30px;
-  justify-content: space-around;
-  width: var(--board-size);
-  z-index: 1;
-
-  &.reversed { flex-direction: row-reverse; }
-}
 
 .feedback {
   position: absolute;
