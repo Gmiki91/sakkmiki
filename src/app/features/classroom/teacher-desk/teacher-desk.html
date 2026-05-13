@@ -4,31 +4,34 @@
   }
   <div class="board-column" [class.normal]="!isGathered()">
     @if (isGathered()) {
+      <app-piece-rack color="black"></app-piece-rack>
       <div class="board-wrapper" [class.gathered]="isGathered()" (mouseup)="onBoardMouseUp($event)">
         <app-chess-board
           #chessBoard
           [config]="boardConfig"
           [mushroomMode]="isGathered() && demoExercise()?.exerciseType === 'mushroom'"
           [style.--mushroom-emoji]="'&quot;' + demoExercise()?.mushroomType + '&quot;'"
+          (handleDrop)="onDrop($event)"
         ></app-chess-board>
         <app-drawing-canvas
-          [strokes]="drawingService.allStrokes()"
-          [annotations]="drawingService.allAnnotations()"
-          [active]="false"
+        [strokes]="drawingService.allStrokes()"
+        [annotations]="drawingService.allAnnotations()"
+        [active]="false"
         >
-        </app-drawing-canvas>
-
-        @for (concept of overlayService.activeConcepts(); track concept.id) {
-          <app-teaching-overlay
-            [conceptId]="concept.id"
-            [squares]="concept.squares"
-            orientation="white"
-          ></app-teaching-overlay>
-        }
-        @if (overlayService.isSelectingSquares()) {
-          <div class="square-interceptor" (click)="onInterceptorClick($event)"></div>
-        }
-      </div>
+      </app-drawing-canvas>
+      
+      @for (concept of overlayService.activeConcepts(); track concept.id) {
+        <app-teaching-overlay
+        [conceptId]="concept.id"
+        [squares]="concept.squares"
+        orientation="white"
+        ></app-teaching-overlay>
+      }
+      @if (overlayService.isSelectingSquares()) {
+        <div class="square-interceptor" (click)="onInterceptorClick($event)"></div>
+      }
+    </div>
+    <app-piece-rack color="white"></app-piece-rack>
     }
     <!-- Gathered-only controls -->
     <div class="controls">
@@ -97,7 +100,9 @@
           <button style="width: 100%" mat-raised-button (click)="startSimul()">Start Simul</button>
         </div>
         <div class="row">
-          <button style="width: 100%" mat-raised-button (click)="openPuzzleRushSetup()">Puzzle Rush</button>
+          <button style="width: 100%" mat-raised-button (click)="openPuzzleRushSetup()">
+            Puzzle Rush
+          </button>
         </div>
       }
 
@@ -114,31 +119,6 @@
   <!-- Concepts + drawings column — gathered  -->
   @if (isGathered()) {
     <div class="column">
-      <div class="concept-palette">
-        <span class="palette-title">Animations</span>
-        @if (overlayService.isSelectingSquares()) {
-          <div class="selection-indicator">
-            <span class="selection-dot"></span>
-            Click a square ({{ overlayService.selectedSquares().length }}/{{
-              overlayService.pendingConcept()!.squaresNeeded
-            }})
-          </div>
-          <button mat-button (click)="overlayService.cancelSquareSelection()">Cancel</button>
-        } @else {
-          @for (concept of concepts; track concept.id) {
-            <button
-              mat-raised-button
-              [class.concept-active]="isConceptActive(concept.id)"
-              (click)="overlayService.startConcept(concept)"
-            >
-              {{ concept.label }}
-            </button>
-          }
-        }
-      </div>
-
-      <div class="panel-divider"></div>
-
       <span class="palette-title">Drawings</span>
       @for (student of store.students(); track student.name) {
         <div class="student-drawing-row">
@@ -161,45 +141,67 @@
       <button mat-raised-button color="warn" (click)="drawingService.clearAll()">
         Clear all drawings
       </button>
+
+      <div class="panel-divider"></div>
+      <div class="concept-palette">
+        <span class="palette-title">Animations</span>
+        @if (overlayService.isSelectingSquares()) {
+          <div class="selection-indicator">
+            <span class="selection-dot"></span>
+            Click a square ({{ overlayService.selectedSquares().length }}/{{
+              overlayService.pendingConcept()!.squaresNeeded
+            }})
+          </div>
+          <button mat-button (click)="overlayService.cancelSquareSelection()">Cancel</button>
+        } @else {
+          @for (concept of concepts; track concept.id) {
+            <button
+              mat-raised-button
+              [class.concept-active]="isConceptActive(concept.id)"
+              (click)="overlayService.startConcept(concept)"
+            >
+              {{ concept.label }}
+            </button>
+          }
+        }
+      </div>
     </div>
   }
 
   <div class="exercise-column">
-      <!-- Puzzle rush racer -->
+    <!-- Puzzle rush racer -->
     @if (store.isPuzzleRushActive()) {
       <app-puzzle-rush-racer [readonly]="false"></app-puzzle-rush-racer>
-    }@else{
+    } @else {
       <div class="row">
         <button style="width: 100%" mat-raised-button (click)="openPicker()">Load exercises</button>
       </div>
-      <mat-accordion 
-        style="
-          display:flex;
-          flex-direction: column;
-          padding:5px;">
-      @for (list of loadedLists(); track list.id) {
-        <mat-expansion-panel hideToggle>
-          <mat-expansion-panel-header>
-          <div class="list-header" draggable="true" (dragstart)="onListDragStart(list, $event)">
-            <h3 [matTooltip]="list.title" matTooltipShowDelay="500">{{ list.title }}</h3>
-            <button mat-icon-button (click)="removeList(list)"><mat-icon>close</mat-icon></button>
-            @if (!this.isGathered()) {
-              <button
-                mat-icon-button
-                (click)="loadListToAll(list,$event)"
-                matTooltip="Load list to all students"
-              >
-                <mat-icon>arrow_forward</mat-icon>
-              </button>
-            }
-          </div>
-        </mat-expansion-panel-header>
-        <app-exercise-list
-          [list]="list"
-          (selectExercise)="demoExercise.set($event)"
-        ></app-exercise-list>
-        </mat-expansion-panel>
-      }
+      <mat-accordion style="display: flex; flex-direction: column; padding: 5px">
+        @for (list of loadedLists(); track list.id) {
+          <mat-expansion-panel hideToggle>
+            <mat-expansion-panel-header>
+              <div class="list-header" draggable="true" (dragstart)="onListDragStart(list, $event)">
+                <h3 [matTooltip]="list.title" matTooltipShowDelay="500">{{ list.title }}</h3>
+                <button mat-icon-button (click)="removeList(list)">
+                  <mat-icon>close</mat-icon>
+                </button>
+                @if (!this.isGathered()) {
+                  <button
+                    mat-icon-button
+                    (click)="loadListToAll(list, $event)"
+                    matTooltip="Load list to all students"
+                  >
+                    <mat-icon>arrow_forward</mat-icon>
+                  </button>
+                }
+              </div>
+            </mat-expansion-panel-header>
+            <app-exercise-list
+              [list]="list"
+              (selectExercise)="demoExercise.set($event)"
+            ></app-exercise-list>
+          </mat-expansion-panel>
+        }
       </mat-accordion>
     }
   </div>

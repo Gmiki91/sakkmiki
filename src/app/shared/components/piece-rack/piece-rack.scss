@@ -1,0 +1,32 @@
+:host {
+  display: flex;
+  gap: 4px;
+  background: var(--mat-sys-surface-container);
+  border-radius: 8px;
+  padding: 6px 10px;
+  width: 100%;
+  justify-content: center;
+
+  .piece {
+    width: 44px;
+    height: 44px;
+    font-size: 36px;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition:
+      transform 0.15s,
+      background 0.15s;
+
+    &:hover {
+      transform: scale(1.2);
+      background: var(--mat-sys-surface-container-high);
+    }
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
+}

@@ -27,12 +27,15 @@ import { WhiteBoard } from "../../../shared/components/white-board/white-board";
 import {MatExpansionModule} from '@angular/material/expansion';
 import { PuzzleRushSetup } from '../puzzle-rush-setup/puzzle-rush-setup';
 import { PuzzleRushRacer } from '../puzzle-rush-racer/puzzle-rush-racer';
+import { PieceRack } from "../../../shared/components/piece-rack/piece-rack";
+import { Color, Role } from '@lichess-org/chessground/types';
 @Component({
   selector: 'app-teacher-desk',
   imports: [
     ChessBoard, DrawingCanvas, TeachingOverlay, ExerciseList,
-    MatButtonModule, MatIconModule, MatTooltipModule,MatExpansionModule,
-    WhiteBoard, PuzzleRushRacer
+    MatButtonModule, MatIconModule, MatTooltipModule, MatExpansionModule,
+    WhiteBoard, PuzzleRushRacer,
+    PieceRack
 ],
   templateUrl: './teacher-desk.html',
   styleUrl: './teacher-desk.scss',
@@ -201,4 +204,16 @@ export class TeacherDesk {
   isConceptActive(conceptId: string): boolean {
     return this.overlayService.activeConcepts().some(c => c.id === conceptId);
   }
+
+  // Dropping pieces
+  onDrop(event: DragEvent) {
+   const square = this.chessBoard()?.api?.getKeyAtDomPos([event.clientX, event.clientY]);
+   const role = event.dataTransfer?.getData('role') as Role;
+   const color = event.dataTransfer?.getData('color') as Color;
+   if (role && color && square) {
+     this.chessBoard()?.api?.setPieces(new Map([[square, { role, color }]]));
+     this.store.sendTeacherFen(this.chessBoard()!.api.getFen());
+   }
+  }
+  
 }

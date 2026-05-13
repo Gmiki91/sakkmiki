@@ -2,13 +2,14 @@
   position: relative;
   width: 100%;
   min-width: 300px;
-  min-height: 640px;
+  min-height: 750px;
+  max-height: 100vh;
   box-sizing: border-box;
 }
 
 .white-board {
   min-width: 300px;
-  min-height: 640px;
+  min-height: 750px;
   height: auto;
   overflow-y: hidden;
   resize: none;

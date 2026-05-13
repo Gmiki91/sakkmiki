@@ -1,1 +1,7 @@
-<div #board class="chessboard" [class.mushroom-mode]="mushroomMode()"></div>
+<div
+  #board
+  class="chessboard"
+  (dragover)="$event.preventDefault()"
+  (drop)="handleDrop.emit($event)"
+  [class.mushroom-mode]="mushroomMode()"
+></div>

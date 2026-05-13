@@ -132,7 +132,7 @@ app-exercise-list{
   gap: 8px;
   padding: 10px;
   min-width: 180px;
-  max-height: var(--board-size);
+  max-height: 100vh;
   overflow-y: auto;
 }
 

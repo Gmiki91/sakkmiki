@@ -1,43 +1,15 @@
 <div class="container">
   <div class="board-column">
-    <div class="piece-rack">
-      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'king', 'black')">♚</div>
-      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'queen', 'black')">
-        ♛
-      </div>
-      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'rook', 'black')">♜</div>
-      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'bishop', 'black')">
-        ♝
-      </div>
-      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'knight', 'black')">
-        ♞
-      </div>
-      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'pawn', 'black')">♟</div>
-    </div>
-
+    <app-piece-rack color="black"></app-piece-rack>
     <app-chess-board
       [style.--mushroom-emoji]='"\"" + mushroomType() + "\""'
       [mushroomMode]="exerciseType() === 'mushroom'"
       [config]="boardConfig()"
       #chessBoard
-    >
-    </app-chess-board>
-
-    <div class="piece-rack">
-      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'king', 'white')">♔</div>
-      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'queen', 'white')">
-        ♕
-      </div>
-      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'rook', 'white')">♖</div>
-      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'bishop', 'white')">
-        ♗
-      </div>
-      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'knight', 'white')">
-        ♘
-      </div>
-      <div class="piece" draggable="true" (dragstart)="onDragStart($event, 'pawn', 'white')">♙</div>
-    </div>
-  </div>
+      (handleDrop)="onDrop($event)"
+    ></app-chess-board>
+    <app-piece-rack color="white"></app-piece-rack>
+  </div> 
 
   <div class="controls-column">
     <div class="control-section"  style="width: 370px">

@@ -27,6 +27,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { PieceRack } from "../../../shared/components/piece-rack/piece-rack";
 
 @Component({
   selector: 'app-board-creator',
@@ -39,7 +40,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
     MatFormFieldModule,
     MatButton,
     MatIcon,
-  ],
+    PieceRack
+],
   templateUrl: './board-creator.html',
   styleUrl: './board-creator.scss',
 })
@@ -101,25 +103,14 @@ export class BoardCreator implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    const board = this.chessBoard.boardElement.nativeElement;
-    this.addDragListener(board);
-    this.addDropListener(board);
     this.chessBoard.api.set({
       events: { change: () => this.boardChange() },
       movable: { events: { after: (orig: Key, dest: Key) => this.handleMove(orig, dest) } },
     });
-    this.updateCastlingRights();
   }
 
   setFen(value: string) {
     this.currentFen.set(value.split(' ')[0] ?? '');
-  }
-
-  onDragStart(event: DragEvent, role: Role, color: Color) {
-    event.dataTransfer?.setData('role', role);
-    event.dataTransfer?.setData('color', color);
-    const el = event.target as HTMLElement;
-    event.dataTransfer?.setDragImage(el, el.offsetWidth / 2, el.offsetHeight / 2);
   }
 
   resetBoard() {
@@ -234,7 +225,6 @@ export class BoardCreator implements OnInit, AfterViewInit {
     this.turnOrder.set((fenParts[1] as 'w' | 'b') ?? 'w');
     this.lastMove.set(exercise.lastMove ?? null);
     if (exercise.mushroomType) this.mushroomType.set(exercise.mushroomType);
-    this.updateCastlingRights();
   }
 
   private move(from: Key, to: Key) {
@@ -283,7 +273,7 @@ export class BoardCreator implements OnInit, AfterViewInit {
     );
   }
 
-  private onDrop(event: DragEvent) {
+ onDrop(event: DragEvent) {
     const square = this.chessBoard.api?.getKeyAtDomPos([event.clientX, event.clientY]);
     const role = event.dataTransfer?.getData('role') as Role;
     const color = event.dataTransfer?.getData('color') as Color;
@@ -293,13 +283,7 @@ export class BoardCreator implements OnInit, AfterViewInit {
     }
   }
 
-  private addDragListener(el: HTMLElement) {
-    el.addEventListener('dragover', (e: DragEvent) => e.preventDefault());
-  }
 
-  private addDropListener(el: HTMLElement) {
-    el.addEventListener('drop', (e: DragEvent) => this.onDrop(e));
-  }
 
   private countBlackPawns(fen:string):number {
     // 1. Get the board layout (everything before the first space)

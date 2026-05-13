@@ -1,0 +1,18 @@
+<div class="piece" draggable="true" (dragstart)="onDragStart($event, 'king')">
+  {{ color() === 'black' ? '♚' : '♔' }}
+</div>
+<div class="piece" draggable="true" (dragstart)="onDragStart($event, 'queen')">
+  {{ color() === 'black' ? '♛' : '♕' }}
+</div>
+<div class="piece" draggable="true" (dragstart)="onDragStart($event, 'rook')">
+  {{ color() === 'black' ? '♜' : '♖' }}
+</div>
+<div class="piece" draggable="true" (dragstart)="onDragStart($event, 'bishop')">
+  {{ color() === 'black' ? '♝' : '♗' }}
+</div>
+<div class="piece" draggable="true" (dragstart)="onDragStart($event, 'knight')">
+  {{ color() === 'black' ? '♞' : '♘' }}
+</div>
+<div class="piece" draggable="true" (dragstart)="onDragStart($event, 'pawn')">
+  {{ color() === 'black' ? '♟' : '♙' }}
+</div>

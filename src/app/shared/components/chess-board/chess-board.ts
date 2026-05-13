@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, ViewChild, input, effect } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, ViewChild, input, effect,output } from '@angular/core';
 import { Chessground } from '@lichess-org/chessground';
 import { Api } from '@lichess-org/chessground/api';
 import { Config } from '@lichess-org/chessground/config';
@@ -11,6 +11,7 @@ import { DEFAULT_BRUSHES } from '../../utils/brushes';
 })
 export class ChessBoard implements AfterViewInit {
   @ViewChild('board') boardElement!: ElementRef;
+  handleDrop = output<DragEvent>()
   mushroomMode = input<boolean|undefined>(false);
   config = input<Config>();
   api!: Api;
