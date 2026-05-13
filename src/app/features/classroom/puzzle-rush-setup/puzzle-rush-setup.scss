@@ -1,0 +1,106 @@
+.setup-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  max-width: 420px;
+
+  h2 {
+    margin: 0;
+    font-size: 1.4rem;
+    text-align: center;
+  }
+}
+
+.section {
+  width: 100%;
+}
+
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+
+  label {
+    font-size: 0.9rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  input {
+    width: 70px;
+    text-align: center;
+    border: 1px solid var(--mat-sys-outline);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.95rem;
+  }
+}
+
+.list-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.list-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: var(--mat-sys-surface-container-high); }
+  &.selected { background: var(--mat-sys-primary-container); }
+
+  .list-title { flex: 1; font-size: 0.85rem; }
+  .list-meta { font-size: 0.75rem; color: var(--mat-sys-on-surface-variant); }
+}
+
+.student-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.student-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .student-name {
+    width: 80px;
+    font-size: 0.85rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.color-options {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.color-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+
+  &:hover { transform: scale(1.2); }
+  &.active { border-color: #333; transform: scale(1.2); }
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 8px;
+}

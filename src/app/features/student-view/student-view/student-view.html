@@ -15,7 +15,19 @@
       }}</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
-      @if (classroomStore.mode() === 'gathered') {
+      @if (classroomStore.isPuzzleRushActive()) {
+        <app-puzzle-rush-board
+          [autoStart]="true"
+          [hideRestart]="true"
+          [exercises]="classroomStore.puzzleRushExercises()"
+          [duration]="classroomStore.puzzleRushDuration()"
+          [timeBonus]="classroomStore.puzzleRushTimeBonus()"
+          [timePenalty]="classroomStore.puzzleRushTimePenalty()"
+          (scoreChange)="onPuzzleRushProgress($event)"
+          (fenChange)="classroomStore.broadcastStudentFen(classroomStore.studentName(), $event)"
+        ></app-puzzle-rush-board>
+        <app-puzzle-rush-racer [readonly]="true"></app-puzzle-rush-racer>
+      } @else if (classroomStore.mode() === 'gathered') {
         <app-gathered-board></app-gathered-board>
       } @else if (classroomStore.mode() === 'simul' || classroomStore.isDuelActive()) {
         <app-simul-board></app-simul-board>

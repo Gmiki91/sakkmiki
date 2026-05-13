@@ -79,6 +79,16 @@ export class ClassroomStore {
   readonly isDuelActive = signal(false);
   readonly duelColor = signal<'w' | 'b'>('b');
 
+  // Puzzle rush
+  readonly isPuzzleRushActive = signal(false);
+  readonly puzzleRushDuration = signal(180);
+  readonly puzzleRushTimeBonus = signal(3);
+  readonly puzzleRushTimePenalty = signal(10);
+  readonly puzzleRushStudentColors = signal<Record<string, string>>({});
+  readonly puzzleRushProgress = signal<Record<string, { score: number; wrongMoves: number; currentIndex: number; totalPuzzles: number }>>({});
+  readonly puzzleRushListId = signal('');
+  readonly puzzleRushExercises = signal<Exercise[]>([]);
+
   // Student-side
   readonly currentStudentFen = signal<string>(STARTING_FEN);
 
@@ -294,6 +304,26 @@ this.students.update(current => {
   sendDuelEnd(studentName: string): void {
     this.transport.send({ type: 'duel_end', studentName });
   }
+
+  sendPuzzleRushStart(listId: string, duration: number, timeBonus: number, timePenalty: number, studentColors: Record<string, string>, exercises: Exercise[]): void {
+    this.isPuzzleRushActive.set(true);
+    this.puzzleRushListId.set(listId);
+    this.puzzleRushDuration.set(duration);
+    this.puzzleRushTimeBonus.set(timeBonus);
+    this.puzzleRushTimePenalty.set(timePenalty);
+    this.puzzleRushStudentColors.set(studentColors);
+    this.puzzleRushExercises.set(exercises);
+    this.transport.send({ type: 'puzzle_rush_start', listId, duration, timeBonus, timePenalty, studentColors, exercises });
+  }
+  sendPuzzleRushEnd(): void {
+    this.isPuzzleRushActive.set(false);
+    this.puzzleRushProgress.set({});
+    this.transport.send({ type: 'puzzle_rush_end' });
+  }
+  sendPuzzleRushProgress(score: number, wrongMoves: number, currentIndex: number, totalPuzzles: number): void {
+    this.puzzleRushProgress.update(p => ({ ...p, [this.studentName()]: { score, wrongMoves, currentIndex, totalPuzzles } }));
+    this.transport.send({ type: 'puzzle_rush_progress', studentName: this.studentName(), score, wrongMoves, currentIndex, totalPuzzles });
+  }
   kickStudent(studentName:string){
     this.transport.send({type:'kick',studentName})
   }
@@ -418,7 +448,6 @@ this.students.update(current => {
         this.resyncEphemeralState();
         this.resync$.next(event.name);
         break;
-      
     }
   }
 
@@ -513,6 +542,17 @@ this.students.update(current => {
           this.isDuelActive.set(false);
         }
         break;
+      case 'puzzle_rush_start':
+        this.isPuzzleRushActive.set(true);
+        this.puzzleRushDuration.set(event.duration);
+        this.puzzleRushTimeBonus.set(event.timeBonus);
+        this.puzzleRushTimePenalty.set(event.timePenalty);
+        this.puzzleRushStudentColors.set(event.studentColors);
+        this.puzzleRushExercises.set(event.exercises);
+        break;
+      case 'puzzle_rush_end':
+        this.isPuzzleRushActive.set(false);
+        break;
     }
   }
 
@@ -533,6 +573,9 @@ this.students.update(current => {
                 ? event.pair : p));
         }
         this.challengeMove.set(null); break;
+      case 'puzzle_rush_progress':
+        this.puzzleRushProgress.update(p => ({ ...p, [event.studentName]: { score: event.score, wrongMoves: event.wrongMoves, currentIndex: event.currentIndex, totalPuzzles: event.totalPuzzles } }));
+        break;
     }
   }
 }

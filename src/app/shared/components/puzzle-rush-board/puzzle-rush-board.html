@@ -1,0 +1,50 @@
+<div class="puzzle-rush-board">
+  @if (phase() === 'running') {
+    <div class="hud">
+      <div class="hud-item score">
+        <mat-icon>check_circle</mat-icon>
+        <span>{{ score() }}</span>
+      </div>
+      <div class="hud-item timer" [class.low-time]="timeLeft() <= 10">
+        <mat-icon>timer</mat-icon>
+        <span>{{ timeLeft() }}s</span>
+      </div>
+      <div class="hud-item wrong">
+        <mat-icon>cancel</mat-icon>
+        <span>{{ wrongMoves() }}</span>
+      </div>
+    </div>
+
+    <div
+      class="board-wrapper"
+      [class.flash-correct]="flashState() === 'correct'"
+      [class.flash-incorrect]="flashState() === 'incorrect'">
+      <app-chess-board #chessBoard [config]="boardConfig()!"></app-chess-board>
+      @if (promotionService.pending()) {
+        <app-promotion color="black" (promote)="promotionService.completePromotion($event)"></app-promotion>
+      }
+    </div>
+  }
+
+  @if (phase() === 'finished') {
+    <div class="result-panel">
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-value">{{ score() }}</span>
+          <span class="stat-label">Solved</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">{{ wrongMoves() }}</span>
+          <span class="stat-label">Wrong</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">{{ accuracy() }}%</span>
+          <span class="stat-label">Accuracy</span>
+        </div>
+      </div>
+      @if (!hideRestart()) {
+        <button mat-raised-button color="primary" (click)="restart()">Play again</button>
+      }
+    </div>
+  }
+</div>

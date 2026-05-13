@@ -1,0 +1,75 @@
+<div class="setup-dialog">
+  <h2>Puzzle Rush</h2>
+
+  <!-- Settings -->
+  <mat-card class="section">
+    <mat-card-header><mat-card-title>Settings</mat-card-title></mat-card-header>
+    <mat-card-content>
+      <div class="setting-row">
+        <label>Duration (s)</label>
+        <input matInput type="number" [(ngModel)]="duration" />
+      </div>
+      <div class="setting-row">
+        <label>Bonus on correct (s)</label>
+        <input matInput type="number" [(ngModel)]="timeBonus" />
+      </div>
+      <div class="setting-row">
+        <label>Penalty on wrong (s)</label>
+        <input matInput type="number" [(ngModel)]="timePenalty" />
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Puzzle list -->
+  <mat-card class="section">
+    <mat-card-header><mat-card-title>Puzzle list</mat-card-title></mat-card-header>
+    <mat-card-content>
+      <div class="list-grid">
+        @for (list of exerciseService.exerciseLists(); track list.id) {
+          @if (list.type === 'puzzle') {
+            <div
+              class="list-item"
+              [class.selected]="selectedList()?.id === list.id"
+              (click)="selectList(list)"
+            >
+              <span class="list-title">{{ list.title }}</span>
+              <span class="list-meta">{{ list.exercises.length }}</span>
+            </div>
+          }
+        }
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Student colors -->
+  <mat-card class="section">
+    <mat-card-header><mat-card-title>Car colors</mat-card-title></mat-card-header>
+    <mat-card-content>
+      <div class="student-list">
+        @for (name of data.studentNames; track name) {
+          <div class="student-row">
+            <span class="student-name">{{ name }}</span>
+            <div class="color-options">
+              @for (color of carColors; track color) {
+                <button
+                  class="color-swatch"
+                  [style.background]="color"
+                  [class.active]="getStudentColor(name) === color"
+                  (click)="setStudentColor(name, color)"
+                ></button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Actions -->
+  <div class="actions">
+    <button mat-button (click)="cancel()">Cancel</button>
+    <button mat-raised-button color="primary" [disabled]="!isReady()" (click)="start()">
+      Start Rush
+    </button>
+  </div>
+</div>

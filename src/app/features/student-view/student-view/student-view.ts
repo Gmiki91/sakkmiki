@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, effect, viewChild, OnDestroy } from '@angular/core';
+import { Component, inject, signal, computed, effect, OnDestroy,viewChild } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,12 +8,14 @@ import { ExerciseBoard } from '../exercise-board/exercise-board';
 import { ChallengeBoard } from '../challenge-board/challenge-board';
 import { SimulBoard } from '../simul-board/simul-board';
 import { GatheredBoard } from '../gathered-board/gathered-board';
+import { PuzzleRushBoard } from '../../../shared/components/puzzle-rush-board/puzzle-rush-board';
+import { PuzzleRushRacer } from '../../../core/../features/classroom/puzzle-rush-racer/puzzle-rush-racer';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-student-view',
-  imports: [MatCardModule, MatIconModule, MatButtonModule,  ExerciseBoard, ChallengeBoard, SimulBoard, GatheredBoard],
+  imports: [MatCardModule, MatIconModule, MatButtonModule, ExerciseBoard, ChallengeBoard, SimulBoard, GatheredBoard, PuzzleRushBoard, PuzzleRushRacer],
   templateUrl: './student-view.html',
   styleUrl: './student-view.scss',
 })
@@ -33,17 +35,17 @@ export class StudentView implements OnDestroy {
   );
 
   title = computed(() => {
-    if(this.classroomStore.isDuelActive()) return 'Párbaj a tanár ellen';
+    if (this.classroomStore.isPuzzleRushActive()) return 'Verseny!';
+    if(this.classroomStore.isDuelActive()) return 'Párbaj a tanár ellen 😱';
     if(this.classroomStore.mode() === 'gathered')return 'Achtung!';
     if(this.classroomStore.mode()==='simul')return 'Szimultán a tanár ellen 😱'
     if (this.myPair()) return `${this.myPair()!.white} vs ${this.myPair()!.black}`;
     return `Szia ${this.classroomStore.studentName()}! ${this.emoji()}`;
   });
 
-  
   private curtainInitialized = false;
-  
-  constructor(){
+
+  constructor() {
     effect(() => {
       this.classroomStore.curtainClosed();
       if (!this.curtainInitialized) { this.curtainInitialized = true; return; }
@@ -61,6 +63,10 @@ export class StudentView implements OnDestroy {
 
   toggleSound(): void {
     this.soundService.isMute.update(v => !v);
+  }
+
+  onPuzzleRushProgress(ev: { score: number; wrongMoves: number; currentIndex: number; totalPuzzles: number }): void {
+    this.classroomStore.sendPuzzleRushProgress(ev.score, ev.wrongMoves, ev.currentIndex, ev.totalPuzzles);
   }
 
   private pickEmoji(): string {

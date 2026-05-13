@@ -1,5 +1,4 @@
 <div class="page-center">
-
   @if (phase() === 'idle') {
     <div class="setup-panel">
       <h2>Puzzle Rush</h2>
@@ -52,57 +51,17 @@
     </div>
   }
 
-  @if (phase() === 'running') {
-    <div class="game-panel">
-      <div class="hud">
-        <div class="hud-item score">
-          <mat-icon>check_circle</mat-icon>
-          <span>{{ score() }}</span>
-        </div>
-        <div class="hud-item timer" [class.low-time]="timeLeft() <= 10">
-          <mat-icon>timer</mat-icon>
-          <span>{{ timeLeft() }}s</span>
-        </div>
-        <div class="hud-item wrong">
-          <mat-icon>cancel</mat-icon>
-          <span>{{ wrongMoves() }}</span>
-        </div>
-      </div>
+  @if (phase() === 'running' || phase() === 'finished') {
+    <app-puzzle-rush-board
+      [exercises]="selectedList()?.exercises ?? []"
+      [duration]="duration()"
+      [timeBonus]="timeBonus()"
+      [timePenalty]="timePenalty()"
+      (finished)="onFinished()"
+    ></app-puzzle-rush-board>
 
-      <div
-        class="board-wrapper"
-        [class.flash-correct]="flashState() === 'correct'"
-        [class.flash-incorrect]="flashState() === 'incorrect'">
-        <app-chess-board #chessBoard [config]="boardConfig()!"></app-chess-board>
-        @if (promotionService.pending()) {
-          <app-promotion color="black" (promote)="promotionService.completePromotion($event)"></app-promotion>
-        }
-      </div>
-    
-    </div>
+    @if (phase() === 'finished') {
+      <button mat-raised-button color="primary" (click)="restart()">Setup again</button>
+    }
   }
-
-  @if (phase() === 'finished') {
-    <div class="result-panel">
-      <!-- <h2>Time's up!</h2> -->
-      <div class="stats">
-        <div class="stat">
-          <span class="stat-value">{{ score() }}</span>
-          <span class="stat-label">Solved</span>
-        </div>
-        <div class="stat">
-          <span class="stat-value">{{ wrongMoves() }}</span>
-          <span class="stat-label">Wrong</span>
-        </div>
-        <div class="stat">
-          <span class="stat-value">{{ accuracy() }}%</span>
-          <span class="stat-label">Accuracy</span>
-        </div>
-      </div>
-      <button mat-raised-button color="primary" (click)="restart()">
-        Play again
-      </button>
-    </div>
-  }
-
 </div>

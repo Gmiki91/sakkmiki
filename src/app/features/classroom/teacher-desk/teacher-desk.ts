@@ -25,12 +25,14 @@ import { ExerciseList as List } from '../../../shared/models/exercise-list.model
 import { DEFAULT_BRUSH_COLOR } from '../../../shared/utils/brushes';
 import { WhiteBoard } from "../../../shared/components/white-board/white-board";
 import {MatExpansionModule} from '@angular/material/expansion';
+import { PuzzleRushSetup } from '../puzzle-rush-setup/puzzle-rush-setup';
+import { PuzzleRushRacer } from '../puzzle-rush-racer/puzzle-rush-racer';
 @Component({
   selector: 'app-teacher-desk',
   imports: [
     ChessBoard, DrawingCanvas, TeachingOverlay, ExerciseList,
     MatButtonModule, MatIconModule, MatTooltipModule,MatExpansionModule,
-    WhiteBoard
+    WhiteBoard, PuzzleRushRacer
 ],
   templateUrl: './teacher-desk.html',
   styleUrl: './teacher-desk.scss',
@@ -150,6 +152,16 @@ export class TeacherDesk {
 
   startSimul(): void { this.store.startSimul(); }
   stopSimul(): void { this.store.stopSimul(); }
+
+  openPuzzleRushSetup(): void {
+    this.dialog.open(PuzzleRushSetup, {
+      width: '480px',
+      data: { studentNames: this.store.students().map(s => s.name) },
+    }).afterClosed().subscribe((result: any) => {
+      if (!result) return;
+      this.store.sendPuzzleRushStart(result.list.id, result.duration, result.timeBonus, result.timePenalty, result.studentColors, result.list.exercises);
+    });
+  }
 
 
   loadListToAll(list: List,e:MouseEvent): void {
