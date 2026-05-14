@@ -1,10 +1,15 @@
 <div class="container">
   <h3>{{ exercise().title }}</h3>
   <div style="display: flex; gap: 10px">
+      <div class="board-wrapper">
     <app-chess-board 
       [config]="boardConfig()" 
       #chessBoard>
     </app-chess-board>
+      @if (boardMode() === 'square-select') {
+    <div class="square-interceptor" (click)="onSquareClicked($event)"></div>
+  }
+  </div>
     @if (promotionService.pending()) {
       <app-promotion [color]="boardConfig()?.orientation ?? 'black'" (promote)="promotionService.completePromotion($event)"></app-promotion>
     }
@@ -68,5 +73,14 @@
           > Back to board creator</button>
         </div>
     </div>
+     <app-hint-sequence-editor
+      [lastMove]="lastPlayedMove()"
+      [exercise]="exercise()"
+      (hintSaved)="onHintSaved($event)"
+      (hintDeleted)="onHintDeleted($event)"
+      (captureArrowsRequested)="onCaptureArrows()"
+      (enterSquareSelectMode)="onEnterSquareSelect()"
+      (exitSpecialMode)="onExitSpecialMode()"
+    ></app-hint-sequence-editor>
   </div>
 </div>

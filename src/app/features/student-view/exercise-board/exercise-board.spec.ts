@@ -98,16 +98,6 @@ describe('ExerciseBoard', () => {
       expect(component.isLocked()).toBe(true);
     });
 
-    it('wrong move shows commonMistake hint when move matches', async() => {
-      store.loadedExercises.set([{
-        ...PUZZLE_EXERCISE,
-        commonMistakes: [{ move: 'd5', hint: 'That loses a pawn!' }]
-      }]);
-      TestBed.tick();
-      (component as any).exerciseChess.load(PUZZLE_EXERCISE.fen, { skipValidation: true });
-      component.handleMove('d7', 'd5');
-      expect(component.feedback()).toBe('That loses a pawn!');
-    });
 
     it('completing solution sets isWaitingForStamp when autoProgress is off', async() => {
       // Play through the full solution: e5 (player), Nf3 (computer), Nc6 (player)

@@ -13,17 +13,18 @@ import { PieceOverlay } from '../../../shared/components/piece-overlay/piece-ove
 import { StampOverlay } from '../../../shared/components/stamp-overlay/stamp-overlay';
 import { StampSvg } from '../../../shared/components/stamp-svg/stamp-svg';
 import { StampType } from '../../../shared/models/stamp.model';
-import { Exercise } from '../../../shared/models/exercise.model';
+import { Exercise, MoveHint } from '../../../shared/models/exercise.model';
 import { getKingSquare, getPlayerOrientation, getValidMoves, isPawnPromotion, loadChess, STARTING_FEN } from '../../../shared/utils/chess.utils';
 import { MatButtonModule } from '@angular/material/button';
 import { PromotionService } from '../../../core/services/promotion.service';
 import { Promotion, PromotionPiece } from '../../../shared/components/promotion/promotion';
+import { TeachingOverlay } from '../../../shared/components/teaching-overlay/teaching-overlay';
 const mushroomCollectionTemplate = {
     '🍄':0,'🍫':0,'🍬':0,'🍦':0,'🍔':0,'🥤':0,'🍩':0,'🎃':0,'♥️':0,'🎁':0,'🎈':0,'⭐':0,
   }
 @Component({
   selector: 'app-exercise-board',
-  imports: [ChessBoard, PieceOverlay, StampOverlay, StampSvg,Promotion,MatButtonModule],
+  imports: [ChessBoard, PieceOverlay, StampOverlay, StampSvg,Promotion,MatButtonModule,TeachingOverlay],
   templateUrl: './exercise-board.html',
   styleUrl: './exercise-board.scss',
 })
@@ -57,15 +58,13 @@ export class ExerciseBoard  {
   private exIndex= linkedSignal({ source: () => this.loadedList(), computation: () => 0 });
   private isWaitingForStamp = linkedSignal({ source: () => this.currentExercise(), computation: () => false });
   private isWaitingForRedo = linkedSignal({ source: () => this.currentExercise(), computation: () => false });
-  private status = linkedSignal<Exercise, string>({
-      source: () => this.currentExercise(),
-      computation: () => this.exerciseChess.turn() === 'w' ? 'White to move' : 'Black to move',
-    });
   private exerciseFen = signal<string>(STARTING_FEN);
   private moveHistory = linkedSignal<Exercise,string[]>({ source: () => this.currentExercise(), computation: () => [] });
 
   private exerciseChess = new Chess();
   private exerciseLastMove = signal<[Key, Key] | undefined>(undefined);
+
+  activeHintOverlay = signal<{ conceptId: string; square: string } | null>(null);
 
   boardConfig = computed<Config | null>(() => {
     const ex = this.currentExercise();
@@ -205,7 +204,6 @@ export class ExerciseBoard  {
     if (this.exIndex() < size) {
       this.exIndex.update(n => n + 1);
     } else {
-      this.status.set('All done!');
       this.feedback.set('Minden feladatot megoldottál!');
       this.isWaitingForStamp.set(true);
     }
@@ -227,6 +225,7 @@ export class ExerciseBoard  {
     if (!ex) return;
     const newHistory = [...this.moveHistory(), move.san];
     const solution = ex.solutions?.find(line => newHistory.every((m, i) => line[i] === m));
+    const hint = this.currentExercise()?.moveHints?.find(h => h.move === move.san);
 
     if (solution) {
       this.isLocked.set(false);
@@ -248,7 +247,12 @@ export class ExerciseBoard  {
         }, 250);
       }
     } else {
-      this.badMove(ex,move);
+      if (hint) {
+        this.isLocked.set(true);
+        this.playHintSequence(hint).then(() => this.badMove(ex,true))
+      }else{
+        this.badMove(ex);
+      }
     }
   }
 
@@ -264,7 +268,7 @@ export class ExerciseBoard  {
       this.exerciseFen.set(this.exerciseChess.fen());
       if(ex.numberOfMushrooms === newHistory.length) this.exerciseSolved();
     } else {
-      this.badMove(ex,move);
+      this.badMove(ex);
     }
   }
 
@@ -273,19 +277,23 @@ export class ExerciseBoard  {
     else { this.isWaitingForStamp.set(true); this.isLocked.set(true); }
   }
 
-  private badMove(ex:Exercise,move:Move):void{
+  private badMove(ex:Exercise,skipFeedback:boolean=false):void{
     this.soundService.play('error');
     if (this.classroomStore.autoRedo()) {
-      const mistake = ex.commonMistakes?.find(m => m.move === move.san);
-      this.feedback.set(mistake?.hint ?? ex.defaultHint ?? 'Biztos? 🤔');
-      this.isLocked.set(true);
-      setTimeout(() => { 
-        // Re-check autoRedo in case it was toggled off while waiting
-        if (this.classroomStore.autoRedo()) {
-          this.handleMistake(); 
-        }
-        this.feedback.set(''); 
-      }, 2000);
+      if(skipFeedback){
+        //hint already shown, dont timeout to show default hint
+        this.handleMistake(); 
+      }else{
+        this.feedback.set(ex.defaultHint ?? 'Biztos? 🤔');
+        this.isLocked.set(true);
+        setTimeout(() => { 
+          // Re-check autoRedo in case it was toggled off while waiting
+          if (this.classroomStore.autoRedo()) {
+            this.handleMistake(); 
+          }
+          this.feedback.set(''); 
+        }, 2000);
+      }
     } else {
       this.isWaitingForRedo.set(true);
       this.isLocked.set(true);
@@ -294,15 +302,11 @@ export class ExerciseBoard  {
 
   private updateStatus(): void {
     if (this.exerciseChess.isCheckmate()) {
-      this.status.set('Checkmate! ' + (this.exerciseChess.turn() === 'w' ? 'Black' : 'White') + ' wins!');
       this.pieceOverlay()?.show('checkmate', getKingSquare(this.exerciseChess)!);
     } else if (this.exerciseChess.isDraw()) {
-      this.status.set('Draw!');
     } else if (this.exerciseChess.isCheck()) {
-      this.status.set('Check! ' + (this.exerciseChess.turn() === 'w' ? 'White' : 'Black') + ' to move');
       this.pieceOverlay()?.show('alarmed', getKingSquare(this.exerciseChess)!);
     } else {
-      this.status.set((this.exerciseChess.turn() === 'w' ? 'White' : 'Black') + ' to move');
     }
   }
 
@@ -345,5 +349,24 @@ export class ExerciseBoard  {
 
   private playSound(move: Move): void {
     this.soundService.play(move.captured ? 'take' : 'move');
+  }
+
+  private async playHintSequence(hint:MoveHint): Promise<void> {
+    for (const step of hint.steps) {
+      if (step.type === 'arrow') {
+        this.chessBoard()?.api?.set({ drawable: { shapes: step.arrows ?? [] } });
+      } else if (step.type === 'overlay') {
+        this.activeHintOverlay.set(
+          step.conceptId ? { conceptId: step.conceptId, square: step.square ?? '' } : null
+        );
+      } else if (step.type === 'text') {
+        this.feedback.set(step.text ?? '');
+      }
+      await new Promise<void>(r => setTimeout(r, step.delayAfter));
+    }
+    // clear hint visuals — normal flow takes over after this
+    this.chessBoard()?.api?.set({ drawable: { shapes: [] } });
+    this.activeHintOverlay.set(null);
+    this.feedback.set('');
   }
 }

@@ -13,6 +13,13 @@
     ></app-chess-board>
     <app-piece-overlay #pieceOverlay [orientation]="boardConfig()?.orientation ?? 'white'"></app-piece-overlay>
     <app-stamp-overlay #stampOverlay></app-stamp-overlay>
+    @if (activeHintOverlay()) {
+      <app-teaching-overlay
+        [conceptId]="activeHintOverlay()!.conceptId"
+        [squares]="activeHintOverlay()!.square ? [activeHintOverlay()!.square] : []"
+        [orientation]="boardConfig()?.orientation ?? 'white'"
+      ></app-teaching-overlay>
+    }
   </div>
   <!-- @if(currentExercise()?.exerciseType==='mushroom'){
     <button mat-icon-button  (click)="reset()"><mat-icon style="font-size: larger">refresh</mat-icon></button>

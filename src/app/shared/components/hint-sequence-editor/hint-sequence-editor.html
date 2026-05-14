@@ -1,0 +1,126 @@
+<div class="hint-editor">
+  <span class="section-label">Hints</span>
+
+  @if (exercise().moveHints?.length) {
+    <div class="existing-hints">
+      @for (hint of exercise().moveHints; track hint.move) {
+        <div class="hint-row">
+          <span class="move-badge">{{ hint.move }}</span>
+          <span class="step-count">{{ hint.steps.length }}×</span>
+          <button mat-icon-button matTooltip="Delete hint" (click)="deleteHint(hint.move)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+      }
+    </div>
+  }
+
+  @if (phase() === 'idle') {
+    @if (lastMove()) {
+      <div class="trigger">
+        <span class="move-badge">{{ lastMove() }}</span>
+        <button mat-stroked-button (click)="startBuilding()">
+          {{ existingHintForMove() ? 'Edit hint' : '+ Hint' }}
+        </button>
+      </div>
+    } @else {
+      <p class="empty-label">Make a move to add a hint.</p>
+    }
+  }
+
+  @if (phase() !== 'idle') {
+    <div class="builder">
+      <div class="builder-header">
+        <span>Hint for <strong>{{ lastMove() }}</strong></span>
+        <button mat-icon-button (click)="cancel()"><mat-icon>close</mat-icon></button>
+      </div>
+
+      @for (step of pendingSteps(); track $index; let i = $index) {
+        <div class="step-row">
+          <span class="step-label">{{ stepLabel(step) }}</span>
+          <button mat-icon-button (click)="removeStep(i)"><mat-icon>close</mat-icon></button>
+        </div>
+      }
+
+      @if (phase() === 'type-select') {
+        <div class="type-row">
+          <button mat-stroked-button (click)="selectStepType('arrow')">↗ Arrow</button>
+          <button mat-stroked-button (click)="selectStepType('overlay')">🎭 Overlay</button>
+          <button mat-stroked-button (click)="selectStepType('text')">💬 Text</button>
+        </div>
+        @if (pendingSteps().length > 0) {
+          <button mat-raised-button color="primary" (click)="saveHint()">Save hint</button>
+        }
+      }
+
+      @if (phase() === 'arrow-pending') {
+        <p class="instruction">Right-click drag on the board to draw arrows, then:</p>
+        <mat-form-field appearance="outline" class="delay-field">
+          <mat-label>Delay after (ms)</mat-label>
+          <input matInput type="number"
+            [ngModel]="pendingDelay()" (ngModelChange)="pendingDelay.set($event)" />
+        </mat-form-field>
+        <div class="action-row">
+          <button mat-raised-button color="primary" (click)="captureArrows()">Capture</button>
+          <button mat-button (click)="cancelStep()">Cancel</button>
+        </div>
+      }
+
+      @if (phase() === 'overlay-config') {
+        <mat-form-field appearance="outline">
+          <mat-label>Concept</mat-label>
+          <mat-select
+            [ngModel]="pendingConceptId()"
+            (ngModelChange)="pendingConceptId.set($event); onConceptChange()">
+            @for (c of concepts; track c.id) {
+              <mat-option [value]="c.id">{{ c.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        @if (selectedConcept().squaresNeeded > 0) {
+          @if (awaitingSquare()) {
+            <p class="instruction">Click a square on the board…</p>
+            <button mat-button (click)="cancelSquareSelect()">Cancel</button>
+          } @else if (selectedSquare()) {
+            <div class="selected-square-row">
+              <span>Square: <strong>{{ selectedSquare() }}</strong></span>
+              <button mat-button (click)="selectedSquare.set(''); exitSpecialMode.emit()">Change</button>
+            </div>
+          } @else {
+            <button mat-stroked-button (click)="requestSquare()">Click a square</button>
+          }
+        }
+
+        @if (canAddOverlayStep()) {
+          <mat-form-field appearance="outline" class="delay-field">
+            <mat-label>Delay after (ms)</mat-label>
+            <input matInput type="number"
+              [ngModel]="pendingDelay()" (ngModelChange)="pendingDelay.set($event)" />
+          </mat-form-field>
+          <div class="action-row">
+            <button mat-raised-button color="primary" (click)="addOverlayStep()">Add step</button>
+            <button mat-button (click)="cancelStep()">Cancel</button>
+          </div>
+        }
+      }
+
+      @if (phase() === 'text-config') {
+        <mat-form-field appearance="outline">
+          <mat-label>Text</mat-label>
+          <input matInput [ngModel]="pendingText()" (ngModelChange)="pendingText.set($event)" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="delay-field">
+          <mat-label>Delay after (ms)</mat-label>
+          <input matInput type="number"
+            [ngModel]="pendingDelay()" (ngModelChange)="pendingDelay.set($event)" />
+        </mat-form-field>
+        <div class="action-row">
+          <button mat-raised-button color="primary"
+            [disabled]="!pendingText()" (click)="addTextStep()">Add step</button>
+          <button mat-button (click)="cancelStep()">Cancel</button>
+        </div>
+      }
+    </div>
+  }
+</div>

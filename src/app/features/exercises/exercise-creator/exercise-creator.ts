@@ -17,22 +17,30 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FormsModule } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
-import { boardConfig, getValidMoves, isPawnPromotion, loadChess } from '../../../shared/utils/chess.utils';
-import { CommonMistake, Exercise } from '../../../shared/models/exercise.model';
+import {
+  boardConfig,
+  getValidMoves,
+  isPawnPromotion,
+  loadChess,
+} from '../../../shared/utils/chess.utils';
+import { Exercise, MoveHint } from '../../../shared/models/exercise.model';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ExerciseService } from '../../../core/services/exercise.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import {MatFormFieldModule} from '@angular/material/form-field';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { validateSolution } from '../../../shared/utils/validation';
 import { Promotion, PromotionPiece } from '../../../shared/components/promotion/promotion';
 import { PromotionService } from '../../../core/services/promotion.service';
+import { HintSequenceEditor } from '../../../shared/components/hint-sequence-editor/hint-sequence-editor';
+import { clientToSquare } from '../../../shared/utils/board-geometry';
 @Component({
   selector: 'app-exercise-creator',
   imports: [
     ChessBoard,
     Promotion,
+    HintSequenceEditor,
     MatRadioModule,
     MatButtonModule,
     MatCheckboxModule,
@@ -47,6 +55,8 @@ import { PromotionService } from '../../../core/services/promotion.service';
 })
 export class ExerciseCreator implements OnInit {
   @ViewChild('chessBoard') chessBoard!: ChessBoard;
+  @ViewChild(HintSequenceEditor) hintEditor?: HintSequenceEditor;
+
   exerciseService = inject(ExerciseService);
   promotionService = inject(PromotionService);
 
@@ -56,11 +66,13 @@ export class ExerciseCreator implements OnInit {
   private originalSolutions = signal<string[][]>([]);
   recordingText = computed(() => this.solutions().join(', '));
   exercise!: WritableSignal<Exercise>;
-  private originalDefaultHint = signal<string|undefined>('');
-  defaultHint = model<string|undefined>('Biztos? 🤔');
+  private originalDefaultHint = signal<string | undefined>('');
+  defaultHint = model<string | undefined>('Biztos? 🤔');
   boardConfig = signal<Config | undefined>(undefined);
   playerColor: Color = 'w';
   saveState = signal<'idle' | 'saving' | 'saved'>('idle');
+  boardMode = signal<'normal' | 'square-select'>('normal');
+  lastPlayedMove = signal<string | null>(null);
 
   private chess: Chess = new Chess();
   private route = inject(ActivatedRoute);
@@ -70,8 +82,9 @@ export class ExerciseCreator implements OnInit {
   // check whether there are unsaved solutions or hints
   isDirty = computed(
     () =>
-      JSON.stringify(this.exercise().solutions ?? []) !== JSON.stringify(this.originalSolutions()) ||
-    this.originalDefaultHint() !== this.defaultHint()
+      JSON.stringify(this.exercise().solutions ?? []) !==
+        JSON.stringify(this.originalSolutions()) ||
+      this.originalDefaultHint() !== this.defaultHint(),
   );
 
   ngOnInit(): void {
@@ -128,18 +141,19 @@ export class ExerciseCreator implements OnInit {
 
   async handleMove(orig: Key, dest: Key): Promise<void> {
     const piece = this.chess.get(orig as any)!;
-    if (isPawnPromotion(dest,piece)) {
-      const role = await this.promotionService.requestPromotion(orig,dest);
-      this.executeMove(orig,dest,role);
+    if (isPawnPromotion(dest, piece)) {
+      const role = await this.promotionService.requestPromotion(orig, dest);
+      this.executeMove(orig, dest, role);
       return;
     }
     this.executeMove(orig, dest);
   }
 
-  executeMove(from: Key, to: Key, promotion?:PromotionPiece) {
+  executeMove(from: Key, to: Key, promotion?: PromotionPiece) {
     try {
       const move = this.chess.move({ from, to, promotion });
       if (move) {
+        this.lastPlayedMove.set(move.san);
         this.chessBoard.api?.set(boardConfig(this.chess));
         if (this.isRecording()) {
           this.solutions.update((moves) => [...moves, move.san]);
@@ -180,24 +194,17 @@ export class ExerciseCreator implements OnInit {
       this.chess.move(steps[index]);
     }
     this.chessBoard.api?.set(boardConfig(this.chess, false));
+    this.lastPlayedMove.set(steps[stepIndex]);
   }
 
-  addHint(hint:CommonMistake) {
-    this.exercise.update(e=>({
-      ...e,
-      commonMistakes:[...(e.commonMistakes ?? []), hint]
-    }));
+  returnToBoard(): void {
+    this.router.navigate([`/exercises/edit-board/${this.exercise().id}`]);
   }
-
-  returnToBoard():void{
-    this.router.navigate([`/exercises/edit-board/${this.exercise().id}`]); 
-  }
-
 
   async save() {
     this.saveState.set('saving');
     this.saveRecording();
-    this.exercise.update(e=>({...e,defaultHint:this.defaultHint()}));
+    this.exercise.update((e) => ({ ...e, defaultHint: this.defaultHint() }));
     this.originalDefaultHint.set(this.defaultHint());
     await this.exerciseService.updateExercise(this.exercise());
     this.originalSolutions.set([...(this.exercise()?.solutions ?? [])]);
@@ -218,8 +225,47 @@ export class ExerciseCreator implements OnInit {
     }, 250);
   }
 
+  // 3. Column methods
+  onCaptureArrows(): void {
+    const shapes = this.chessBoard.api?.state.drawable.shapes ?? [];
+    this.hintEditor?.receiveArrows(shapes);
+  }
+
+  onEnterSquareSelect(): void {
+    this.boardMode.set('square-select');
+  }
+
+  onExitSpecialMode(): void {
+    this.boardMode.set('normal');
+  }
+
+  onSquareClicked(event: MouseEvent): void {
+    const boardEl = this.chessBoard.boardElement.nativeElement as HTMLElement;
+    const orientation = (this.chessBoard.api?.state.orientation ?? 'white') as 'white' | 'black';
+    const square = clientToSquare(event.clientX, event.clientY, boardEl, orientation);
+    this.hintEditor?.receiveSquare(square);
+    this.boardMode.set('normal');
+  }
+
+  async onHintSaved(hint: MoveHint): Promise<void> {
+    this.exercise.update((ex) => ({
+      ...ex,
+      moveHints: [...(ex.moveHints ?? []).filter((h) => h.move !== hint.move), hint],
+    }));
+    await this.exerciseService.updateExercise(this.exercise());
+  }
+
+  async onHintDeleted(move: string): Promise<void> {
+    this.exercise.update((ex) => ({
+      ...ex,
+      moveHints: (ex.moveHints ?? []).filter((h) => h.move !== move),
+    }));
+    await this.exerciseService.updateExercise(this.exercise());
+  }
+
   private resetBoard() {
     this.solutions.set([]);
+    this.lastPlayedMove.set(null);
     loadChess(this.chess, this.exercise().fen);
     // replay last move if exists so recording starts from the correct position
     if (this.exercise().lastMove) {
@@ -231,7 +277,7 @@ export class ExerciseCreator implements OnInit {
 
   private saveRecording() {
     if (this.solutions().length > 0) {
-      const error = validateSolution(this.solutions(),this.exercise().solutions ?? []);
+      const error = validateSolution(this.solutions(), this.exercise().solutions ?? []);
       if (error) {
         this.snackbar.open(error, '', { duration: 3000 });
         return;

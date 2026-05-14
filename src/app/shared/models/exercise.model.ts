@@ -1,9 +1,19 @@
+import { DrawShape } from '@lichess-org/chessground/draw';
 import { Key } from "@lichess-org/chessground/types";
 
-export type CommonMistake = {
-  move: string;
-  hint: string;
-}
+export type HintStep = {
+  type: 'arrow' | 'overlay' | 'text';
+  arrows?: DrawShape[];   // captured from chessground drawable
+  conceptId?: string;     // overlay: id from TEACHING_CONCEPTS
+  square?: string;        // overlay: target square
+  text?: string;
+  delayAfter: number;     // ms before next step shows
+};
+
+export type MoveHint = {
+  move: string;           // SAN: 'Nf3', 'a4', 'O-O'
+  steps: HintStep[];
+};
 
 export type LastMove = {
   from: Key;
@@ -22,7 +32,7 @@ export type ExerciseInput = {
   listId:string;
   instruction:string;
   solutions?: string[][];
-  commonMistakes?: CommonMistake[];
+  moveHints?: MoveHint[];
   defaultHint?: string;
   whiteWinConditions?: string[];
   blackWinConditions?: string[];
