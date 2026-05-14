@@ -81,6 +81,17 @@
     />
     }
   }
+    @if (conceptId() === 'target') {
+    @let coord = squareCoord();
+    @if (coord) {
+     <image
+      href="/images/target.png"
+      [attr.x]="coord.x"
+      [attr.y]="coord.y"
+      width="1" height="1"
+    />
+    }
+  }
   @if (conceptId() === 'poison') {
     @let coord = squareCoord();
     @if (coord) {
