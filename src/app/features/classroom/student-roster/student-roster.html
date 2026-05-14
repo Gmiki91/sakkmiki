@@ -59,7 +59,7 @@
               <app-chess-board  [config]="store.mode()==='simul' || duelColors()[student.name] !== undefined ? simulBoardConfigFor(student.name) : boardConfigFor(student.fen)" #studentBoard></app-chess-board>
             }
           </div>
-          @if (promotionService.pending()) {
+          @if (promotionService.pending() && this.promotionAgainst()===student.name) {
             <app-promotion color="white" (promote)="promotionService.completePromotion($event)"></app-promotion>
           } 
           <!-- <div class="student-status">

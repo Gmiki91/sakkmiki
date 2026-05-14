@@ -46,6 +46,7 @@ export class StudentRoster {
   // Simul
   simulChessMap = new Map<string, Chess>();
   simulConfigs = signal<Record<string, Config>>({});
+  promotionAgainst = signal<string>('');
 
   exerciseTitles = computed(() => {
     const globalList = this.store.loadedList();
@@ -391,7 +392,9 @@ export class StudentRoster {
     if (!chess || chess.turn() !== color) return;
     const piece = chess.get(orig as any)!;
     if (isPawnPromotion(dest, piece)){
+      this.promotionAgainst.set(studentName);
       const role = await this.promotionService.requestPromotion(orig, dest);
+      this.promotionAgainst.set('');
       this.executeMove(orig, dest,studentName, role);
       return;
     } 
