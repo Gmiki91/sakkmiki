@@ -28,7 +28,7 @@ export class SimulBoard {
   private soundService = inject(SoundService);
   promotionService = inject(PromotionService);
 
-  private simulFen = signal<string>(STARTING_FEN);
+  private fen = signal<string>(STARTING_FEN);
 
   private simulChess = new Chess();
   private simulLastMove = signal<[Key, Key] | undefined>(undefined);
@@ -41,7 +41,7 @@ export class SimulBoard {
     const isMyTurn = this.simulChess.turn() === color;
     const myColor = color === 'w' ? 'white' : 'black';
     return {
-      fen: this.simulFen(),
+      fen: this.fen(),
       orientation: myColor,
       turnColor: isMyTurn ? myColor : (myColor === 'white' ? 'black' : 'white'),
       movable: {
@@ -62,16 +62,8 @@ export class SimulBoard {
   constructor() {
     // Initialize on simul or duel start
     effect(() => {
-      if (this.classroomStore.mode() === 'simul') {
-        this.simulChess.reset();
-        this.simulFen.set(this.simulChess.fen());
-        this.simulLastMove.set(undefined);
-        this.peerBoards.set([]);
-      } else if (this.classroomStore.isDuelActive()) {
-        loadChess(this.simulChess, this.classroomStore.currentStudentFen());
-        this.simulFen.set(this.classroomStore.currentStudentFen());
-        this.simulLastMove.set(undefined);
-        this.peerBoards.set([]);
+      if (this.classroomStore.mode() === 'simul' || this.classroomStore.isDuelActive()) {
+        this.resetFen();
       }
     });
 
@@ -87,7 +79,7 @@ export class SimulBoard {
       }
       try {
         loadChess(this.simulChess, move.fen);
-        this.simulFen.set(this.simulChess.fen());
+        this.fen.set(this.simulChess.fen());
         this.simulLastMove.set([move.from as Key, move.to as Key]);
         this.soundService.play(move.capture ? 'take' : 'move');
       } catch {
@@ -103,6 +95,13 @@ export class SimulBoard {
       if (move.studentName === this.classroomStore.studentName()) return;
       this.updatePeerBoard(move.studentName, move.fen, move.from, move.to);
     });
+
+    // If duelColor is changed by teacher, reset fen
+    effect(()=>{
+      this.classroomStore.duelColor();
+      this.resetFen();
+    })
+
   }
 
   async handleSimulMove(orig: Key, dest: Key): Promise<void> {
@@ -123,13 +122,13 @@ export class SimulBoard {
     try {
       const move = this.simulChess.move({ from: orig, to: dest, promotion });
       if (!move) return;
-      this.simulFen.set(this.simulChess.fen());
+      this.fen.set(this.simulChess.fen());
       this.simulLastMove.set([orig, dest]);
       this.soundService.play(move.captured ? 'take' : 'move');
       if (promotion) this.chessBoard()?.api?.set({ fen: this.simulChess.fen() });
       this.classroomStore.sendSimulStudentMove(this.simulChess.fen(), orig, dest);
     } catch {
-      this.simulFen.set(this.simulChess.fen());
+      this.fen.set(this.simulChess.fen());
     }
   }
 
@@ -154,5 +153,13 @@ export class SimulBoard {
       const exists = boards.find((b) => b.name === name);
       return exists ? boards.map((b) => (b.name === name ? entry : b)) : [...boards, entry];
     });
+  }
+
+  private resetFen(){
+    const fen = this.classroomStore.currentStudentFen();
+    loadChess(this.simulChess, fen);
+    this.fen.set(fen);
+    this.simulLastMove.set(undefined);
+    this.peerBoards.set([]);
   }
 }
