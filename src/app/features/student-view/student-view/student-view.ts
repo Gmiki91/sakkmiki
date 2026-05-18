@@ -12,10 +12,11 @@ import { PuzzleRushBoard } from '../../../shared/components/puzzle-rush-board/pu
 import { PuzzleRushRacer } from '../../../core/../features/classroom/puzzle-rush-racer/puzzle-rush-racer';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-student-view',
-  imports: [MatCardModule, MatIconModule, MatButtonModule, ExerciseBoard, ChallengeBoard, SimulBoard, GatheredBoard, PuzzleRushBoard, PuzzleRushRacer],
+  imports: [CommonModule,MatCardModule, MatIconModule, MatButtonModule, ExerciseBoard, ChallengeBoard, SimulBoard, GatheredBoard, PuzzleRushBoard, PuzzleRushRacer],
   templateUrl: './student-view.html',
   styleUrl: './student-view.scss',
 })

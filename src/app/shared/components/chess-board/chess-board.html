@@ -4,4 +4,5 @@
   (dragover)="$event.preventDefault()"
   (drop)="handleDrop.emit($event)"
   [class.mushroom-mode]="mushroomMode()"
+  [ngClass]="gameMode()"
 ></div>

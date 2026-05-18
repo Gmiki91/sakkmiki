@@ -1,10 +1,6 @@
 <div class="board-wrapper">
   <div class="overlay-wrapper">
-    <app-chess-board #chessBoard [config]="boardConfig()"></app-chess-board>
-  </div>
-  <div class="file-helper" [class.reversed]="myColor() === 'black'">
-    <span>🍎</span><span>🍌</span><span>😺</span><span>🥁</span>
-    <span>🐭</span><span>🪥</span><span>🍄</span><span>☃️</span>
+    <app-chess-board #chessBoard gameMode="duel" [config]="boardConfig()"></app-chess-board>
   </div>
 </div>
   @if (promotionService.pending()) {

@@ -1,4 +1,8 @@
-<div class="background"></div>
+<div class="background" [ngClass]="{
+  'exercise':classroomStore.mode() === 'normal',
+  'class':classroomStore.mode() === 'gathered',
+  'duel':classroomStore.mode() === 'simul'|| myPair() || classroomStore.isDuelActive(),
+}"></div>
 <button class="volume-btn" (click)="toggleSound()">
   <mat-icon>{{ soundService.isMute() ? 'volume_off' : 'volume_up' }}</mat-icon>
 </button>

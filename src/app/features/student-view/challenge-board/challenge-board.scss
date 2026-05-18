@@ -19,13 +19,4 @@
   app-chess-board { display: block; width: 100%; height: 100%; }
 }
 
-.file-helper {
-  background-color: rgba(255,255,255,0.95);
-  padding: 10px;
-  border-radius: 20px;
-  display: flex;
-  font-size: 30px;
-  justify-content: space-around;
-  width: var(--board-size);
-  &.reversed { flex-direction: row-reverse; }
-}
+

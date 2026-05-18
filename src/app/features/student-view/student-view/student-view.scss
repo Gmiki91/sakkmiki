@@ -1,10 +1,18 @@
 .background {
   position: fixed;
   inset: 0;
-  background-image: url('../../../../../public/bg.png');
   background-size: cover;
   background-position: center;
   z-index: -10;
+}
+.exercise{
+  background-image: url('../../../../../public/bg.png');
+}
+.class{
+  background-image: url('../../../../../public/images/class.jpg');
+}
+.duel{
+  background-image: url('../../../../../public/images/duel.png');
 }
 
 .volume-btn {
@@ -64,11 +72,12 @@ mat-card-header {
   mat-card-title {
     text-align: center;
     font-size: 1.4rem;
-    font-weight: 700;
     letter-spacing: 0.04em;
-    color: var(--mat-sys-on-surface);
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
     padding-bottom: 6px;
+    color: white;
+    font-weight: bold;
+    text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.8), 
+               0px 0px 10px rgba(0, 0, 0, 0.5);
   }
   mat-card-subtitle{
     height:25px;

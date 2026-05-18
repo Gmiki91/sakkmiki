@@ -3,9 +3,10 @@ import { Chessground } from '@lichess-org/chessground';
 import { Api } from '@lichess-org/chessground/api';
 import { Config } from '@lichess-org/chessground/config';
 import { DEFAULT_BRUSHES } from '../../utils/brushes';
+import { CommonModule } from '@angular/common';
 @Component({
   selector: 'app-chess-board',
-  imports: [],
+  imports: [CommonModule],
   templateUrl: './chess-board.html',
   styleUrl: './chess-board.scss'
 })
@@ -13,6 +14,7 @@ export class ChessBoard implements AfterViewInit {
   @ViewChild('board') boardElement!: ElementRef;
   handleDrop = output<DragEvent>()
   mushroomMode = input<boolean|undefined>(false);
+  gameMode = input<'exercise'|'class'|'duel'>('exercise');
   config = input<Config>();
   api!: Api;
 
