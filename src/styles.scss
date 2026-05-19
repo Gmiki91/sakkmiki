@@ -83,6 +83,22 @@ router-outlet + * {
   left:auto;
 }
 
+// White pieces
+.cg-wrap piece.king.white   { background-image: url('/pieces/cooke/wK.svg'); } 
+.cg-wrap piece.queen.white  { background-image: url('/pieces/cooke/wQ.svg'); }
+.cg-wrap piece.rook.white   { background-image: url('/pieces/cooke/wR.svg'); }
+.cg-wrap piece.bishop.white { background-image: url('/pieces/cooke/wB.svg'); }
+.cg-wrap piece.knight.white { background-image: url('/pieces/cooke/wN.svg'); }
+.cg-wrap piece.pawn.white   { background-image: url('/pieces/cooke/wP.svg'); }
+
+// Black pieces
+.cg-wrap piece.king.black   { background-image: url('/pieces/cooke/bK.svg'); }
+.cg-wrap piece.queen.black  { background-image: url('/pieces/cooke/bQ.svg'); }
+.cg-wrap piece.rook.black   { background-image: url('/pieces/cooke/bR.svg'); }
+.cg-wrap piece.bishop.black { background-image: url('/pieces/cooke/bB.svg'); }
+.cg-wrap piece.knight.black { background-image: url('/pieces/cooke/bN.svg'); }
+.cg-wrap piece.pawn.black   { background-image: url('/pieces/cooke/bP.svg'); }
+
 .duel{
   cg-board {
     background-color: #ffb200 !important;
