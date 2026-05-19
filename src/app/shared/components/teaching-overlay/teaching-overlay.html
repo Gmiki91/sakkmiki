@@ -63,9 +63,23 @@
     />
   }
 
-    @if (conceptId() === 'tired') {
+  @if (conceptId() === 'tired') {
      <image
       href="/images/tired_cat.png"
+      x="2" y="2"
+      width="4" height="4"
+    />
+  }
+  @if (conceptId() === 'rook-attack') {
+     <image
+      href="/images/rooka.png"
+      x="2" y="2"
+      width="4" height="4"
+    />
+  }
+    @if (conceptId() === 'rook-guard') {
+     <image
+      href="/images/rookd.png"
       x="2" y="2"
       width="4" height="4"
     />
@@ -81,7 +95,7 @@
     />
     }
   }
-    @if (conceptId() === 'target') {
+  @if (conceptId() === 'target') {
     @let coord = squareCoord();
     @if (coord) {
      <image
@@ -92,6 +106,7 @@
     />
     }
   }
+
   @if (conceptId() === 'poison') {
     @let coord = squareCoord();
     @if (coord) {

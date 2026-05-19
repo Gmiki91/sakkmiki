@@ -57,6 +57,7 @@ export class ChallengeBoard {
   }));
 
   constructor() {
+      this.soundService.play('openingBell');
     // Reset board when pair is assigned or rematch occurs
     effect(() => {
       const pair = this.myPair();

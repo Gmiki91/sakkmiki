@@ -60,6 +60,7 @@ export class SimulBoard {
   });
 
   constructor() {
+    this.soundService.play('openingBell');
     // Initialize on simul or duel start
     effect(() => {
       if (this.classroomStore.mode() === 'simul' || this.classroomStore.isDuelActive()) {
