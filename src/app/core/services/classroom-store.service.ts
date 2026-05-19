@@ -215,6 +215,11 @@ this.students.update(current => {
 
   }
 
+  // when student is thrown back to "main board", have an unconfigured board
+  private resetFen():void{
+    this.droppedExercise.set(null); this.assignedExercises.set([]); this.loadedExercises.set([]);
+  }
+
   // ----------------------------------------------------------------
   // Send methods (teacher)
   // ----------------------------------------------------------------
@@ -460,7 +465,9 @@ this.students.update(current => {
       case 'gather':
         this.sharedArrows.set(null); this.miniboardArrows.set(null); this.mode.set('gathered'); break;
       case 'disperse':
-        this.sharedArrows.set(null); this.miniboardArrows.set(null); this.mode.set('normal'); break;
+        this.sharedArrows.set(null); this.miniboardArrows.set(null); this.mode.set('normal');
+        this.resetFen();
+        break;
       case 'teacher_fen': this.teacherFen.set(event.fen); break;
       case 'mushroom_type': this.mushroomType.set(event.mType); break;
       case 'list_loaded':
@@ -512,7 +519,9 @@ this.students.update(current => {
         break;
       case 'challenge_remove':
         this.challengePairs.update((pairs) =>
-          pairs.filter((p) => p.white !== event.pair.white || p.black !== event.pair.black)); break;
+          pairs.filter((p) => p.white !== event.pair.white || p.black !== event.pair.black));
+        this.resetFen();
+        break;
       case 'drawing_clear': this.incomingDrawingClear.set({ studentName: event.studentName }); break;
       case 'drawing_clear_all': this.incomingDrawingClear.set({ studentName: 'all' }); break;
       case 'teaching_overlay_update':
@@ -522,7 +531,7 @@ this.students.update(current => {
       case 'stamp_annotation_clear_all':
         this.incomingStampAnnotationClear.set({ studentName: 'all' }); break;
       case 'simul_start': this.mode.set('simul'); break;
-      case 'simul_end': this.mode.set('normal'); break;
+      case 'simul_end': this.mode.set('normal'); this.resetFen(); break;
       case 'simul_teacher_move':
         this.incomingSimulTeacherMove.set({ studentName: event.studentName, fen: event.fen, from: event.from, to: event.to,capture:event.capture });
         break;
@@ -540,6 +549,7 @@ this.students.update(current => {
       case 'duel_end':
         if (event.studentName === this.studentName()) {
           this.isDuelActive.set(false);
+          this.resetFen();
         }
         break;
       case 'puzzle_rush_start':
