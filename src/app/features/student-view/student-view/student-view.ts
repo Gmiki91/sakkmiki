@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, effect, OnDestroy,viewChild } from '@angular/core';
+import { Component, inject, signal, computed, effect, OnDestroy,viewChild, ChangeDetectorRef, untracked } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -13,6 +13,7 @@ import { PuzzleRushRacer } from '../../../core/../features/classroom/puzzle-rush
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { ChallengePair } from '../../../shared/models/challenge-pair.model';
 
 @Component({
   selector: 'app-student-view',
@@ -22,7 +23,7 @@ import { CommonModule } from '@angular/common';
 })
 export class StudentView implements OnDestroy {
   exerciseBoard = viewChild(ExerciseBoard);
-
+  private cdRef = inject(ChangeDetectorRef);
   classroomStore = inject(ClassroomStore);
   soundService = inject(SoundService);
   router = inject(Router);
@@ -46,6 +47,12 @@ export class StudentView implements OnDestroy {
 
   private curtainInitialized = false;
 
+  // Buffer signals — template reads these, not the store directly
+displayMode = signal(this.classroomStore.mode());
+displayPair = signal<ChallengePair | null>(null);
+displayDuel = signal(this.classroomStore.isDuelActive())
+
+
   constructor() {
     effect(() => {
       this.classroomStore.curtainClosed();
@@ -56,6 +63,26 @@ export class StudentView implements OnDestroy {
       this.classroomStore.leave();
       this.router.navigate([`/bye`]);
     });
+  effect(() => {
+    const mode = this.classroomStore.mode();
+    const pair = this.myPair();
+    const duel = this.classroomStore.isDuelActive();
+    const curtain = untracked(()=>this.classroomStore.curtainClosed())
+
+    if (!document.startViewTransition || curtain) {
+      this.displayMode.set(mode);
+      this.displayPair.set(pair);
+      this.displayDuel.set(duel);
+      return;
+    }
+
+    document.startViewTransition(() => {
+      this.displayMode.set(mode);
+      this.displayPair.set(pair);
+      this.displayDuel.set(duel);
+      this.cdRef.detectChanges(); // synchronous, completes before browser snapshots new state
+    });
+  });
   }
 
   ngOnDestroy(): void {

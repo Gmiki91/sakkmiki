@@ -100,3 +100,17 @@ router-outlet + * {
     background-color: #f0d9b5 !important; 
   }
 }
+
+@keyframes vt-slide-out {
+  to { transform: translateX(-1400px); opacity: 0; }
+}
+@keyframes vt-slide-in {
+  from { transform: translateX(1400px); opacity: 0; }
+}
+
+::view-transition-old(chess-mode) {
+  animation: 420ms ease-in both vt-slide-out;
+}
+::view-transition-new(chess-mode) {
+  animation: 420ms ease-out both vt-slide-in;
+}
