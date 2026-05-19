@@ -103,7 +103,25 @@ export class SimulBoard {
       this.resetFen();
     })
 
+    // Shared arrows from teacher
+    effect(() => {
+      const target = this.classroomStore.sharedArrows()?.name;
+      const arrows = this.classroomStore.sharedArrows()?.arrows ?? [];
+      if (target === 'all' || target === this.classroomStore.studentName()) {
+        this.chessBoard()?.api?.set({ drawable: { shapes: arrows } });
+      }
+    });
+
   }
+
+    onMouseUp(e: MouseEvent): void {
+    if (e.button !== 0 && e.button !== 2) return;
+    setTimeout(() => {
+      const shapes = this.chessBoard()?.api?.state.drawable.shapes ?? [];
+      this.classroomStore.sendMiniboardArrows(shapes);
+    }, 0);
+  }
+
 
   async handleSimulMove(orig: Key, dest: Key): Promise<void> {
     const color = this.classroomStore.isDuelActive()

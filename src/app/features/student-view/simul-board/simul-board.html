@@ -13,7 +13,7 @@
   </div>
 
   <div class="main-board-area">
-    <div class="overlay-wrapper">
+    <div class="overlay-wrapper" (mouseup)="onMouseUp($event)">
       <app-chess-board #chessBoard gameMode='duel' [config]="boardConfig()"></app-chess-board>
     </div>
   </div>

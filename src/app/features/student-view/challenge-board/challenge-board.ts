@@ -94,6 +94,15 @@ export class ChallengeBoard {
       this.challengeFen.set(this.challengeChess.fen());
       this.challengeLastMove.set([move.from as Key, move.to as Key]);
     });
+
+    // Incoming arrows from teacher
+    effect(() => {
+      const target = this.classroomStore.sharedArrows()?.name;
+      const arrows = this.classroomStore.sharedArrows()?.arrows ?? [];
+      if (target === 'all' || target === this.myPair()?.black || target === this.myPair()?.white) {
+        this.chessBoard()?.api?.set({ drawable: { shapes: arrows } });
+      }
+    });
   }
 
   async handleChallengeMove(orig: Key, dest: Key): Promise<void> {
@@ -114,6 +123,13 @@ export class ChallengeBoard {
     }
   }
 
+  onMouseUp(e: MouseEvent): void {
+    if (e.button !== 0 && e.button !== 2) return;
+    setTimeout(() => {
+      const shapes = this.chessBoard()?.api?.state.drawable.shapes ?? [];
+      this.classroomStore.sendMiniboardArrows(shapes);
+    }, 0);
+  }
 
 
   private executeMove(orig: Key, dest: Key, pair: ChallengePair, promotion?: 'q' | 'r' | 'n' | 'b'): void {
