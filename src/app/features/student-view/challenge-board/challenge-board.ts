@@ -142,7 +142,8 @@ export class ChallengeBoard {
     const captureAllWin = conditions?.includes('capture_all') &&
       this.challengeChess.board().flat().filter(Boolean)
         .every(p => p!.color === (this.myColor() === 'white' ? 'w' : 'b'));
-    return !!(captureAllWin || conditions?.includes(normalizedSan));
+    const mate = this.challengeChess.isCheckmate()
+    return !!(captureAllWin || conditions?.includes(normalizedSan)||mate);
   }
 
   private backrankPawnWins(dest: Key): boolean {
