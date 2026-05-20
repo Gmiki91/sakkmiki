@@ -63,6 +63,7 @@ export class ExerciseBoard  {
 
   private exerciseChess = new Chess();
   private exerciseLastMove = signal<[Key, Key] | undefined>(undefined);
+  private preMoveFen = ''; //for kingless mushroom fen
 
   activeHintOverlay = signal<{ conceptId: string; square: string } | null>(null);
 
@@ -80,7 +81,7 @@ export class ExerciseBoard  {
         showDests: ex.exerciseType === 'puzzle',
         events: { after: (orig, dest) => this.handleMove(orig, dest) },
       },
-      check: this.exerciseChess.isCheck(),
+      check : this.currentExercise().exerciseType==='mushroom' ? false :this.exerciseChess.isCheck(),
       draggable: { enabled: true, showGhost: true },
       highlight: { lastMove: true, check: true },
       lastMove: this.exerciseLastMove(),
@@ -116,7 +117,8 @@ export class ExerciseBoard  {
           this.chessBoard()?.api?.move(from, to);
         }, 250);
       }
-      this.updateStatus();
+      if(exercise.exerciseType!=='mushroom')
+        this.updateStatus();
       this.chessBoard()?.api?.set({ lastMove: [] });
     });
 
@@ -181,6 +183,7 @@ export class ExerciseBoard  {
   }
 
   private executeMove(orig: Key, dest: Key,role?:PromotionPiece): void {
+    this.preMoveFen = this.exerciseChess.fen();
     try {
       const move = this.exerciseChess.move({ from: orig, to: dest,promotion:role });
       if (move) {
@@ -247,6 +250,7 @@ export class ExerciseBoard  {
         }, 250);
       }
     } else {
+      this.soundService.play('error');
       if (hint) {
         this.isLocked.set(true);
         this.playHintSequence(hint).then(() => this.badMove(ex,true))
@@ -278,7 +282,6 @@ export class ExerciseBoard  {
   }
 
   private badMove(ex:Exercise,skipFeedback:boolean=false):void{
-    this.soundService.play('error');
     if (this.classroomStore.autoRedo()) {
       if(skipFeedback){
         //hint already shown, dont timeout to show default hint
@@ -311,8 +314,11 @@ export class ExerciseBoard  {
   }
 
   private handleMistake(): void {
-    this.exerciseChess.undo();
-    if (this.currentExercise().exerciseType === 'mushroom') this.exerciseChess.setTurn('w');
+    if (this.currentExercise().exerciseType === 'mushroom') {
+      loadChess(this.exerciseChess, this.preMoveFen);
+    } else {
+      this.exerciseChess.undo();
+    }
     this.exerciseFen.set(this.exerciseChess.fen());
     this.exerciseLastMove.set(undefined);
     this.isLocked.set(false);

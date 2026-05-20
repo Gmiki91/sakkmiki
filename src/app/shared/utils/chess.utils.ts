@@ -8,12 +8,16 @@ export const EMPTY_BOARD_FEN = '8/8/8/8/8/8/8/8 w - - 0 1';
 export const getValidMoves = (chess: Chess): Map<Key, Key[]> => {
   const dests = new Map<Key, Key[]>();
   for (const square of SQUARES) {
-    const moves = chess.moves({ square: square, verbose: true });
-    if (moves.length > 0) {
-      dests.set(
-        square,
-        moves.map((m) => m.to),
-      );
+    try {
+      const moves = chess.moves({ square: square, verbose: true });
+      if (moves.length > 0) {
+        dests.set(
+          square,
+          moves.map((m) => m.to),
+        );
+      }
+    } catch {
+      // Board may lack kings (e.g. mushroom mode) — skip
     }
   }
   return dests;
