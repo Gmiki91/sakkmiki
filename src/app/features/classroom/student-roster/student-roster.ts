@@ -65,20 +65,6 @@ export class StudentRoster {
     return result;
   });
 
-  // Effective per-student values — override from store if set, otherwise fall back to global.
-  // Recomputed automatically whenever overrides or global changes.
-  effectiveAutoRedo = computed(() => {
-    const overrides = this.store.autoRedoOverrides();
-    const global = this.store.autoRedo();
-    return (name: string) => overrides[name] ?? global;
-  });
-
-  effectiveAutoProgress = computed(() => {
-    const overrides = this.store.autoProgressOverrides();
-    const global = this.store.autoProgress();
-    return (name: string) => overrides[name] ?? global;
-  });
-
   private lastExIndex: Record<string, number> = {};
 
   constructor() {
@@ -213,8 +199,8 @@ export class StudentRoster {
     this.store.students.update(s => s.filter(x =>  x.name !==studentName));
   }
 
-  toggleStudentAutoRedo(name: string): void { this.store.sendAutoRedo(!this.effectiveAutoRedo()(name), name); }
-  toggleStudentAutoProgress(name: string): void { this.store.sendAutoProgress(!this.effectiveAutoProgress()(name), name); }
+  toggleStudentAutoRedo(name: string): void { this.store.sendAutoRedo(!this.store.autoRedoList()[name], name); }
+  toggleStudentAutoProgress(name: string): void { this.store.sendAutoProgress(!this.store.autoProgressList()[name], name); }
 
   toggleDuel(studentName: string): void {
     if (this.duelStudents().has(studentName)) {

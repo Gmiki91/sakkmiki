@@ -144,15 +144,6 @@ export class TeacherDesk {
     this.demoExercise.set(null);
   }
 
-  
-  toggleAutoRedo(): void {
-    this.store.sendAutoRedo(!this.store.autoRedo());
-  }
-
-  toggleAutoProgress(): void {
-    this.store.sendAutoProgress(!this.store.autoProgress());
-  }
-
   openPuzzleRushSetup(): void {
     this.dialog.open(PuzzleRushSetup, {
       width: '480px',

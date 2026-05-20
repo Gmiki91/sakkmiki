@@ -41,10 +41,6 @@ export class ClassroomStore {
 
   // Shared
   readonly mode = signal<ClassroomMode>('normal');
-  readonly autoRedo = signal(true);
-  readonly autoProgress = signal(true);
-  readonly autoRedoOverrides = signal<Record<string, boolean>>({});
-  readonly autoProgressOverrides = signal<Record<string, boolean>>({});
   readonly challengePairs = signal<ChallengePair[]>([]);
   readonly challengeMove = signal<{
     white: string; black: string; fen: string; from: string; to: string; over?: boolean;
@@ -60,6 +56,8 @@ export class ClassroomStore {
   readonly students = signal<StudentState[]>([]);
   readonly spectators = signal<SpectatorPresence[]>([]);
   readonly assignedLists = signal<Record<string, Exercise[]>>({});
+  readonly autoRedoList = signal<Record<string, boolean>>({});
+  readonly autoProgressList = signal<Record<string, boolean>>({});
   readonly miniboardArrows = signal<{ name: string; shapes: DrawShape[] } | null>(null);
   readonly incomingDrawingPoints = signal<{
     studentName: string; strokeId: string; color: string; points: Point[];
@@ -93,7 +91,8 @@ export class ClassroomStore {
 
   // Student-side
   readonly currentStudentFen = signal<string>(STARTING_FEN);
-
+  readonly autoRedo = signal(true);
+  readonly autoProgress = signal(true);
   readonly teacherFen = signal(STARTING_FEN);
   readonly loadedExercises = signal<Exercise[]>([]);
   readonly assignedExercises = signal<Exercise[]>([]);
@@ -250,22 +249,12 @@ this.students.update(current => {
   sendStamp(studentName: string): void { this.transport.send({ type: 'stamp', studentName }); }
   sendLock(studentName: string): void { this.transport.send({ type: 'lock', studentName }); }
   sendUnlock(studentName: string): void { this.transport.send({ type: 'unlock', studentName }); }
-  sendAutoRedo(value: boolean, studentName?: string): void {
-    if (studentName) {
-      this.autoRedoOverrides.update((o) => ({ ...o, [studentName]: value }));
-    } else {
-      this.autoRedo.set(value);
-      this.autoRedoOverrides.set({});
-    }
+  sendAutoRedo(value: boolean, studentName: string): void {
+    this.autoRedoList.update((o) => ({ ...o, [studentName]: value })); 
     this.transport.send({ type: 'set_auto_redo', value, studentName });
   }
-  sendAutoProgress(value: boolean, studentName?: string): void {
-    if (studentName) {
-      this.autoProgressOverrides.update((o) => ({ ...o, [studentName]: value }));
-    } else {
-      this.autoProgress.set(value);
-      this.autoProgressOverrides.set({});
-    }
+  sendAutoProgress(value: boolean, studentName: string): void {
+    this.autoProgressList.update((o) => ({ ...o, [studentName]: value }));
     this.transport.send({ type: 'set_auto_progress', value, studentName });
   }
   sendTeachingOverlay(concepts:TeachingConceptListItem[]): void {
@@ -484,10 +473,10 @@ this.students.update(current => {
       case 'kick':
         if( event.studentName === myName)this.kick$.next(event.studentName); break;
       case 'set_auto_redo':
-        if (!event.studentName || event.studentName === myName) this.autoRedo.set(event.value);
+        if (event.studentName === myName) this.autoRedo.set(event.value);
         break;
       case 'set_auto_progress':
-        if (!event.studentName || event.studentName === myName) this.autoProgress.set(event.value);
+        if (event.studentName === myName) this.autoProgress.set(event.value);
         break;
       case 'lock':
         if (event.studentName === myName) this.lock$.next(event.studentName); break;

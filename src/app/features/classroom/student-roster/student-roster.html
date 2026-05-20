@@ -76,8 +76,8 @@
               <button mat-raised-button class="stamp-btn" (click)="handleStamp(student.name)">Stamp</button>
             } @else {
               <button mat-icon-button
-                [class.active-toggle]="effectiveAutoRedo()(student.name)"
-                [matTooltip]="'Auto redo: ' + (effectiveAutoRedo()(student.name) ? 'ON' : 'OFF')"
+                [class.active-toggle]="this.store.autoRedoList()[student.name]"
+                [matTooltip]="'Auto redo: ' + (this.store.autoRedoList()[student.name] ? 'ON' : 'OFF')"
                 (click)="toggleStudentAutoRedo(student.name)">
                 <mat-icon fontSet="material-symbols-outlined">autopause</mat-icon>
               </button>
@@ -87,8 +87,8 @@
                 <mat-icon>{{ student.locked ? 'lock' : 'lock_open' }}</mat-icon>
               </button>
               <button mat-icon-button
-                [class.active-toggle]="effectiveAutoProgress()(student.name)"
-                [matTooltip]="'Auto progress: ' + (effectiveAutoProgress()(student.name) ? 'ON' : 'OFF')"
+                [class.active-toggle]="this.store.autoProgressList()[student.name]"
+                [matTooltip]="'Auto progress: ' + (this.store.autoProgressList()[student.name] ? 'ON' : 'OFF')"
                 (click)="toggleStudentAutoProgress(student.name)">
                 <mat-icon fontSet="material-symbols-outlined">autoplay</mat-icon>
               </button>
