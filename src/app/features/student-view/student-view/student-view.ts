@@ -6,7 +6,6 @@ import { ClassroomStore } from '../../../core/services/classroom-store.service';
 import { SoundService } from '../../../core/services/sound.service';
 import { ExerciseBoard } from '../exercise-board/exercise-board';
 import { ChallengeBoard } from '../challenge-board/challenge-board';
-import { SimulBoard } from '../simul-board/simul-board';
 import { DuelBoard } from '../duel-board/duel-board';
 import { GatheredBoard } from '../gathered-board/gathered-board';
 import { PuzzleRushBoard } from '../../../shared/components/puzzle-rush-board/puzzle-rush-board';
@@ -18,7 +17,7 @@ import { ChallengePair } from '../../../shared/models/challenge-pair.model';
 
 @Component({
   selector: 'app-student-view',
-  imports: [CommonModule,MatCardModule, MatIconModule, MatButtonModule, ExerciseBoard, ChallengeBoard, SimulBoard, DuelBoard, GatheredBoard, PuzzleRushBoard, PuzzleRushRacer],
+  imports: [CommonModule,MatCardModule, MatIconModule, MatButtonModule, ExerciseBoard, ChallengeBoard, DuelBoard, GatheredBoard, PuzzleRushBoard, PuzzleRushRacer],
   templateUrl: './student-view.html',
   styleUrl: './student-view.scss',
 })
@@ -39,9 +38,8 @@ export class StudentView implements OnDestroy {
 
   title = computed(() => {
     if (this.classroomStore.isPuzzleRushActive()) return 'Verseny!';
-    if(this.classroomStore.isDuelActive()) return 'Párbaj a tanár ellen 😱';
+    if(this.classroomStore.isDuelActive()) return 'Játék a tanár ellen 😱';
     if(this.classroomStore.mode() === 'gathered')return 'Achtung!';
-    if(this.classroomStore.mode()==='simul')return 'Szimultán a tanár ellen 😱'
     if (this.myPair()) return `${this.myPair()!.white} vs ${this.myPair()!.black}`;
     return `Szia ${this.classroomStore.studentName()}! ${this.emoji()}`;
   });

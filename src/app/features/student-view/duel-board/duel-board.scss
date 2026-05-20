@@ -1,9 +1,17 @@
 .duel-layout {
   display: flex;
-  flex-direction: column;
   align-items: center;
+  gap: 16px;
 }
-
+.simul-sidebar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  flex: 0 0 auto;
+  width: var(--mini-board-size);
+  min-height: 0;
+  h2 { text-align: center; margin: 0 0 4px; }
+}
 .main-board-area {
   display: flex;
   flex-direction: column;
@@ -16,5 +24,12 @@
   border-radius: 6px;
   overflow: hidden;
   box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.25);
+  app-chess-board { display: block; width: 100%; height: 100%; }
+}
+.peer-board-wrapper {
+  width: var(--mini-board-size);
+  height: var(--mini-board-size);
+  border-radius: 4px;
+  overflow: hidden;
   app-chess-board { display: block; width: 100%; height: 100%; }
 }

@@ -14,7 +14,7 @@ import { TeachingConceptListItem } from '../../shared/models/teaching-concept.mo
 
 
 export type { SpectatorPresence };
-export type ClassroomMode = 'normal' | 'gathered' | 'simul';
+export type ClassroomMode = 'normal' | 'gathered';
 export type StudentState = {
   name: string;
   online: boolean;
@@ -76,8 +76,8 @@ export class ClassroomStore {
   readonly incomingSimulStudentMove = signal<{ studentName: string; fen: string; from: string; to: string } | null>(null);
 
   // Duel
-  readonly incomingDuelTeacherMove = signal<{ studentName: string; fen: string; from: string; to: string; capture: boolean } | null>(null);
-  readonly incomingDuelStudentMove = signal<{ studentName: string; fen: string; from: string; to: string } | null>(null);
+  readonly incomingDuelTeacherMove$ = new Subject<{ studentName: string; fen: string; from: string; to: string; capture: boolean }>();
+  readonly incomingDuelStudentMove$ = new Subject<{ studentName: string; fen: string; from: string; to: string }>();
   readonly isDuelActive = signal(false);
   readonly duelColor = signal<'w' | 'b'>('b');
 
@@ -212,9 +212,7 @@ this.students.update(current => {
     this.transport.send({ type: 'sync_all_challenge_pairs', pairs: this.challengePairs() });
     const mode = this.mode();
     if (mode === 'gathered') this.transport.send({ type: 'gather' });
-    else if (mode === 'simul') this.transport.send({ type: 'simul_start' });
     else this.transport.send({ type: 'disperse' }); //normal mode
-
   }
 
   // when student is thrown back to "main board", have an unconfigured board
@@ -305,13 +303,6 @@ this.students.update(current => {
     this.transport.send({ type: 'curtain', closed });
   }
 
-  sendDuelStart(studentName: string, fen: string, studentColor: 'w' | 'b'): void {
-    this.transport.send({ type: 'duel_start', studentName, fen, studentColor });
-  }
-  sendDuelEnd(studentName: string): void {
-    this.transport.send({ type: 'duel_end', studentName });
-  }
-
   sendPuzzleRushStart(listId: string, duration: number, timeBonus: number, timePenalty: number, studentColors: Record<string, string>, exercises: Exercise[]): void {
     this.isPuzzleRushActive.set(true);
     this.puzzleRushListId.set(listId);
@@ -336,25 +327,14 @@ this.students.update(current => {
   }
 
   // ----------------------------------------------------------------
-  // Simul
+  // Duel
   // ----------------------------------------------------------------
 
-  startSimul(): void {
-    this.mode.set('simul');
-    for (const student of this.students()) {
-      this.transport.send({ type: 'request_fen', target: student.name });
-    }
-    this.transport.send({ type: 'simul_start' });
+  sendDuelStart(studentName: string, fen: string, studentColor: 'w' | 'b'): void {
+    this.transport.send({ type: 'duel_start', studentName, fen, studentColor });
   }
-  stopSimul(): void {
-    this.mode.set('normal');
-    this.transport.send({ type: 'simul_end' });
-  }
-  sendSimulTeacherMove(studentName: string, fen: string, from: string, to: string,capture:boolean): void {
-    this.transport.send({ type: 'simul_teacher_move', studentName, fen, from, to,capture });
-  }
-  sendSimulStudentMove(fen: string, from: string, to: string): void {
-    this.transport.send({ type: 'simul_student_move', studentName: this.studentName(), fen, from, to });
+  sendDuelEnd(studentName: string): void {
+    this.transport.send({ type: 'duel_end', studentName });
   }
   sendDuelTeacherMove(studentName: string, fen: string, from: string, to: string, capture: boolean): void {
     this.transport.send({ type: 'duel_teacher_move', studentName, fen, from, to, capture });
@@ -456,8 +436,7 @@ this.students.update(current => {
       case 'drawing_color':
         this.incomingDrawingColor.set({ studentName: event.studentName, color: event.color }); break;
       case 'stamp_annotation': this.incomingStampAnnotation.set(event.annotation); break;
-      case 'simul_student_move': this.incomingSimulStudentMove.set(event); break;
-      case 'duel_student_move': this.incomingDuelStudentMove.set(event); break;
+      case 'duel_student_move': this.incomingDuelStudentMove$.next(event); break;
       case 'student_ready': 
         this.resyncEphemeralState();
         this.resync$.next(event.name);
@@ -539,13 +518,8 @@ this.students.update(current => {
         this.incomingStampAnnotationClear.set({ studentName: event.studentName }); break;
       case 'stamp_annotation_clear_all':
         this.incomingStampAnnotationClear.set({ studentName: 'all' }); break;
-      case 'simul_start': this.mode.set('simul'); break;
-      case 'simul_end': this.mode.set('normal'); this.resetFen(); break;
-      case 'simul_teacher_move':
-        this.incomingSimulTeacherMove.set({ studentName: event.studentName, fen: event.fen, from: event.from, to: event.to,capture:event.capture });
-        break;
       case 'duel_teacher_move':
-        this.incomingDuelTeacherMove.set({ studentName: event.studentName, fen: event.fen, from: event.from, to: event.to, capture: event.capture });
+        this.incomingDuelTeacherMove$.next({ studentName: event.studentName, fen: event.fen, from: event.from, to: event.to, capture: event.capture });
         break;
       case 'white_board_text': this.whiteBoardText.set(event.text);break;
       case 'request_fen':if (event.target === this.studentName()) 

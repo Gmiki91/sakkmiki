@@ -1,4 +1,5 @@
 import { Component, inject, signal, computed, effect, viewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Chess } from 'chess.js';
 import { Key } from '@lichess-org/chessground/types';
 import { Config } from '@lichess-org/chessground/config';
@@ -13,7 +14,7 @@ import {
 } from '../../../shared/utils/chess.utils';
 import { Promotion, PromotionPiece } from '../../../shared/components/promotion/promotion';
 import { PromotionService } from '../../../core/services/promotion.service';
-
+type PeerBoard = { name: string; config: Config };
 @Component({
   selector: 'app-duel-board',
   imports: [ChessBoard, Promotion],
@@ -27,9 +28,10 @@ export class DuelBoard {
   promotionService = inject(PromotionService);
 
   private fen = signal<string>(STARTING_FEN);
-
-  private duelChess = new Chess();
   private duelLastMove = signal<[Key, Key] | undefined>(undefined);
+  peerBoards = signal<PeerBoard[]>([]);
+  
+  private duelChess = new Chess();
 
   boardConfig = computed<Config>(() => {
     const color = this.classroomStore.duelColor();
@@ -64,10 +66,11 @@ export class DuelBoard {
     });
 
     // Receive teacher's move
-    effect(() => {
-      const move = this.classroomStore.incomingDuelTeacherMove();
-      if (!move) return;
-      this.classroomStore.incomingDuelTeacherMove.set(null);
+    this.classroomStore.incomingDuelTeacherMove$.pipe(takeUntilDestroyed()).subscribe(move=>{
+      if (move.studentName !== this.classroomStore.studentName()) {
+        this.updatePeerBoard(move.studentName, move.fen, move.from, move.to);
+        return;
+      }
       try {
         loadChess(this.duelChess, move.fen);
         this.fen.set(this.duelChess.fen());
@@ -76,6 +79,12 @@ export class DuelBoard {
       } catch {
         /* ignore */
       }
+    });
+
+    // Receive a peer student's move (sidebar update)
+    this.classroomStore.incomingDuelStudentMove$.pipe(takeUntilDestroyed()).subscribe(move=>{
+      if (move.studentName !== this.classroomStore.studentName())
+        this.updatePeerBoard(move.studentName, move.fen, move.from, move.to);
     });
 
     // If duelColor is changed by teacher, reset fen
@@ -126,6 +135,29 @@ export class DuelBoard {
     } catch {
       this.fen.set(this.duelChess.fen());
     }
+  }
+
+  private updatePeerBoard(name: string, fen: string, from: string, to: string): void {
+    const chess = new Chess();
+    try {
+      loadChess(chess, fen);
+    } catch {
+      return;
+    }
+    const config: Config = {
+      fen,
+      orientation: 'black',
+      coordinates: false,
+      movable: { free: false, color: undefined },
+      draggable: { enabled: false },
+      lastMove: [from as Key, to as Key],
+      highlight: { lastMove: true, check: chess.isCheck() },
+    };
+    this.peerBoards.update((boards) => {
+      const entry: PeerBoard = { name, config };
+      const exists = boards.find((b) => b.name === name);
+      return exists ? boards.map((b) => (b.name === name ? entry : b)) : [...boards, entry];
+    });
   }
 
   private resetFen() {

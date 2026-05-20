@@ -29,7 +29,6 @@
       }
     } @else {
       <mat-card class="student-card"
-        [class.duel-active]="duelColors()[student.name] !== undefined"
         [attr.draggable]="!readonly() || null"
         (dragstart)="onDragStart(student.name)"
         (dragover)="!readonly() && $event.preventDefault()"
@@ -50,13 +49,14 @@
         </mat-card-header>
         <mat-card-content>
           <div class="mini-board"
-              [class.awaiting-teacher]="store.mode()==='simul' && isAwaitingTeacher(student.name)"
+              [class.duel-active]="duelColors()[student.name] !== undefined"
+              [class.awaiting-teacher]="isAwaitingTeacher(student.name)"
               (mouseup)="onBoardMouseUp($event, student.name)"
               (contextmenu)="$event.preventDefault()">
-              @if (isLoadingList()) {
+            @if (isLoadingList()) {
               <div class="board-loading"><mat-spinner diameter="32"></mat-spinner></div>
             } @else {
-              <app-chess-board  [config]="store.mode()==='simul' ? simulBoardConfigFor(student.name) : duelColors()[student.name] !== undefined ? duelBoardConfigFor(student.name) : boardConfigFor(student.fen)" #studentBoard></app-chess-board>
+              <app-chess-board  [config]="duelColors()[student.name] !== undefined ? duelBoardConfigFor(student.name) : boardConfigFor(student.fen)" #studentBoard></app-chess-board>
             }
           </div>
           @if (promotionService.pending() && this.promotionAgainst()===student.name) {

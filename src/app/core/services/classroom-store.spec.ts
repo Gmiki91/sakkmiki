@@ -99,16 +99,6 @@ describe('resyncEphemeralState', () => {
     expect(transport.sentOfType('gather').length).toBe(1);
   });
 
-  it('sends simul_start to new joiner when in simul mode', () => {
-    const transport = new FakeRealtimeTransport();
-    const store = makeStore(transport);
-    store.joinAsTeacher('room-1');
-    store.startSimul();
-    transport.clear();
-
-    transport.presenceSync$.next([{ role: 'student', name: 'Alice' }]);
-    expect(transport.sentOfType('simul_start').length).toBe(1);
-  });
 
   it('sends current curtain state to new joiner', () => {
     const transport = new FakeRealtimeTransport();
@@ -392,17 +382,6 @@ describe('wired teacher-student scenarios', () => {
     expect(aliceStore.curtainClosed()).toBe(true);
     teacherStore.sendCurtain(false);
     expect(aliceStore.curtainClosed()).toBe(false);
-  });
-
-  it('teacher startSimul → student mode becomes simul', () => {
-    teacherStore.startSimul();
-    expect(aliceStore.mode()).toBe('simul');
-  });
-
-  it('teacher stopSimul → student mode returns to normal', () => {
-    teacherStore.startSimul();
-    teacherStore.stopSimul();
-    expect(aliceStore.mode()).toBe('normal');
   });
 
   it('teacher kick → student kick$ fires', () => {

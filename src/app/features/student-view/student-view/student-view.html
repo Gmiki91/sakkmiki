@@ -1,7 +1,7 @@
 <div class="background" [ngClass]="{
   'exercise':classroomStore.mode() === 'normal',
   'class':classroomStore.mode() === 'gathered',
-  'duel':classroomStore.mode() === 'simul'|| myPair() || classroomStore.isDuelActive(),
+  'duel': myPair() || classroomStore.isDuelActive(),
 }"></div>
 <button class="volume-btn" (click)="toggleSound()">
   <mat-icon>{{ soundService.isMute() ? 'volume_off' : 'volume_up' }}</mat-icon>
@@ -33,8 +33,6 @@
         <app-puzzle-rush-racer [readonly]="true"></app-puzzle-rush-racer>
       } @else if (displayMode() === 'gathered') {
         <app-gathered-board></app-gathered-board>
-      } @else if (displayMode() === 'simul') {
-        <app-simul-board></app-simul-board>
       } @else if (displayDuel()) {
         <app-duel-board></app-duel-board>
       } @else if (displayPair()) {

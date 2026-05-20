@@ -153,9 +153,6 @@ export class TeacherDesk {
     this.store.sendAutoProgress(!this.store.autoProgress());
   }
 
-  startSimul(): void { this.store.startSimul(); }
-  stopSimul(): void { this.store.stopSimul(); }
-
   openPuzzleRushSetup(): void {
     this.dialog.open(PuzzleRushSetup, {
       width: '480px',
