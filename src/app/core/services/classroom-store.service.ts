@@ -76,6 +76,8 @@ export class ClassroomStore {
   readonly incomingSimulStudentMove = signal<{ studentName: string; fen: string; from: string; to: string } | null>(null);
 
   // Duel
+  readonly incomingDuelTeacherMove = signal<{ studentName: string; fen: string; from: string; to: string; capture: boolean } | null>(null);
+  readonly incomingDuelStudentMove = signal<{ studentName: string; fen: string; from: string; to: string } | null>(null);
   readonly isDuelActive = signal(false);
   readonly duelColor = signal<'w' | 'b'>('b');
 
@@ -354,6 +356,12 @@ this.students.update(current => {
   sendSimulStudentMove(fen: string, from: string, to: string): void {
     this.transport.send({ type: 'simul_student_move', studentName: this.studentName(), fen, from, to });
   }
+  sendDuelTeacherMove(studentName: string, fen: string, from: string, to: string, capture: boolean): void {
+    this.transport.send({ type: 'duel_teacher_move', studentName, fen, from, to, capture });
+  }
+  sendDuelStudentMove(fen: string, from: string, to: string): void {
+    this.transport.send({ type: 'duel_student_move', studentName: this.studentName(), fen, from, to });
+  }
 
   // ----------------------------------------------------------------
   // Send methods (student)
@@ -448,7 +456,8 @@ this.students.update(current => {
       case 'drawing_color':
         this.incomingDrawingColor.set({ studentName: event.studentName, color: event.color }); break;
       case 'stamp_annotation': this.incomingStampAnnotation.set(event.annotation); break;
-      case 'simul_student_move': this.incomingSimulStudentMove.set(event); break;     
+      case 'simul_student_move': this.incomingSimulStudentMove.set(event); break;
+      case 'duel_student_move': this.incomingDuelStudentMove.set(event); break;
       case 'student_ready': 
         this.resyncEphemeralState();
         this.resync$.next(event.name);
@@ -534,6 +543,9 @@ this.students.update(current => {
       case 'simul_end': this.mode.set('normal'); this.resetFen(); break;
       case 'simul_teacher_move':
         this.incomingSimulTeacherMove.set({ studentName: event.studentName, fen: event.fen, from: event.from, to: event.to,capture:event.capture });
+        break;
+      case 'duel_teacher_move':
+        this.incomingDuelTeacherMove.set({ studentName: event.studentName, fen: event.fen, from: event.from, to: event.to, capture: event.capture });
         break;
       case 'white_board_text': this.whiteBoardText.set(event.text);break;
       case 'request_fen':if (event.target === this.studentName()) 

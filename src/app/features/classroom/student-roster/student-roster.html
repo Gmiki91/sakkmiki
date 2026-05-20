@@ -56,7 +56,7 @@
               @if (isLoadingList()) {
               <div class="board-loading"><mat-spinner diameter="32"></mat-spinner></div>
             } @else {
-              <app-chess-board  [config]="store.mode()==='simul' || duelColors()[student.name] !== undefined ? simulBoardConfigFor(student.name) : boardConfigFor(student.fen)" #studentBoard></app-chess-board>
+              <app-chess-board  [config]="store.mode()==='simul' ? simulBoardConfigFor(student.name) : duelColors()[student.name] !== undefined ? duelBoardConfigFor(student.name) : boardConfigFor(student.fen)" #studentBoard></app-chess-board>
             }
           </div>
           @if (promotionService.pending() && this.promotionAgainst()===student.name) {

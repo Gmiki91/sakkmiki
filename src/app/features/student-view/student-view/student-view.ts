@@ -7,6 +7,7 @@ import { SoundService } from '../../../core/services/sound.service';
 import { ExerciseBoard } from '../exercise-board/exercise-board';
 import { ChallengeBoard } from '../challenge-board/challenge-board';
 import { SimulBoard } from '../simul-board/simul-board';
+import { DuelBoard } from '../duel-board/duel-board';
 import { GatheredBoard } from '../gathered-board/gathered-board';
 import { PuzzleRushBoard } from '../../../shared/components/puzzle-rush-board/puzzle-rush-board';
 import { PuzzleRushRacer } from '../../../core/../features/classroom/puzzle-rush-racer/puzzle-rush-racer';
@@ -17,7 +18,7 @@ import { ChallengePair } from '../../../shared/models/challenge-pair.model';
 
 @Component({
   selector: 'app-student-view',
-  imports: [CommonModule,MatCardModule, MatIconModule, MatButtonModule, ExerciseBoard, ChallengeBoard, SimulBoard, GatheredBoard, PuzzleRushBoard, PuzzleRushRacer],
+  imports: [CommonModule,MatCardModule, MatIconModule, MatButtonModule, ExerciseBoard, ChallengeBoard, SimulBoard, DuelBoard, GatheredBoard, PuzzleRushBoard, PuzzleRushRacer],
   templateUrl: './student-view.html',
   styleUrl: './student-view.scss',
 })

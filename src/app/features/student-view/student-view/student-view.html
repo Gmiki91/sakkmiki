@@ -33,8 +33,10 @@
         <app-puzzle-rush-racer [readonly]="true"></app-puzzle-rush-racer>
       } @else if (displayMode() === 'gathered') {
         <app-gathered-board></app-gathered-board>
-      } @else if (displayMode() === 'simul' || displayDuel()) {
+      } @else if (displayMode() === 'simul') {
         <app-simul-board></app-simul-board>
+      } @else if (displayDuel()) {
+        <app-duel-board></app-duel-board>
       } @else if (displayPair()) {
         <app-challenge-board></app-challenge-board>
       } @else {

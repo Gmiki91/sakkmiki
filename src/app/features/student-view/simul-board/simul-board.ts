@@ -61,9 +61,9 @@ export class SimulBoard {
 
   constructor() {
     this.soundService.play('openingBell');
-    // Initialize on simul or duel start
+    // Initialize on simul start
     effect(() => {
-      if (this.classroomStore.mode() === 'simul' || this.classroomStore.isDuelActive()) {
+      if (this.classroomStore.mode() === 'simul') {
         this.resetFen();
       }
     });
@@ -97,12 +97,6 @@ export class SimulBoard {
       this.updatePeerBoard(move.studentName, move.fen, move.from, move.to);
     });
 
-    // If duelColor is changed by teacher, reset fen
-    effect(()=>{
-      this.classroomStore.duelColor();
-      this.resetFen();
-    })
-
     // Shared arrows from teacher
     effect(() => {
       const target = this.classroomStore.sharedArrows()?.name;
@@ -124,10 +118,7 @@ export class SimulBoard {
 
 
   async handleSimulMove(orig: Key, dest: Key): Promise<void> {
-    const color = this.classroomStore.isDuelActive()
-      ? this.classroomStore.duelColor()
-      : 'b';
-    if (this.simulChess.turn() !== color) return;
+    if (this.simulChess.turn() !== 'b') return;
     const piece = this.simulChess.get(orig as any)!;
     if (isPawnPromotion(dest, piece)) {
       const role = await this.promotionService.requestPromotion(orig,dest);
