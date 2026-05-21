@@ -1,0 +1,14 @@
+<div class="captured-pieces">
+  @for (piece of this.pieces(); track $index) {
+    <span class="figue" [class.white]="color() === 'w'">{{ piece }}</span>
+  }
+  @if (color() === 'w') {
+    @if (score() < 0) {
+      <span>{{ score() * -1 }}</span>
+    }
+  } @else {
+    @if (score() > 0) {
+      <span>{{ score() }}</span>
+    }
+  }
+</div>

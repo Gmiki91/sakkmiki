@@ -42,3 +42,8 @@
     text-align: center;
   }
 }
+.panel-divider {
+  height: 1px;
+  background: var(--mat-sys-outline-variant);
+  margin: 4px 0;
+}

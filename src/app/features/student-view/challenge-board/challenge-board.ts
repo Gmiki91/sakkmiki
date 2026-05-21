@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, effect, viewChild } from '@angular/core';
+import { Component, inject, signal, computed, effect, viewChild, output } from '@angular/core';
 import { Chess, Move } from 'chess.js';
 import { Key } from '@lichess-org/chessground/types';
 import { Config } from '@lichess-org/chessground/config';
@@ -9,6 +9,7 @@ import { ChallengePair } from '../../../shared/models/challenge-pair.model';
 import { getValidMoves, isPawnPromotion, loadChess, STARTING_FEN } from '../../../shared/utils/chess.utils';
 import { Promotion } from "../../../shared/components/promotion/promotion";
 import { PromotionService } from '../../../core/services/promotion.service';
+import { CapturedPiece } from '../../../shared/models/captured-piece.model';
 
 @Component({
   selector: 'app-challenge-board',
@@ -21,6 +22,10 @@ export class ChallengeBoard {
   private classroomStore = inject(ClassroomStore);
   private soundService = inject(SoundService);
   promotionService = inject(PromotionService);
+  
+  capture = output<CapturedPiece>();
+  promotion = output<CapturedPiece>();
+  clearCapturedRack = output<void>();
 
   myPair = computed(() =>
     this.classroomStore.challengePairs().find(
@@ -71,6 +76,7 @@ export class ChallengeBoard {
       this.challengeFen.set(this.challengeChess.fen());
       this.challengeLastMove.set(undefined);
       this.chessBoard()?.api?.set({ lastMove: [] });
+      this.clearCapturedRack.emit();
     });
 
     effect(() => {
@@ -81,18 +87,21 @@ export class ChallengeBoard {
 
     // Incoming move from opponent
     effect(() => {
-      const move = this.classroomStore.challengeMove();
-      if (!move) return;
+      const event = this.classroomStore.challengeMove();
+      if (!event) return;
       const pair = this.myPair();
-      if (!pair || move.white !== pair.white || move.black !== pair.black) return;
-      if (move.over) {
-        this.challengeChess.move({ ...move, promotion: 'q' });
+      if (!pair || event.white !== pair.white || event.black !== pair.black) return;
+      if(event.move.captured)this.capture.emit({piece:event.move.captured,color:event.move.color})
+      if(event.move.promotion)this.promotion.emit({piece:event.move.promotion,color:event.move.color});
+      if (event.over) {
+        this.challengeChess.move({ from:event.move.from,to:event.move.to, promotion: 'q' });
         this.soundService.play('lost');
+        this.challengeChess.setTurn(event.move.color)
       } else {
-        loadChess(this.challengeChess, move.fen);
+        loadChess(this.challengeChess, event.fen);
       }
       this.challengeFen.set(this.challengeChess.fen());
-      this.challengeLastMove.set([move.from as Key, move.to as Key]);
+      this.challengeLastMove.set([event.move.from as Key, event.move.to as Key]);
     });
 
     // Incoming arrows from teacher
@@ -110,14 +119,9 @@ export class ChallengeBoard {
     if (!pair) return;
     const piece = this.challengeChess.get(orig as any)!;
     if (isPawnPromotion(dest,piece)) {
-      if (this.backrankPawnWins(dest)) {
-        this.classroomStore.sendChallengeMove(pair.white, pair.black, this.challengeChess.fen(), orig, dest, true);
-        this.soundService.playRandomCheering();
-      } else {
-        const role = await this.promotionService.requestPromotion(orig,dest);
-        this.executeMove(orig,dest,pair,role);
-        return;
-      }
+      const role = await this.promotionService.requestPromotion(orig,dest);
+      this.executeMove(orig,dest,pair,role);
+      return;
     } else {
       this.executeMove(orig, dest, pair);
     }
@@ -136,11 +140,19 @@ export class ChallengeBoard {
     try {
       const move = this.challengeChess.move({ from: orig, to: dest, promotion });
       if (!move) return;
+      if(move.captured)this.capture.emit({piece:move.captured,color:move.color});
+      if(move.promotion)this.promotion.emit({piece:move.promotion,color:move.color});
+
+      if (this.backrankPawnWins(dest)) {
+        this.classroomStore.sendChallengeMove(pair.white, pair.black, this.challengeChess.fen(), move, true);
+        this.soundService.playRandomCheering();
+        return;
+      }
       this.challengeFen.set(this.challengeChess.fen());
       this.challengeLastMove.set([orig, dest]);
       this.soundService.play(move.captured ? 'take' : 'move');
       const win = this.checkWinConditions(move);
-      this.classroomStore.sendChallengeMove(pair.white, pair.black, this.challengeChess.fen(), orig, dest, win);
+      this.classroomStore.sendChallengeMove(pair.white, pair.black, this.challengeChess.fen(), move, win);
       if (win) this.soundService.playRandomCheering();
       if (promotion) this.chessBoard()?.api?.set({ fen: this.challengeChess.fen() });
     } catch {

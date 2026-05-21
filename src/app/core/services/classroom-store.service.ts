@@ -11,6 +11,7 @@ import { ExerciseList as List } from '../../shared/models/exercise-list.model';
 import { STARTING_FEN } from '../../shared/utils/chess.utils';
 import { Point, StampAnnotation } from '../../shared/models/drawing.model';
 import { TeachingConceptListItem } from '../../shared/models/teaching-concept.model';
+import { Move } from 'chess.js';
 
 
 export type { SpectatorPresence };
@@ -43,7 +44,7 @@ export class ClassroomStore {
   readonly mode = signal<ClassroomMode>('normal');
   readonly challengePairs = signal<ChallengePair[]>([]);
   readonly challengeMove = signal<{
-    white: string; black: string; fen: string; from: string; to: string; over?: boolean;
+    white: string; black: string; fen: string; move:Move; over?: boolean;
   } | null>(null);
   readonly loadedList = signal<Exercise[]>([]);
   readonly loadedListTitle = signal<string>('');
@@ -69,13 +70,9 @@ export class ClassroomStore {
   readonly incomingStampAnnotation = signal<StampAnnotation | null>(null);
   readonly incomingStampAnnotationClear = signal<{ studentName: string } | null>(null);
 
-  // Simul
-  readonly incomingSimulTeacherMove = signal<{ studentName: string; fen: string; from: string; to: string; capture: boolean } | null>(null);
-  readonly incomingSimulStudentMove = signal<{ studentName: string; fen: string; from: string; to: string } | null>(null);
-
   // Duel
-  readonly incomingDuelTeacherMove$ = new Subject<{ studentName: string; fen: string; from: string; to: string; capture: boolean }>();
-  readonly incomingDuelStudentMove$ = new Subject<{ studentName: string; fen: string; from: string; to: string }>();
+  readonly incomingDuelTeacherMove$ = new Subject<{ studentName: string; fen: string; move:Move }>();
+  readonly incomingDuelStudentMove$ = new Subject<{ studentName: string; fen: string; move:Move  }>();
   readonly isDuelActive = signal(false);
   readonly duelColor = signal<'w' | 'b'>('b');
 
@@ -325,11 +322,11 @@ this.students.update(current => {
   sendDuelEnd(studentName: string): void {
     this.transport.send({ type: 'duel_end', studentName });
   }
-  sendDuelTeacherMove(studentName: string, fen: string, from: string, to: string, capture: boolean): void {
-    this.transport.send({ type: 'duel_teacher_move', studentName, fen, from, to, capture });
+  sendDuelTeacherMove(studentName: string, fen: string, move:Move): void {
+    this.transport.send({ type: 'duel_teacher_move', studentName, fen, move });
   }
-  sendDuelStudentMove(fen: string, from: string, to: string): void {
-    this.transport.send({ type: 'duel_student_move', studentName: this.studentName(), fen, from, to });
+  sendDuelStudentMove(fen: string,  move:Move): void {
+    this.transport.send({ type: 'duel_student_move', studentName: this.studentName(), fen,  move });
   }
 
   // ----------------------------------------------------------------
@@ -357,8 +354,8 @@ this.students.update(current => {
   // ----------------------------------------------------------------
 
   syncChallengePair(pair: ChallengePair): void { this.transport.send({ type: 'sync_challenge_pair', pair }); }
-  sendChallengeMove(white: string, black: string, fen: string, from: string, to: string, over?: boolean): void {
-    this.transport.send({ type: 'challenge_move', white, black, fen, from, to, over });
+  sendChallengeMove(white: string, black: string, fen: string, move:Move, over?: boolean): void {
+    this.transport.send({ type: 'challenge_move', white, black, fen, move, over });
   }
   sendChallengeRemove(pair: ChallengePair): void { this.transport.send({ type: 'challenge_remove', pair }); }
   sendChallengeRematch(pair: ChallengePair): void { this.transport.send({ type: 'challenge_rematch', pair }); }
@@ -508,7 +505,7 @@ this.students.update(current => {
       case 'stamp_annotation_clear_all':
         this.incomingStampAnnotationClear.set({ studentName: 'all' }); break;
       case 'duel_teacher_move':
-        this.incomingDuelTeacherMove$.next({ studentName: event.studentName, fen: event.fen, from: event.from, to: event.to, capture: event.capture });
+        this.incomingDuelTeacherMove$.next({ studentName: event.studentName, fen: event.fen, move: event.move});
         break;
       case 'white_board_text': this.whiteBoardText.set(event.text);break;
       case 'request_fen':if (event.target === this.studentName()) 
@@ -547,7 +544,7 @@ this.students.update(current => {
       case 'challenge_move':
         this.challengeMove.set({
           white: event.white, black: event.black, fen: event.fen,
-          from: event.from, to: event.to, over: event.over,
+          move: event.move, over: event.over,
         }); break;
       case 'challenge_rematch':
         if(event.pair.black===this.studentName()||event.pair.white===this.studentName()){

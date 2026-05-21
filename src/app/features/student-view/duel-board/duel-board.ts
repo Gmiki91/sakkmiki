@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, effect, viewChild } from '@angular/core';
+import { Component, inject, signal, computed, effect, viewChild, output } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Chess } from 'chess.js';
 import { Key } from '@lichess-org/chessground/types';
@@ -14,6 +14,7 @@ import {
 } from '../../../shared/utils/chess.utils';
 import { Promotion, PromotionPiece } from '../../../shared/components/promotion/promotion';
 import { PromotionService } from '../../../core/services/promotion.service';
+import { CapturedPiece } from '../../../shared/models/captured-piece.model';
 type PeerBoard = { name: string; config: Config };
 @Component({
   selector: 'app-duel-board',
@@ -26,6 +27,10 @@ export class DuelBoard {
   private classroomStore = inject(ClassroomStore);
   private soundService = inject(SoundService);
   promotionService = inject(PromotionService);
+
+  capture = output<CapturedPiece>();
+  promotion = output<CapturedPiece>();
+  clearCapturedRack = output<void>();
 
   private fen = signal<string>(STARTING_FEN);
   private duelLastMove = signal<[Key, Key] | undefined>(undefined);
@@ -66,25 +71,27 @@ export class DuelBoard {
     });
 
     // Receive teacher's move
-    this.classroomStore.incomingDuelTeacherMove$.pipe(takeUntilDestroyed()).subscribe(move=>{
-      if (move.studentName !== this.classroomStore.studentName()) {
-        this.updatePeerBoard(move.studentName, move.fen, move.from, move.to);
+    this.classroomStore.incomingDuelTeacherMove$.pipe(takeUntilDestroyed()).subscribe(event=>{
+      if (event.studentName !== this.classroomStore.studentName()) {
+        this.updatePeerBoard(event.studentName, event.fen, event.move.from, event.move.to);
         return;
       }
       try {
-        loadChess(this.duelChess, move.fen);
+        loadChess(this.duelChess, event.fen);
         this.fen.set(this.duelChess.fen());
-        this.duelLastMove.set([move.from as Key, move.to as Key]);
-        this.soundService.play(move.capture ? 'take' : 'move');
+        this.duelLastMove.set([event.move.from as Key, event.move.to as Key]);
+        this.soundService.play(event.move.captured ? 'take' : 'move');
+        if(event.move.captured)this.capture.emit({piece:event.move.captured,color:event.move.color});
+        if(event.move.promotion)this.promotion.emit({piece:event.move.promotion,color:event.move.color});
       } catch {
         /* ignore */
       }
     });
 
     // Receive a peer student's move (sidebar update)
-    this.classroomStore.incomingDuelStudentMove$.pipe(takeUntilDestroyed()).subscribe(move=>{
-      if (move.studentName !== this.classroomStore.studentName())
-        this.updatePeerBoard(move.studentName, move.fen, move.from, move.to);
+    this.classroomStore.incomingDuelStudentMove$.pipe(takeUntilDestroyed()).subscribe(event=>{
+      if (event.studentName !== this.classroomStore.studentName())
+        this.updatePeerBoard(event.studentName, event.fen, event.move.from, event.move.to);
     });
 
     // If duelColor is changed by teacher, reset fen
@@ -127,11 +134,15 @@ export class DuelBoard {
     try {
       const move = this.duelChess.move({ from: orig, to: dest, promotion });
       if (!move) return;
+      if(move.captured)this.capture.emit({piece:move.captured,color:move.color})
       this.fen.set(this.duelChess.fen());
       this.duelLastMove.set([orig, dest]);
       this.soundService.play(move.captured ? 'take' : 'move');
-      if (promotion) this.chessBoard()?.api?.set({ fen: this.duelChess.fen() });
-      this.classroomStore.sendDuelStudentMove(this.duelChess.fen(), orig, dest);
+      if (promotion){
+        this.chessBoard()?.api?.set({ fen: this.duelChess.fen() });
+        this.promotion.emit({piece:promotion,color:move.color});
+      } 
+      this.classroomStore.sendDuelStudentMove(this.duelChess.fen(), move);
     } catch {
       this.fen.set(this.duelChess.fen());
     }
@@ -165,5 +176,6 @@ export class DuelBoard {
     loadChess(this.duelChess, fen);
     this.fen.set(fen);
     this.duelLastMove.set(undefined);
+    this.clearCapturedRack.emit();
   }
 }

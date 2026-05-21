@@ -1,8 +1,11 @@
-<div class="background" [ngClass]="{
-  'exercise':classroomStore.mode() === 'normal',
-  'class':classroomStore.mode() === 'gathered',
-  'duel': myPair() || classroomStore.isDuelActive(),
-}"></div>
+<div
+  class="background"
+  [ngClass]="{
+    exercise: classroomStore.mode() === 'normal',
+    class: classroomStore.mode() === 'gathered',
+    duel: myPair() || classroomStore.isDuelActive(),
+  }"
+></div>
 <button class="volume-btn" (click)="toggleSound()">
   <mat-icon>{{ soundService.isMute() ? 'volume_off' : 'volume_up' }}</mat-icon>
 </button>
@@ -14,9 +17,13 @@
   <mat-card class="main-card">
     <mat-card-header>
       <mat-card-title>{{ title() }}</mat-card-title>
-      <mat-card-subtitle [style.visibility]=" this.exerciseBoard()?.currentExercise()?.instruction? 'visible' : 'hidden'">
-        {{this.exerciseBoard()?.currentExercise()?.instruction
-      }}</mat-card-subtitle>
+      <mat-card-subtitle
+        [style.visibility]="
+          this.exerciseBoard()?.currentExercise()?.instruction ? 'visible' : 'hidden'
+        "
+      >
+        {{ this.exerciseBoard()?.currentExercise()?.instruction }}</mat-card-subtitle
+      >
     </mat-card-header>
     <mat-card-content style="view-transition-name: chess-mode">
       @if (classroomStore.isPuzzleRushActive()) {
@@ -34,9 +41,29 @@
       } @else if (displayMode() === 'gathered') {
         <app-gathered-board></app-gathered-board>
       } @else if (displayDuel()) {
-        <app-duel-board></app-duel-board>
+        <app-captured-rack 
+          [score]="score()" 
+          [color]="classroomStore.duelColor()" 
+          [pieces]="classroomStore.duelColor()==='b' ? capturedBlackPieces() : capturedWhitePieces()">
+        </app-captured-rack>
+        <app-duel-board (capture)="handleCapture($event)" (promotion)="handlePromotion($event)" (clearCapturedRack)="handleClearing()"></app-duel-board>
+        <app-captured-rack 
+          [score]="score()" 
+          [color]="classroomStore.duelColor()==='b'?'w':'b'" 
+          [pieces]="classroomStore.duelColor()==='w' ? capturedBlackPieces() : capturedWhitePieces()">
+        </app-captured-rack>
       } @else if (displayPair()) {
-        <app-challenge-board></app-challenge-board>
+        <app-captured-rack 
+          [score]="score()" 
+          [color]="challengeBoard()?.myColor()==='white'?'w':'b'" 
+          [pieces]="challengeBoard()?.myColor()==='black'? capturedBlackPieces() : capturedWhitePieces()">
+        </app-captured-rack>
+        <app-challenge-board (capture)="handleCapture($event)" (promotion)="handlePromotion($event)" (clearCapturedRack)="handleClearing()"></app-challenge-board>
+         <app-captured-rack 
+          [score]="score()" 
+          [color]="challengeBoard()?.myColor()==='white'?'b':'w'" 
+          [pieces]="challengeBoard()?.myColor()==='white'? capturedBlackPieces() : capturedWhitePieces()">
+        </app-captured-rack>
       } @else {
         <app-exercise-board></app-exercise-board>
       }

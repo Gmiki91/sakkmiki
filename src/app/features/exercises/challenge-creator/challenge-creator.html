@@ -46,9 +46,6 @@
             Captures all enemy pieces
           </mat-checkbox>
           <span>Reaches the following position(s):</span>
-          <button mat-button [disabled]="recording() !== null" (click)="startRecording('white')">
-            + Record winning position
-          </button>
           <div class="move-list">
             @for (move of whiteWinMoves(); track $index; let i = $index) {
               <div class="move-item">
@@ -59,8 +56,11 @@
               </div>
             }
           </div>
+          <button mat-button [disabled]="recording() !== null" (click)="startRecording('white')">
+            + Record winning position
+          </button>
         </div>
-
+        <div class="panel-divider"></div>
         <div class="conditions-column">
           <h4>Black wins if...</h4>
           <mat-checkbox
@@ -71,9 +71,6 @@
             Captures all enemy pieces
           </mat-checkbox>
           <span>Reaches the following position(s):</span>
-          <button mat-button [disabled]="recording() !== null" (click)="startRecording('black')">
-            + Record winning position
-          </button>
           <div class="move-list">
             @for (move of blackWinMoves(); track $index; let i = $index) {
               <div class="move-item">
@@ -84,6 +81,9 @@
               </div>
             }
           </div>
+           <button mat-button [disabled]="recording() !== null" (click)="startRecording('black')">
+            + Record winning position
+          </button>
         </div>
         <div class="save-btn">
           <button

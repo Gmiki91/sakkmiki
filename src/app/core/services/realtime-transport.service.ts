@@ -7,7 +7,7 @@ import { Point, StampAnnotation } from '../../shared/models/drawing.model';
 import { Exercise } from '../../shared/models/exercise.model';
 import { TeachingConceptListItem } from '../../shared/models/teaching-concept.model';
 import { StudentState } from './classroom-store.service';
-
+import { Move } from 'chess.js';
 
 interface StudentPresence {
   role: 'student';
@@ -18,7 +18,6 @@ export type SpectatorPresence ={
   role: 'spectator'; 
   displayName: string;
 }
-
 
 export type BroadcastEvent =
   | { type: 'request_student_states' }
@@ -36,7 +35,7 @@ export type BroadcastEvent =
   | { type: 'sync_all_challenge_pairs'; pairs: ChallengePair[] }
   | { type: 'challenge_remove'; pair: ChallengePair }
   | { type: 'challenge_rematch'; pair: ChallengePair }
-  | { type: 'challenge_move'; white: string; black: string; fen: string; from: string; to: string; over?: boolean }
+  | { type: 'challenge_move'; white: string; black: string; fen: string; move:Move; over?: boolean }
   | { type: 'resume'; studentName: string }
   | { type: 'stamp'; studentName: string }
   | { type: 'reset'; studentName: string }
@@ -59,8 +58,8 @@ export type BroadcastEvent =
   | { type: 'white_board_text', text:string}
   | { type: 'curtain'; closed: boolean }
   | { type: 'student_ready'; name: string }
-  | { type: 'duel_teacher_move'; studentName: string; fen: string; from: string; to: string; capture: boolean }
-  | { type: 'duel_student_move'; studentName: string; fen: string; from: string; to: string }
+  | { type: 'duel_teacher_move'; studentName: string; fen: string; move:Move }
+  | { type: 'duel_student_move'; studentName: string; fen: string; move:Move }
   | { type: 'duel_start'; studentName: string; fen: string; studentColor: 'w' | 'b' }
   | { type: 'duel_end'; studentName: string }
   | { type: 'puzzle_rush_start'; listId: string; duration: number; timeBonus: number; timePenalty: number; studentColors: Record<string, string>; exercises: Exercise[] }

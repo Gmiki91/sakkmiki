@@ -14,7 +14,7 @@ import { ChallengePair } from '../../../shared/models/challenge-pair.model';
 import { Exercise } from '../../../shared/models/exercise.model';
 import { STARTING_FEN, getValidMoves, isPawnPromotion, loadChess } from '../../../shared/utils/chess.utils';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Chess } from 'chess.js';
+import { Chess, Move } from 'chess.js';
 import { Promotion, PromotionPiece } from "../../../shared/components/promotion/promotion";
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PromotionService } from '../../../core/services/promotion.service';
@@ -72,8 +72,11 @@ export class StudentRoster {
     this.store.resync$.pipe(takeUntilDestroyed()).subscribe(studentName => {
     const pair = this.getPair(studentName);
       if (pair) {
-        const { fen, from, to } = this.getChallengeFen(pair);
-        if (fen) this.store.sendChallengeMove(pair.white, pair.black, fen, from ?? '', to ?? '');
+       const challengeState = this.getChallengeFen(pair);
+        if (challengeState.fen) {
+          const fakeMove = { from: challengeState.from ?? '', to: challengeState.to ?? '' } as Move;
+          this.store.sendChallengeMove(pair.white, pair.black, challengeState.fen, fakeMove);
+        }
         return;
       }
     
@@ -81,7 +84,8 @@ export class StudentRoster {
       if (duelChess && this.duelColors()[studentName] !== undefined) {
         const teacherColor = this.duelColors()[studentName];
         this.store.sendDuelStart(studentName, duelChess.fen(), teacherColor === 'w' ? 'b' : 'w');
-        this.store.sendDuelTeacherMove(studentName, duelChess.fen(), '', '', false);
+        // TODO sending empty Move object might be wrong 
+        this.store.sendDuelTeacherMove(studentName, duelChess.fen(), {} as Move);
         return;
       }
      
@@ -114,13 +118,13 @@ export class StudentRoster {
     });
 
     // Duel: receive student move, update teacher miniboard
-    this.store.incomingDuelStudentMove$.pipe(takeUntilDestroyed()).subscribe(move=>{
-      const chess = this.duelChessMap.get(move.studentName);
+    this.store.incomingDuelStudentMove$.pipe(takeUntilDestroyed()).subscribe(event=>{
+      const chess = this.duelChessMap.get(event.studentName);
       if (!chess) return;
-      loadChess(chess, move.fen);
+      loadChess(chess, event.fen);
       this.duelConfigs.update(c => ({
         ...c,
-        [move.studentName]: this.buildDuelConfig(move.studentName, chess, move.from, move.to),
+        [event.studentName]: this.buildDuelConfig(event.studentName, chess, event.move.from, event.move.to),
       }));
     });
   }
@@ -309,9 +313,9 @@ export class StudentRoster {
   }
 
   getChallengeFen(pair: ChallengePair): { fen: string; from?: string; to?: string } {
-    const move = this.store.challengeMove();
-    if (move && move.white === pair.white && move.black === pair.black)
-      return { fen: move.fen, from: move.from, to: move.to };
+    const event = this.store.challengeMove();
+    if (event && event.white === pair.white && event.black === pair.black)
+      return { fen: event.fen, from: event.move.from, to: event.move.to };
     const whiteFen = this.store.students().find(s => s.name === pair.white)?.fen;
     return whiteFen ? { fen: whiteFen } : { fen: STARTING_FEN };
   }
@@ -362,10 +366,10 @@ export class StudentRoster {
     const color = this.duelColors()[studentName];
     if (!chess || !color || chess.turn() !== color) return;
     try {
-      const move = chess.move({ from: orig, to: dest, promotion });
+      const move:Move = chess.move({ from: orig, to: dest, promotion });
       if (!move) return;
       this.duelConfigs.update(c => ({ ...c, [studentName]: this.buildDuelConfig(studentName, chess) }));
-      this.store.sendDuelTeacherMove(studentName, chess.fen(), orig, dest, !!move.captured);
+      this.store.sendDuelTeacherMove(studentName, chess.fen(), move);
     } catch {
       this.duelConfigs.update(c => ({ ...c, [studentName]: this.buildDuelConfig(studentName, chess) }));
     }
