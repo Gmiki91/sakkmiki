@@ -4,6 +4,7 @@ import { RealtimeTransport } from '../core/services/realtime-transport.service';
 import { SupabaseService } from '../core/services/supabase.service';
 import { FakeRealtimeTransport } from './fake-transport';
 import { Exercise } from '../shared/models/exercise.model';
+import { Move } from 'chess.js';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -77,7 +78,7 @@ describe('Challenge store — dropped_exercise', () => {
     t.events$.next({
       type: 'challenge_move',
       white: 'Alice', black: 'Bob',
-      fen: 'mid-game-fen', from: 'e2', to: 'e4',
+      fen: 'mid-game-fen', move:{}as Move,
     });
     expect(store.challengeMove()).not.toBeNull();
 
@@ -208,7 +209,7 @@ describe('Challenge store — FEN tracking on teacher side', () => {
     t.events$.next({
       type: 'challenge_move',
       white: 'Alice', black: 'Bob',
-      fen: 'position-after-move', from: 'd2', to: 'd4',
+      fen: 'position-after-move', move:{}as Move,
     });
 
     expect(store.challengeMove()?.fen).toBe('position-after-move');
@@ -236,7 +237,7 @@ describe('Challenge store — FEN tracking on teacher side', () => {
     t.events$.next({
       type: 'challenge_move',
       white: 'Alice', black: 'Bob',
-      fen: 'old-game', from: 'e2', to: 'e4',
+      fen: 'old-game',move:{}as Move
     });
     expect(store.challengeMove()).not.toBeNull();
 

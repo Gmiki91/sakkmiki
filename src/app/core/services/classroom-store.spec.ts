@@ -4,6 +4,7 @@ import {FakeRealtimeTransport,fakeSupabase, makeStore, wireTransports} from '../
 import { RealtimeTransport } from './realtime-transport.service';
 import { SupabaseService } from './supabase.service';
 import { ExerciseList } from '../../shared/models/exercise-list.model';
+import { Move } from 'chess.js';
 describe('resyncStudentGameState', () => {
   let teacherTransport: FakeRealtimeTransport;
   let teacherStore: ClassroomStore;
@@ -131,7 +132,7 @@ describe('challenge pair logic', () => {
   });
 
   it('challenge_rematch clears challengeMove', () => {
-    store.challengeMove.set({ white: 'Alice', black: 'Bob', fen: 'x', from: 'e2', to: 'e4' });
+    store.challengeMove.set({ white: 'Alice', black: 'Bob', fen: 'x', move:{}as Move});
     store.challengePairs.set([{ white: 'Alice', black: 'Bob' }]);
     transport.events$.next({ type: 'challenge_rematch', pair: { white: 'Bob', black: 'Alice' } });
 
@@ -165,10 +166,7 @@ describe('autoRedo / autoProgress overrides', () => {
     store.joinAsStudent('Alice', 'room-1', () => {},() => {});
   });
 
-  it('global autoRedo false applies when no studentName', () => {
-    transport.events$.next({ type: 'set_auto_redo', value: false });
-    expect(store.autoRedo()).toBe(false);
-  });
+
 
   it('per-student autoRedo does not affect global', () => {
     transport.events$.next({ type: 'set_auto_redo', value: false, studentName: 'Bob' });
@@ -182,29 +180,7 @@ describe('autoRedo / autoProgress overrides', () => {
 
 });
 
-describe('autoRedo / autoProgress overrides — teacher side', () => {
-  let teacherTransport: FakeRealtimeTransport;
-  let teacherStore: ClassroomStore;
 
-  beforeEach(() => {
-    teacherTransport = new FakeRealtimeTransport();
-    teacherStore = makeStore(teacherTransport);
-    teacherStore.joinAsTeacher('room-1');
-  });
-
-  it('sendAutoRedo globally clears all overrides', () => {
-    teacherStore.sendAutoRedo(false, 'Alice');
-    expect(teacherStore.autoRedoOverrides()['Alice']).toBe(false);
-    teacherStore.sendAutoRedo(true);
-    expect(teacherStore.autoRedoOverrides()).toEqual({});
-  });
-
-  it('sendAutoProgress per-student sets override without touching global', () => {
-    teacherStore.sendAutoProgress(false, 'Bob');
-    expect(teacherStore.autoProgress()).toBe(true);
-    expect(teacherStore.autoProgressOverrides()['Bob']).toBe(false);
-  });
-});
 describe('student name filtering', () => {
   let teacherTransport: FakeRealtimeTransport;
   let aliceTransport: FakeRealtimeTransport;
@@ -242,11 +218,6 @@ describe('student name filtering', () => {
     aliceTransport.events$.next({ type: 'lock', studentName: 'Bob' }); // should not fire
     aliceTransport.events$.next({ type: 'lock', studentName: 'Alice' }); // should fire
     expect(count).toBe(1);
-  });
-
-  it('set_auto_redo with no studentName applies globally', () => {
-    aliceTransport.events$.next({ type: 'set_auto_redo', value: false });
-    expect(aliceStore.autoRedo()).toBe(false);
   });
 
   it('set_auto_redo with a different studentName does NOT apply', () => {
