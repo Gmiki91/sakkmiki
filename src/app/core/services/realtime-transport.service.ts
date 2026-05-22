@@ -60,7 +60,7 @@ export type BroadcastEvent =
   | { type: 'student_ready'; name: string }
   | { type: 'duel_teacher_move'; studentName: string; fen: string; move:Move }
   | { type: 'duel_student_move'; studentName: string; fen: string; move:Move }
-  | { type: 'duel_start'; studentName: string; fen: string; studentColor: 'w' | 'b' }
+  | { type: 'duel_start'; studentName: string; fen: string; studentColor: 'w' | 'b'; exercise: Exercise; scoreDiffWin?: number; timerMinutes?: number }
   | { type: 'duel_end'; studentName: string }
   | { type: 'puzzle_rush_start'; listId: string; duration: number; timeBonus: number; timePenalty: number; studentColors: Record<string, string>; exercises: Exercise[] }
   | { type: 'puzzle_rush_end' }

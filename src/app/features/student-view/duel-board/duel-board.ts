@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, effect, viewChild, output } from '@angular/core';
+import { Component, inject, signal, computed, effect, viewChild, output, input } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Chess } from 'chess.js';
 import { Key } from '@lichess-org/chessground/types';
@@ -10,6 +10,7 @@ import {
   getValidMoves,
   isPawnPromotion,
   loadChess,
+  pieceValue,
   STARTING_FEN,
 } from '../../../shared/utils/chess.utils';
 import { Promotion, PromotionPiece } from '../../../shared/components/promotion/promotion';
@@ -34,6 +35,7 @@ export class DuelBoard {
 
   private fen = signal<string>(STARTING_FEN);
   private duelLastMove = signal<[Key, Key] | undefined>(undefined);
+  private localScore = signal(0);
   peerBoards = signal<PeerBoard[]>([]);
   
   private duelChess = new Chess();
@@ -76,13 +78,21 @@ export class DuelBoard {
         this.updatePeerBoard(event.studentName, event.fen, event.move.from, event.move.to);
         return;
       }
-      try {
+        try {
         loadChess(this.duelChess, event.fen);
         this.fen.set(this.duelChess.fen());
         this.duelLastMove.set([event.move.from as Key, event.move.to as Key]);
         this.soundService.play(event.move.captured ? 'take' : 'move');
-        if(event.move.captured)this.capture.emit({piece:event.move.captured,color:event.move.color});
-        if(event.move.promotion)this.promotion.emit({piece:event.move.promotion,color:event.move.color});
+        if(event.move.captured){
+          const delta = pieceValue(event.move.captured) * (event.move.color === 'w' ? 1 : -1);
+          this.localScore.update(s => s + delta);
+          this.capture.emit({piece:event.move.captured,color:event.move.color,scoreDelta: delta});
+        }
+        if(event.move.promotion){
+          const delta = (pieceValue(event.move.promotion) - 1) * (event.move.color === 'w' ? 1 : -1);
+          this.localScore.update(s => s + delta);
+          this.promotion.emit({piece:event.move.promotion,color:event.move.color,scoreDelta: delta});
+        }
       } catch {
         /* ignore */
       }
@@ -134,18 +144,34 @@ export class DuelBoard {
     try {
       const move = this.duelChess.move({ from: orig, to: dest, promotion });
       if (!move) return;
-      if(move.captured)this.capture.emit({piece:move.captured,color:move.color})
+      if(move.captured){
+        const delta = pieceValue(move.captured) * (move.color === 'w' ? 1 : -1);
+        this.localScore.update(s => s + delta);
+        this.capture.emit({piece:move.captured,color:move.color,scoreDelta: delta});
+      }
       this.fen.set(this.duelChess.fen());
       this.duelLastMove.set([orig, dest]);
       this.soundService.play(move.captured ? 'take' : 'move');
       if (promotion){
         this.chessBoard()?.api?.set({ fen: this.duelChess.fen() });
-        this.promotion.emit({piece:promotion,color:move.color});
-      } 
+        const delta = (pieceValue(promotion) - 1) * (move.color === 'w' ? 1 : -1);
+        this.localScore.update(s => s + delta);
+        this.promotion.emit({piece:promotion,color:move.color,scoreDelta: delta});
+      }
       this.classroomStore.sendDuelStudentMove(this.duelChess.fen(), move);
+      this.checkScoreDiffWin();
     } catch {
       this.fen.set(this.duelChess.fen());
     }
+  }
+
+  private checkScoreDiffWin(): void {
+    const config = this.classroomStore.duelConfig();
+    if (!config?.scoreDiffWin || config.scoreDiffWin <= 0) return;
+    const studentColor = this.classroomStore.duelColor();
+    const won = (studentColor === 'w' && this.localScore() >= config.scoreDiffWin) ||
+                (studentColor === 'b' && this.localScore() <= -config.scoreDiffWin);
+    if (won) this.soundService.playRandomCheering();
   }
 
   private updatePeerBoard(name: string, fen: string, from: string, to: string): void {
@@ -176,6 +202,7 @@ export class DuelBoard {
     loadChess(this.duelChess, fen);
     this.fen.set(fen);
     this.duelLastMove.set(undefined);
+    this.localScore.set(0);
     this.clearCapturedRack.emit();
   }
 }

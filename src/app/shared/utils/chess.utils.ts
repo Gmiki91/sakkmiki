@@ -70,3 +70,13 @@ export const getPlayerOrientation=(exercise: Exercise): 'white' | 'black' => {
 export const isPawnPromotion=(dest: Key, piece:Piece): boolean=> {
   return piece?.type === 'p' && ((piece.color === 'w' && dest[1] === '8') || (piece.color === 'b' && dest[1] === '1'));
 }
+
+export const pieceValue=(piece: string): number=> {
+    switch (piece) {
+      case 'p': return 1;
+      case 'r': return 5;
+      case 'n': case 'b': return 3;
+      case 'q': return 9;
+      default: return 0;
+    }
+  }

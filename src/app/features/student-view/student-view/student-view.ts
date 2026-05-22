@@ -100,38 +100,31 @@ displayDuel = signal(this.classroomStore.isDuelActive())
     this.classroomStore.sendPuzzleRushProgress(ev.score, ev.wrongMoves, ev.currentIndex, ev.totalPuzzles);
   }
 
-  handleCapture(event:CapturedPiece){
-    let {piece, color} = event;
-    color  = color === 'b'? 'w' : 'b'; 
-    const {icon,score} = this.getPieceValue(piece);
-    if(color ==='b'){
-      this.score.update(prev=>prev+score);
-      this.capturedBlackPieces.update(pieces=>[...pieces,icon]);
-    }else{
-      this.score.update(prev=>prev-score);
-      this.capturedWhitePieces.update(pieces=>[...pieces,icon]);
+  handleCapture(event: CapturedPiece){
+    const {piece, color, scoreDelta} = event;
+    const rackColor = color === 'b' ? 'w' : 'b';
+    this.score.update(prev => prev + scoreDelta);
+    if (rackColor === 'b') {
+      this.capturedBlackPieces.update(pieces => [...pieces, this.pieceIcon(piece)]);
+    } else {
+      this.capturedWhitePieces.update(pieces => [...pieces, this.pieceIcon(piece)]);
     }
   }
 
-  handlePromotion(event:CapturedPiece){
-    let {piece, color} = event;
-    const {icon,score} = this.getPieceValue(piece);
-    if(color ==='b'){
-      const index = this.capturedBlackPieces().indexOf(icon);
-      if (index !== -1) {
-        this.capturedBlackPieces.update(pieces=>pieces.toSpliced(index, 1,'♟'));
-      }else{
-        this.capturedBlackPieces.update(pieces=>[...pieces,'♟']);
-      }
-      this.score.update(prev=>prev-score+1);
-    }else{
-      const index = this.capturedWhitePieces().indexOf(icon);
-      if (index !== -1) {
-        this.capturedWhitePieces.update(pieces=>pieces.toSpliced(index, 1,'♟'));
-      }else{
-        this.capturedWhitePieces.update(pieces=>[...pieces,'♟']);
-      }
-      this.score.update(prev=>prev+score-1);
+  handlePromotion(event: CapturedPiece){
+    const {piece, color, scoreDelta} = event;
+    const icon = this.pieceIcon(piece);
+    this.score.update(prev => prev + scoreDelta);
+    if (color === 'b') {
+      this.capturedBlackPieces.update(pieces => {
+        const i = pieces.indexOf(icon);
+        return i !== -1 ? pieces.toSpliced(i, 1, '♟') : [...pieces, '♟'];
+      });
+    } else {
+      this.capturedWhitePieces.update(pieces => {
+        const i = pieces.indexOf(icon);
+        return i !== -1 ? pieces.toSpliced(i, 1, '♟') : [...pieces, '♟'];
+      });
     }
   }
 
@@ -141,14 +134,14 @@ displayDuel = signal(this.classroomStore.isDuelActive())
     this.score.set(0);
   }
 
-  private getPieceValue(piece:string){
-    switch(piece){
-      case 'p': return {icon:'♟', score:1};
-      case 'r': return {icon:'♜', score:5}; 
-      case 'n': return {icon:'♞', score:3}; 
-      case 'b': return {icon:'♝', score:3}; 
-      case 'q': return {icon:'♛', score:9}; 
-      default:  return {icon:'♚', score:0}; 
+  private pieceIcon(piece: string): string {
+    switch (piece) {
+      case 'p': return '♟';
+      case 'r': return '♜';
+      case 'n': return '♞';
+      case 'b': return '♝';
+      case 'q': return '♛';
+      default:  return '♚';
     }
   }
 

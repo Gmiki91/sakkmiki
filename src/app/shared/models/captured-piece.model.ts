@@ -2,5 +2,6 @@ import { Color, PieceSymbol } from "chess.js"
 
 export type CapturedPiece ={
     piece:PieceSymbol,
-    color:Color
+    color:Color,
+    scoreDelta: number;
 }

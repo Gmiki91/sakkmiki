@@ -37,6 +37,10 @@ const dummyExercise: Exercise = {
   listId: 'list-1',
 };
 
+const ab: any = { white: 'Alice', black: 'Bob' };
+const cd: any = { white: 'Carol', black: 'Dave' };
+const ba: any = { white: 'Bob', black: 'Alice' };
+
 const newExercise: Exercise = {
   ...dummyExercise,
   id: 'ex-2',
@@ -100,10 +104,10 @@ describe('Challenge store — challenge_remove', () => {
     const store = makeStore(t);
     store.studentName.set('Alice');
 
-    t.events$.next({ type: 'sync_challenge_pair', pair: { white: 'Alice', black: 'Bob' } });
+    t.events$.next({ type: 'sync_challenge_pair', pair: ab });
     expect(store.challengePairs().length).toBe(1);
 
-    t.events$.next({ type: 'challenge_remove', pair: { white: 'Alice', black: 'Bob' } });
+    t.events$.next({ type: 'challenge_remove', pair: ab });
     expect(store.challengePairs().length).toBe(0);
   });
 
@@ -112,10 +116,10 @@ describe('Challenge store — challenge_remove', () => {
     const store = makeStore(t);
     store.studentName.set('Bob');
 
-    t.events$.next({ type: 'sync_challenge_pair', pair: { white: 'Alice', black: 'Bob' } });
+    t.events$.next({ type: 'sync_challenge_pair', pair: ab });
     expect(store.challengePairs().length).toBe(1);
 
-    t.events$.next({ type: 'challenge_remove', pair: { white: 'Alice', black: 'Bob' } });
+    t.events$.next({ type: 'challenge_remove', pair: ab });
     expect(store.challengePairs().length).toBe(0);
   });
 
@@ -124,8 +128,8 @@ describe('Challenge store — challenge_remove', () => {
     const store = makeStore(t);
     store.studentName.set('Carol');
 
-    t.events$.next({ type: 'sync_challenge_pair', pair: { white: 'Carol', black: 'Dave' } });
-    t.events$.next({ type: 'challenge_remove', pair: { white: 'Alice', black: 'Bob' } });
+    t.events$.next({ type: 'sync_challenge_pair', pair: cd });
+    t.events$.next({ type: 'challenge_remove', pair: ab });
 
     expect(store.challengePairs().length).toBe(1);
   });
@@ -144,12 +148,12 @@ describe('Challenge store — sync_all_challenge_pairs (reconnect resync)', () =
     t.events$.next({
       type: 'sync_all_challenge_pairs',
       pairs: [
-        { white: 'Alice', black: 'Bob' },
-        { white: 'Carol', black: 'Dave' },
+        ab,
+        cd,
       ],
     });
 
-    expect(store.challengePairs()).toEqual([{ white: 'Alice', black: 'Bob' }]);
+    expect(store.challengePairs()).toEqual([ab]);
   });
 
   it('restores the correct pair for a student who is black', () => {
@@ -160,12 +164,12 @@ describe('Challenge store — sync_all_challenge_pairs (reconnect resync)', () =
     t.events$.next({
       type: 'sync_all_challenge_pairs',
       pairs: [
-        { white: 'Alice', black: 'Bob' },
-        { white: 'Carol', black: 'Dave' },
+        ab,
+        cd,
       ],
     });
 
-    expect(store.challengePairs()).toEqual([{ white: 'Carol', black: 'Dave' }]);
+    expect(store.challengePairs()).toEqual([cd]);
   });
 
   it('gives an empty list when the student is not in any pair', () => {
@@ -175,7 +179,7 @@ describe('Challenge store — sync_all_challenge_pairs (reconnect resync)', () =
 
     t.events$.next({
       type: 'sync_all_challenge_pairs',
-      pairs: [{ white: 'Alice', black: 'Bob' }],
+      pairs: [ab],
     });
 
     expect(store.challengePairs().length).toBe(0);
@@ -187,7 +191,7 @@ describe('Challenge store — sync_all_challenge_pairs (reconnect resync)', () =
     store.studentName.set('Alice');
 
     // Alice thinks she's paired with Bob (stale in-memory state from before disconnect)
-    t.events$.next({ type: 'sync_challenge_pair', pair: { white: 'Alice', black: 'Bob' } });
+    t.events$.next({ type: 'sync_challenge_pair', pair: ab });
     expect(store.challengePairs().length).toBe(1);
 
     // Teacher sends authoritative list — Alice's pair was removed server-side

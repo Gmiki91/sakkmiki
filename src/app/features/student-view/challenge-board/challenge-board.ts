@@ -6,7 +6,7 @@ import { ClassroomStore } from '../../../core/services/classroom-store.service';
 import { SoundService } from '../../../core/services/sound.service';
 import { ChessBoard } from '../../../shared/components/chess-board/chess-board';
 import { ChallengePair } from '../../../shared/models/challenge-pair.model';
-import { getValidMoves, isPawnPromotion, loadChess, STARTING_FEN } from '../../../shared/utils/chess.utils';
+import { getValidMoves, isPawnPromotion, loadChess, pieceValue, STARTING_FEN } from '../../../shared/utils/chess.utils';
 import { Promotion } from "../../../shared/components/promotion/promotion";
 import { PromotionService } from '../../../core/services/promotion.service';
 import { CapturedPiece } from '../../../shared/models/captured-piece.model';
@@ -22,7 +22,7 @@ export class ChallengeBoard {
   private classroomStore = inject(ClassroomStore);
   private soundService = inject(SoundService);
   promotionService = inject(PromotionService);
-  
+
   capture = output<CapturedPiece>();
   promotion = output<CapturedPiece>();
   clearCapturedRack = output<void>();
@@ -42,6 +42,7 @@ export class ChallengeBoard {
 
   private challengeLastMove = signal<[Key, Key] | undefined>(undefined);
   private challengeChess = new Chess();
+  private localScore = signal(0);
 
   boardConfig = computed<Config>(() => ({
     fen: this.challengeFen(),
@@ -62,19 +63,14 @@ export class ChallengeBoard {
   }));
 
   constructor() {
-      this.soundService.play('openingBell');
-    // Reset board when pair is assigned or rematch occurs
+    this.soundService.play('openingBell');
     effect(() => {
       const pair = this.myPair();
       if (!pair) return;
-      const exercise = this.classroomStore.droppedExercise()
-        ?? this.classroomStore.assignedExercises()[0]
-        ?? this.classroomStore.loadedExercises()[0]
-        ?? null;
-      if (exercise?.fen) loadChess(this.challengeChess, exercise.fen);
-      else this.challengeChess = new Chess();
+      loadChess(this.challengeChess, pair.exercise.fen);
       this.challengeFen.set(this.challengeChess.fen());
       this.challengeLastMove.set(undefined);
+      this.localScore.set(0);
       this.chessBoard()?.api?.set({ lastMove: [] });
       this.clearCapturedRack.emit();
     });
@@ -91,8 +87,16 @@ export class ChallengeBoard {
       if (!event) return;
       const pair = this.myPair();
       if (!pair || event.white !== pair.white || event.black !== pair.black) return;
-      if(event.move.captured)this.capture.emit({piece:event.move.captured,color:event.move.color})
-      if(event.move.promotion)this.promotion.emit({piece:event.move.promotion,color:event.move.color});
+      if(event.move.captured){
+        const delta = pieceValue(event.move.captured) * (event.move.color === 'w' ? 1 : -1);
+        this.localScore.update(s => s + delta);
+        this.capture.emit({piece:event.move.captured,color:event.move.color,scoreDelta: delta});
+      }
+      if(event.move.promotion){
+        const delta = (pieceValue(event.move.promotion) - 1) * (event.move.color === 'w' ? 1 : -1);
+        this.localScore.update(s => s + delta);
+        this.promotion.emit({piece:event.move.promotion,color:event.move.color,scoreDelta: delta});
+      }
       if (event.over) {
         this.challengeChess.move({ from:event.move.from,to:event.move.to, promotion: 'q' });
         this.soundService.play('lost');
@@ -140,8 +144,16 @@ export class ChallengeBoard {
     try {
       const move = this.challengeChess.move({ from: orig, to: dest, promotion });
       if (!move) return;
-      if(move.captured)this.capture.emit({piece:move.captured,color:move.color});
-      if(move.promotion)this.promotion.emit({piece:move.promotion,color:move.color});
+      if(move.captured){
+        const delta = pieceValue(move.captured) * (move.color === 'w' ? 1 : -1);
+        this.localScore.update(s => s + delta);
+        this.capture.emit({piece:move.captured,color:move.color,scoreDelta: delta});
+      }
+      if(move.promotion){
+        const delta = (pieceValue(move.promotion) - 1) * (move.color === 'w' ? 1 : -1);
+        this.localScore.update(s => s + delta);
+        this.promotion.emit({piece:move.promotion,color:move.color,scoreDelta: delta});
+      }
 
       if (this.backrankPawnWins(dest)) {
         this.classroomStore.sendChallengeMove(pair.white, pair.black, this.challengeChess.fen(), move, true);
@@ -161,24 +173,25 @@ export class ChallengeBoard {
   }
 
   private checkWinConditions(move: Move): boolean {
-    const exercise = this.classroomStore.droppedExercise()
-      ?? this.classroomStore.assignedExercises()[0]
-      ?? this.classroomStore.loadedExercises()[0]
-      ?? null;
+    const pair = this.myPair();
+    if (!pair) return false;
+    const exercise = pair.exercise;
     const normalizedSan = move.san.replace('x','').replace('+','').replace('#','').replace(/=[QRBN]/,'');
     const conditions = this.myColor() === 'white' ? exercise?.whiteWinConditions : exercise?.blackWinConditions;
     const captureAllWin = conditions?.includes('capture_all') &&
       this.challengeChess.board().flat().filter(Boolean)
         .every(p => p!.color === (this.myColor() === 'white' ? 'w' : 'b'));
     const mate = this.challengeChess.isCheckmate()
-    return !!(captureAllWin || conditions?.includes(normalizedSan)||mate);
+    const threshold = pair.scoreDiffWin;
+    const scoreDiffWin = !!threshold && threshold > 0 && (
+      (this.myColor() === 'white' && this.localScore() >= threshold) ||
+      (this.myColor() === 'black' && this.localScore() <= -threshold)
+    );
+    return !!(captureAllWin || conditions?.includes(normalizedSan)||mate||scoreDiffWin);
   }
 
   private backrankPawnWins(dest: Key): boolean {
-    const exercise = this.classroomStore.droppedExercise()
-      ?? this.classroomStore.assignedExercises()[0]
-      ?? this.classroomStore.loadedExercises()[0]
-      ?? null;
+    const exercise = this.myPair()?.exercise;
     const conditions = this.myColor() === 'white' ? exercise?.whiteWinConditions : exercise?.blackWinConditions;
     return !!conditions?.includes(dest);
   }

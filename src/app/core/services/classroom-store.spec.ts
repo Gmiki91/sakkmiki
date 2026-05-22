@@ -124,35 +124,33 @@ describe('challenge pair logic', () => {
   });
 
   it('challenge_rematch swaps colors', () => {
-    store.challengePairs.set([{ white: 'Alice', black: 'Bob' }]);
+    store.challengePairs.set([{ white: 'Alice', black: 'Bob' } as any]);
     const swapped = { white: 'Bob', black: 'Alice' };
-    transport.events$.next({ type: 'challenge_rematch', pair: swapped });
+    transport.events$.next({ type: 'challenge_rematch', pair: swapped as any });
 
-    expect(store.challengePairs()[0]).toEqual(swapped);
+    expect(store.challengePairs()[0]).toEqual(swapped as any);
   });
 
   it('challenge_rematch clears challengeMove', () => {
     store.challengeMove.set({ white: 'Alice', black: 'Bob', fen: 'x', move:{}as Move});
-    store.challengePairs.set([{ white: 'Alice', black: 'Bob' }]);
-    transport.events$.next({ type: 'challenge_rematch', pair: { white: 'Bob', black: 'Alice' } });
+    store.challengePairs.set([{ white: 'Alice', black: 'Bob' } as any]);
+    transport.events$.next({ type: 'challenge_rematch', pair: { white: 'Bob', black: 'Alice' } as any });
 
     expect(store.challengeMove()).toBeNull();
   });
 
   it('challenge_remove deletes the pair', () => {
-    store.challengePairs.set([{ white: 'Alice', black: 'Bob' }]);
-    transport.events$.next({ type: 'challenge_remove', pair: { white: 'Alice', black: 'Bob' } });
+    store.challengePairs.set([{ white: 'Alice', black: 'Bob' } as any]);
+    transport.events$.next({ type: 'challenge_remove', pair: { white: 'Alice', black: 'Bob' } as any });
     expect(store.challengePairs()).toEqual([]);
   });
 
   it('challenge_rematch also matches on swapped original', () => {
-    // Pair was created as Alice=white, Bob=black
-    // Rematch arrives as Bob=white, Alice=black
-    store.challengePairs.set([{ white: 'Alice', black: 'Bob' }]);
+    store.challengePairs.set([{ white: 'Alice', black: 'Bob' } as any]);
     const rematch = { white: 'Bob', black: 'Alice' };
-    transport.events$.next({ type: 'challenge_rematch', pair: rematch });
+    transport.events$.next({ type: 'challenge_rematch', pair: rematch as any });
 
-    expect(store.challengePairs()[0]).toEqual(rematch);
+    expect(store.challengePairs()[0]).toEqual(rematch as any);
   });
 });
 
@@ -226,11 +224,11 @@ describe('student name filtering', () => {
   });
 
   it('challenge pair only added when student is involved', () => {
-    const pair = { white: 'Bob', black: 'Charlie' };
+    const pair: any = { white: 'Bob', black: 'Charlie' };
     aliceTransport.events$.next({ type: 'sync_challenge_pair', pair });
     expect(aliceStore.challengePairs()).toEqual([]);
 
-    const alicePair = { white: 'Alice', black: 'Bob' };
+    const alicePair: any = { white: 'Alice', black: 'Bob' };
     aliceTransport.events$.next({ type: 'sync_challenge_pair', pair: alicePair });
     expect(aliceStore.challengePairs().length).toBe(1);
   });

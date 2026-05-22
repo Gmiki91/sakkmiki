@@ -44,20 +44,17 @@
             <mat-icon>delete</mat-icon>
           </button>
         </div>
-        <div class="row">
-          <button style="width: 100%" mat-raised-button (click)="disperse()">Disperse</button>
-        </div>
       }
-      @if (!isGathered()) {
-        <div class="row">
+       <div class="row" [class.direction]="!isGathered()">
+        @if (isGathered()) {
+          <button style="width: 100%" mat-raised-button (click)="disperse()">Disperse</button>
+        }@else {
           <button style="width: 100%" mat-raised-button color="primary" (click)="gather()">
             Gather
           </button>
-        </div>
-      }
+        }
 
       <!-- Always visible controls -->
-      <div class="row">
         <button
           style="width: 100%"
           mat-raised-button
@@ -66,8 +63,6 @@
         >
           {{ store.curtainClosed() ? 'Curtain up' : 'Curtain down' }}
         </button>
-      </div>
-      <div class="row">
         <button mat-raised-button style="width: 100%" (click)="openInviteDialog()">
           Invite student
         </button>

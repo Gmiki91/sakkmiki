@@ -14,10 +14,12 @@ import { ChallengePair } from '../../../shared/models/challenge-pair.model';
 import { Exercise } from '../../../shared/models/exercise.model';
 import { STARTING_FEN, getValidMoves, isPawnPromotion, loadChess } from '../../../shared/utils/chess.utils';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialog } from '@angular/material/dialog';
 import { Chess, Move } from 'chess.js';
 import { Promotion, PromotionPiece } from "../../../shared/components/promotion/promotion";
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PromotionService } from '../../../core/services/promotion.service';
+import { GameSetupDialog, GameSetupResult } from '../../../shared/components/game-setup-dialog/game-setup-dialog';
 
 @Component({
   selector: 'app-student-roster',
@@ -35,6 +37,7 @@ export class StudentRoster {
   drawingService = inject(DrawingService);
   promotionService = inject(PromotionService);
   snackBar = inject(MatSnackBar);
+  dialog = inject(MatDialog);
 
   isLoadingList = signal(false);
   pendingPair = signal<string | null>(null);
@@ -44,6 +47,7 @@ export class StudentRoster {
   duelOriginalFens = signal<Record<string, string>>({});
   duelChessMap = new Map<string, Chess>();
   duelConfigs = signal<Record<string, Config>>({});
+  duelExercises = signal<Record<string, Exercise>>({});
 
   promotionAgainst = signal<string>('');
 
@@ -83,7 +87,11 @@ export class StudentRoster {
       const duelChess = this.duelChessMap.get(studentName);
       if (duelChess && this.duelColors()[studentName] !== undefined) {
         const teacherColor = this.duelColors()[studentName];
-        this.store.sendDuelStart(studentName, duelChess.fen(), teacherColor === 'w' ? 'b' : 'w');
+        const ex = this.duelExercises()[studentName] ?? {
+          id: '', title: '', fen: duelChess.fen(), exerciseType: 'challenge' as const,
+          position: 0, listId: '', instruction: '',
+        };
+        this.store.sendDuelStart(studentName, duelChess.fen(), teacherColor === 'w' ? 'b' : 'w', ex);
         // TODO sending empty Move object might be wrong 
         this.store.sendDuelTeacherMove(studentName, duelChess.fen(), {} as Move);
         return;
@@ -216,17 +224,25 @@ export class StudentRoster {
         const { [studentName]: _, ...rest } = c;
         return rest;
       });
+      this.duelExercises.update(e => { const { [studentName]: _, ...rest } = e; return rest; });
       this.store.sendDuelEnd(studentName);
     } else {
-      const student = this.store.students().find(s => s.name === studentName);
-      const fen = student?.fen ?? STARTING_FEN;
-      const chess = new Chess(fen, { skipValidation: true });
-      this.duelChessMap.set(studentName, chess);
-      this.duelColors.update(c => ({ ...c, [studentName]: 'w' }));
-      this.duelOriginalFens.update(f => ({ ...f, [studentName]: fen }));
-      this.duelConfigs.update(c => ({ ...c, [studentName]: this.buildDuelConfig(studentName, chess) }));
-      this.duelStudents.update(s => { s.add(studentName); return new Set(s); });
-      this.store.sendDuelStart(studentName, chess.fen(), 'b');
+      const dialogRef = this.dialog.open(GameSetupDialog, {
+        data: { mode: 'duel', studentName },
+        minWidth: 400,
+      });
+      dialogRef.afterClosed().subscribe((result: GameSetupResult) => {
+        if (!result) return;
+        const fen = result.exercise.fen;
+        const chess = new Chess(fen, { skipValidation: true });
+        this.duelChessMap.set(studentName, chess);
+        this.duelExercises.update(e => ({ ...e, [studentName]: result.exercise }));
+        this.duelColors.update(c => ({ ...c, [studentName]: 'w' }));
+        this.duelOriginalFens.update(f => ({ ...f, [studentName]: fen }));
+        this.duelConfigs.update(c => ({ ...c, [studentName]: this.buildDuelConfig(studentName, chess) }));
+        this.duelStudents.update(s => { s.add(studentName); return new Set(s); });
+        this.store.sendDuelStart(studentName, chess.fen(), 'b', result.exercise, result.scoreDiffWin || undefined, result.timerMinutes || undefined);
+      });
     }
   }
 
@@ -242,7 +258,11 @@ export class StudentRoster {
       ...c,
       [studentName]: this.buildDuelConfig(studentName, chess),
     }));
-    this.store.sendDuelStart(studentName, chess.fen(), newColor === 'w' ? 'b' : 'w');
+    const ex = this.duelExercises()[studentName] ?? {
+      id: '', title: '', fen: originalFen, exerciseType: 'challenge' as const,
+      position: 0, listId: '', instruction: '',
+    };
+    this.store.sendDuelStart(studentName, chess.fen(), newColor === 'w' ? 'b' : 'w', ex);
   }
 
   // ── Drag & drop ──────────────────────────────────────────────────
@@ -257,7 +277,7 @@ export class StudentRoster {
 
   handleListDrop(targetName: string, event: DragEvent): void {
     if (this.getPair(targetName)) {
-      this.snackBar.open("Can't assign a list to a two player game", '', { duration: 2000 });
+      this.snackBar.open("Can't drop list on a two player game", '', { duration: 2000 });
     } else {
       const exercises = JSON.parse(event.dataTransfer?.getData('exercises') ?? '[]');
       this.store.sendAssignedList(targetName, exercises);
@@ -267,12 +287,9 @@ export class StudentRoster {
 
   handleExerciseDrop(targetName: string, event: DragEvent): void {
     const exercise = JSON.parse(event.dataTransfer?.getData('exercise') ?? '{}') as Exercise;
-    const pair = this.getPair(targetName);
-    if (pair) {
-      this.store.challengeMove.set(null);
-      this.store.sendDroppedExercise(pair.white, exercise);
-      this.store.sendDroppedExercise(pair.black, exercise);
-    } else {
+    if (this.getPair(targetName)) {
+      this.snackBar.open("Can't drop exercise on a two player game", '', { duration: 2000 });
+    }else{
       this.store.sendDroppedExercise(targetName, exercise);
       this.resetTimer(targetName);
     }
@@ -281,10 +298,22 @@ export class StudentRoster {
   handleChallengeCreation(targetName: string): void {
     const source = this.pendingPair();
     if (!source || source === targetName) { this.pendingPair.set(null); return; }
-    const pair: ChallengePair = { white: source, black: targetName };
-    this.store.challengePairs.update(pairs => [...pairs, pair]);
-    this.store.syncChallengePair(pair);
-    this.pendingPair.set(null);
+    const dialogRef = this.dialog.open(GameSetupDialog, {
+      data: { mode: 'challenge', white: source, black: targetName },
+      minWidth: 400,
+    });
+    dialogRef.afterClosed().subscribe((result: GameSetupResult) => {
+      this.pendingPair.set(null);
+      if (!result) return;
+      const pair: ChallengePair = {
+        white: source,
+        black: targetName,
+        exercise: result.exercise,
+        scoreDiffWin: result.scoreDiffWin || undefined,
+      };
+      this.store.challengePairs.update(pairs => [...pairs, pair]);
+      this.store.syncChallengePair(pair);
+    });
   }
 
   onDragStart(studentName: string): void {
@@ -306,7 +335,12 @@ export class StudentRoster {
   }
 
   triggerRematch(pair: ChallengePair): void {
-    const swapped: ChallengePair = { white: pair.black, black: pair.white };
+    const swapped: ChallengePair = {
+      white: pair.black,
+      black: pair.white,
+      exercise: pair.exercise,
+      scoreDiffWin: pair.scoreDiffWin,
+    };
     this.store.challengePairs.update(pairs =>
       pairs.map(p => (p.white === pair.white && p.black === pair.black ? swapped : p)));
     this.store.sendChallengeRematch(swapped);

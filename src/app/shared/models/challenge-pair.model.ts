@@ -1,5 +1,8 @@
+import { Exercise } from './exercise.model';
 
 export type ChallengePair = {
-  white: string; // player#1
-  black: string; // player#2
+  white: string;
+  black: string;
+  exercise: Exercise;
+  scoreDiffWin?: number;
 };

@@ -75,6 +75,7 @@ export class ClassroomStore {
   readonly incomingDuelStudentMove$ = new Subject<{ studentName: string; fen: string; move:Move  }>();
   readonly isDuelActive = signal(false);
   readonly duelColor = signal<'w' | 'b'>('b');
+  readonly duelConfig = signal<{ exercise: Exercise; scoreDiffWin?: number; timerMinutes?: number } | null>(null);
 
   // Puzzle rush
   readonly isPuzzleRushActive = signal(false);
@@ -316,8 +317,9 @@ this.students.update(current => {
   // Duel
   // ----------------------------------------------------------------
 
-  sendDuelStart(studentName: string, fen: string, studentColor: 'w' | 'b'): void {
-    this.transport.send({ type: 'duel_start', studentName, fen, studentColor });
+  sendDuelStart(studentName: string, fen: string, studentColor: 'w' | 'b', exercise: Exercise, scoreDiffWin?: number, timerMinutes?: number): void {
+    this.duelConfig.set({ exercise, scoreDiffWin, timerMinutes });
+    this.transport.send({ type: 'duel_start', studentName, fen, studentColor, exercise, scoreDiffWin, timerMinutes });
   }
   sendDuelEnd(studentName: string): void {
     this.transport.send({ type: 'duel_end', studentName });
@@ -516,11 +518,13 @@ this.students.update(current => {
           this.isDuelActive.set(true);
           this.duelColor.set(event.studentColor);
           this.currentStudentFen.set(event.fen);
+          this.duelConfig.set({ exercise: event.exercise, scoreDiffWin: event.scoreDiffWin, timerMinutes: event.timerMinutes });
         }
         break;
       case 'duel_end':
         if (event.studentName === this.studentName()) {
           this.isDuelActive.set(false);
+          this.duelConfig.set(null);
           this.resetFen();
         }
         break;
