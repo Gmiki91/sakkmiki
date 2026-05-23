@@ -49,7 +49,7 @@
     position: absolute;
     inset: 0;
     z-index: 20;
-    transform: translateY(0%);
+    transform: translateY(-100%);
     transition: transform 2s cubic-bezier(0.4, 0, 0.5, 1);
     pointer-events: none;
     border-radius: 6px;
@@ -59,8 +59,8 @@
       width: 100%;
       height: 100%;
     }
-    &.open {
-      transform: translateY(-100%);
+    &.closed {
+      transform: translateY(0%);
     }
   }
   app-exercise-board {

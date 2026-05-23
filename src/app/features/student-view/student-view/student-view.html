@@ -11,7 +11,7 @@
 </button>
 
 <div class="chess-container">
-  <div class="curtain" [class.open]="!classroomStore.curtainClosed()">
+  <div class="curtain" [class.closed]="classroomStore.curtainClosed()">
     <img src="/images/curtain.png" alt="" />
   </div>
   <mat-card class="main-card">
