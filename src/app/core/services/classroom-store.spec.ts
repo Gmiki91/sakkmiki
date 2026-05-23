@@ -89,26 +89,25 @@ describe('presence sync', () => {
 });
 
 describe('resyncEphemeralState', () => {
-  it('sends gather event to new joiner when in gathered mode', () => {
+  it('sends gather event when student_ready fires and teacher is in gathered mode', () => {
     const transport = new FakeRealtimeTransport();
     const store = makeStore(transport);
     store.joinAsTeacher('room-1');
     store.gather();
     transport.clear();
 
-    transport.presenceSync$.next([{ role: 'student', name: 'Alice' }]);
+    transport.events$.next({ type: 'student_ready', name: 'Alice' });
     expect(transport.sentOfType('gather').length).toBe(1);
   });
 
-
-  it('sends current curtain state to new joiner', () => {
+  it('sends current curtain state when student_ready fires', () => {
     const transport = new FakeRealtimeTransport();
     const store = makeStore(transport);
     store.joinAsTeacher('room-1');
     store.sendCurtain(false); // open the curtain
     transport.clear();
 
-    transport.presenceSync$.next([{ role: 'student', name: 'Alice' }]);
+    transport.events$.next({ type: 'student_ready', name: 'Alice' });
     const curtainEvent = transport.sentOfType('curtain').at(-1) as any;
     expect(curtainEvent?.closed).toBe(false);
   });

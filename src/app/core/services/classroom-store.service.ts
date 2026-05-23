@@ -121,7 +121,6 @@ export class ClassroomStore {
     .subscribe((presenceStudents) => {
       const hasNewJoiner = presenceStudents.some(s => !this.previousStudentNames.has(s.name));
       this.previousStudentNames = new Set(presenceStudents.map(s => s.name));
-
       this.students.update(current => {
         const map = new Map(current.map(s => [s.name, s]));
         const presenceSet = new Set(presenceStudents.map(p => p.name));
@@ -143,10 +142,7 @@ export class ClassroomStore {
 
         return [...map.values()];
       });
-      if (hasNewJoiner) {
-        this.resyncEphemeralState(); // defensive measure next to student_ready handler
-        this.transport.send({ type: 'request_student_states' });
-      }
+      if (hasNewJoiner) this.transport.send({ type: 'request_student_states' });
       this.onStudentsUpdate?.(this.students());
     });
 
