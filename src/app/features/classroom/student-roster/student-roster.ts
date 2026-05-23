@@ -74,7 +74,7 @@ export class StudentRoster {
   constructor() {
     // resync student state on (re)connect
     this.store.resync$.pipe(takeUntilDestroyed()).subscribe(studentName => {
-    const pair = this.getPair(studentName);
+      const pair = this.getPair(studentName);
       if (pair) {
        const challengeState = this.getChallengeFen(pair);
         if (challengeState.fen) {
@@ -190,18 +190,35 @@ export class StudentRoster {
     this.store.students.update(s =>
       s.map(x => x.name === studentName ? { ...x, locked: false, awaitingStamp: false } : x));
   }
-
-  handleLock(studentName: string): void {
-    const student = this.store.students().find(s => s.name === studentName);
-    if (student?.locked) {
-      this.store.sendUnlock(studentName);
-      this.store.students.update(s => s.map(x => x.name === studentName ? { ...x, locked: false } : x));
-    } else {
-      this.store.sendLock(studentName);
-      this.store.students.update(s => s.map(x => x.name === studentName ? { ...x, locked: true } : x));
+  toggleLock(studentName: string): void {
+    const student = this.store.students().find(s => s.name === studentName); 
+    if(student?.locked){ 
+      this.store.sendLock(false,studentName); 
+      this.store.students.update(s => s.map(x => x.name === studentName ? { ...x, locked: false } : x)); 
+    }else{ 
+      this.store.sendLock(true,studentName); 
+      this.store.students.update(s => s.map(x => x.name === studentName ? { ...x, locked: true } : x)); 
+    } 
+  } 
+  toggleStudentAutoRedo(studentName: string): void {
+    const student = this.store.students().find(s => s.name === studentName); 
+    if(student?.autoRedo){ 
+      this.store.sendAutoRedo(false,studentName); 
+      this.store.students.update(s => s.map(x => x.name === studentName ? { ...x, autoRedo: false } : x)); 
+    }else{ 
+      this.store.sendAutoRedo(true,studentName); 
+      this.store.students.update(s => s.map(x => x.name === studentName ? { ...x, autoRedo: true } : x)); 
+    } 
+  } 
+  toggleStudentAutoProgress(studentName: string): void { 
+    const student = this.store.students().find(s => s.name === studentName); 
+    if(student?.autoProgress){ 
+      this.store.sendAutoProgress(false,studentName); 
+      this.store.students.update(s => s.map(x => x.name === studentName ? { ...x, autoProgress: false } : x)); 
+    }else{ 
+      this.store.sendAutoProgress(true,studentName); 
+      this.store.students.update(s => s.map(x => x.name === studentName ? { ...x, autoProgress: true } : x)); } 
     }
-  }
-
   handleReset(studentName:string):void{
     this.store.sendReset(studentName);
   }
@@ -211,8 +228,6 @@ export class StudentRoster {
     this.store.students.update(s => s.filter(x =>  x.name !==studentName));
   }
 
-  toggleStudentAutoRedo(name: string): void { this.store.sendAutoRedo(!this.store.autoRedoList()[name], name); }
-  toggleStudentAutoProgress(name: string): void { this.store.sendAutoProgress(!this.store.autoProgressList()[name], name); }
 
   toggleDuel(studentName: string): void {
     if (this.duelStudents().has(studentName)) {

@@ -92,11 +92,14 @@ export class ExerciseBoard  {
   constructor() {
     // state sync
     effect(() => {
+      this.classroomStore.requestStudentState();  //  re-run effect when teacher asks
       const exIndex = this.exIndex();
       const awaitingStamp = this.isWaitingForStamp();
       const awaitingRedo = this.isWaitingForRedo();
       const locked = untracked(()=>this.isLocked())
-      this.classroomStore.broadcastStudentState({online:true,lastSeen:Date.now(),  exIndex,locked, awaitingRedo, awaitingStamp });
+      const autoRedo = untracked(() => this.classroomStore.autoRedo());
+      const autoProgress = untracked(() => this.classroomStore.autoProgress());
+      this.classroomStore.broadcastStudentState({online:true,lastSeen:Date.now(),  exIndex,locked, awaitingRedo, awaitingStamp,autoProgress,autoRedo });
     });
 
     // Reset board when exercise changes
@@ -157,11 +160,8 @@ export class ExerciseBoard  {
 
     this.classroomStore.lock$
       .pipe(takeUntilDestroyed())
-      .subscribe(() => this.isLocked.set(true));
+      .subscribe(b => this.isLocked.set(b));
 
-    this.classroomStore.unlock$
-      .pipe(takeUntilDestroyed())
-      .subscribe(() => this.isLocked.set(false));
   }
 
   onMouseUp(e: MouseEvent): void {

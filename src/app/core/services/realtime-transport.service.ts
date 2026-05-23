@@ -41,8 +41,7 @@ export type BroadcastEvent =
   | { type: 'reset'; studentName: string }
   | { type: 'set_auto_redo'; value: boolean; studentName?: string }
   | { type: 'set_auto_progress'; value: boolean; studentName?: string }
-  | { type: 'lock'; studentName: string }
-  | { type: 'unlock'; studentName: string }
+  | { type: 'lock'; value:boolean,studentName: string }
   | { type: 'kick'; studentName: string }
   | { type: 'student_fen'; studentName: string; fen: string }
   | { type: 'request_fen'; target:string }
@@ -104,9 +103,6 @@ export class RealtimeTransport implements OnDestroy {
     this.lastJoin = { mode: 'teacher', channelId };
     void this.connectTeacher(channelId);
   }
-
-
-
 
   joinAsStudent(
     channelId: string,
@@ -174,7 +170,6 @@ export class RealtimeTransport implements OnDestroy {
 
       if (status === 'SUBSCRIBED') {
         await this.channel.track({ role: 'teacher' });
-        this.handlePresence();
       }
 
       if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {

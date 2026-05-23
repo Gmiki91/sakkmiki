@@ -24,6 +24,8 @@ export type StudentState = {
   locked: boolean;
   awaitingRedo: boolean;
   awaitingStamp: boolean;
+  autoRedo:boolean;
+  autoProgress:boolean;
   fen?: string;
 };
 @Injectable({ providedIn: 'root' })
@@ -50,15 +52,13 @@ export class ClassroomStore {
   readonly loadedListTitle = signal<string>('');
   readonly droppedExercises = signal<Record<string, Exercise>>({});
   readonly sharedArrows = signal<{name:string, arrows:DrawShape[]}|null>(null);
-  readonly curtainClosed = signal(true);
+  readonly curtainClosed = signal(false);
 
   // Teacher-side
   readonly requestStudentState = signal(0); 
   readonly students = signal<StudentState[]>([]);
   readonly spectators = signal<SpectatorPresence[]>([]);
   readonly assignedLists = signal<Record<string, Exercise[]>>({});
-  readonly autoRedoList = signal<Record<string, boolean>>({});
-  readonly autoProgressList = signal<Record<string, boolean>>({});
   readonly miniboardArrows = signal<{ name: string; shapes: DrawShape[] } | null>(null);
   readonly incomingDrawingPoints = signal<{
     studentName: string; strokeId: string; color: string; points: Point[];
@@ -99,8 +99,7 @@ export class ClassroomStore {
   readonly reset$ = new Subject<string>();
   readonly resume$ = new Subject<string>();
   readonly stamp$ = new Subject<string>();
-  readonly lock$ = new Subject<string>();
-  readonly unlock$ = new Subject<string>();
+  readonly lock$ = new Subject<boolean>();
   readonly kick$ = new Subject<string>();
   readonly mushroomType = signal<string|null>(null);
   readonly whiteBoardText = signal<string>('');
@@ -115,42 +114,42 @@ export class ClassroomStore {
 
   constructor() {
     this.transport.events$
-      .pipe(takeUntilDestroyed())
-      .subscribe((event) => this.handleEvent(event));
-
+    .pipe(takeUntilDestroyed())
+    .subscribe((event) => this.handleEvent(event));
     this.transport.presenceSync$
-      .pipe(takeUntilDestroyed())
-      .subscribe((presenceStudents) => {
-        const hasNewJoiner = presenceStudents.some(s => !this.previousStudentNames.has(s.name));
-        this.previousStudentNames = new Set(presenceStudents.map(s => s.name));
-this.students.update(current => {
-  const map = new Map(current.map(s => [s.name, s]));
+    .pipe(takeUntilDestroyed())
+    .subscribe((presenceStudents) => {
+      const hasNewJoiner = presenceStudents.some(s => !this.previousStudentNames.has(s.name));
+      this.previousStudentNames = new Set(presenceStudents.map(s => s.name));
 
-  for (const p of presenceStudents) {
-    const existing = map.get(p.name);
+      this.students.update(current => {
+        const map = new Map(current.map(s => [s.name, s]));
+        const presenceSet = new Set(presenceStudents.map(p => p.name));
 
-    map.set(p.name, {
-      ...(existing ??{ name: p.name, exIndex: 0, locked: false, awaitingRedo: false, awaitingStamp: false}),
-      online: true,
-      lastSeen: Date.now()
-    });
-  }
+        for (const p of presenceStudents) {
+          const existing = map.get(p.name);   
+          map.set(p.name, {
+            ...(existing ?? { name: p.name, exIndex: 0, locked: false, awaitingRedo: false, awaitingStamp: false,autoProgress:true,autoRedo:true }),
+            online: true,
+            lastSeen: Date.now()
+          });
+        }
 
-  for (const [name, student] of map) {
-    if (!presenceStudents.some(p => p.name === name)) {
-      map.set(name, { ...student, online: false });
-    }
-  }
+        for (const [name, student] of map) {
+          if (!presenceSet.has(name)) {
+            map.set(name, { ...student, online: false });
+          }
+        }
 
-  return [...map.values()];
-});
-        if (hasNewJoiner) this.resyncEphemeralState();
-        this.onStudentsUpdate?.(this.students());
+        return [...map.values()];
       });
+      if (hasNewJoiner) this.transport.send({ type: 'request_student_states' });
+      this.onStudentsUpdate?.(this.students());
+    });
 
     this.transport.spectatorSync$
-      .pipe(takeUntilDestroyed())
-      .subscribe((spectators) => this.spectators.set(spectators));
+    .pipe(takeUntilDestroyed())
+    .subscribe((spectators) => this.spectators.set(spectators));
   }
 
   // ----------------------------------------------------------------
@@ -205,7 +204,7 @@ this.students.update(current => {
   private resyncEphemeralState(): void {
     this.transport.send({ type: 'curtain', closed: this.curtainClosed() });
     if (this.mushroomType()) this.transport.send({ type: 'mushroom_type', mType: this.mushroomType()! });
-    this.transport.send({ type: 'request_student_states' });
+    // this.transport.send({ type: 'request_student_states' });
     this.transport.send({ type: 'sync_all_challenge_pairs', pairs: this.challengePairs() });
     const mode = this.mode();
     if (mode === 'gathered') this.transport.send({ type: 'gather' });
@@ -245,16 +244,9 @@ this.students.update(current => {
   sendReset(studentName: string): void { this.transport.send({ type: 'reset', studentName }); }
   sendResume(studentName: string): void { this.transport.send({ type: 'resume', studentName }); }
   sendStamp(studentName: string): void { this.transport.send({ type: 'stamp', studentName }); }
-  sendLock(studentName: string): void { this.transport.send({ type: 'lock', studentName }); }
-  sendUnlock(studentName: string): void { this.transport.send({ type: 'unlock', studentName }); }
-  sendAutoRedo(value: boolean, studentName: string): void {
-    this.autoRedoList.update((o) => ({ ...o, [studentName]: value })); 
-    this.transport.send({ type: 'set_auto_redo', value, studentName });
-  }
-  sendAutoProgress(value: boolean, studentName: string): void {
-    this.autoProgressList.update((o) => ({ ...o, [studentName]: value }));
-    this.transport.send({ type: 'set_auto_progress', value, studentName });
-  }
+  sendLock(value: boolean,studentName: string): void { this.transport.send({ type: 'lock',value, studentName }); }
+  sendAutoRedo(value: boolean, studentName: string): void {this.transport.send({ type: 'set_auto_redo', value, studentName });}
+  sendAutoProgress(value: boolean, studentName: string): void {this.transport.send({ type: 'set_auto_progress', value, studentName });}
   sendTeachingOverlay(concepts:TeachingConceptListItem[]): void {
     this.transport.send({ type: 'teaching_overlay_update', concepts });
   }
@@ -403,7 +395,14 @@ this.students.update(current => {
         this.students.update(list =>{
           const state = event.studentState;
           return list.map(s => s.name === state.name
-            ? { ...s, exIndex: state.exIndex, locked: state.locked, awaitingRedo: state.awaitingRedo, awaitingStamp: state.awaitingStamp }
+            ? { ...s, 
+              exIndex: state.exIndex, 
+              locked: state.locked, 
+              awaitingRedo: state.awaitingRedo, 
+              awaitingStamp: state.awaitingStamp,
+              autoProgress:state.autoProgress,
+              autoRedo:state.autoRedo 
+            }
             : s
           )}
         );
@@ -478,9 +477,7 @@ this.students.update(current => {
         if (event.studentName === myName) this.autoProgress.set(event.value);
         break;
       case 'lock':
-        if (event.studentName === myName) this.lock$.next(event.studentName); break;
-      case 'unlock':
-        if (event.studentName === myName) this.unlock$.next(event.studentName); break;
+        if (event.studentName === myName) this.lock$.next(event.value); break;
       case 'sync_challenge_pair': {
         const { pair } = event;
         if (pair.white === myName || pair.black === myName)
