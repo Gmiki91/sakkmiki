@@ -33,6 +33,7 @@ export class StudentView implements OnDestroy {
   capturedBlackPieces=signal<string[]>([]);
   capturedWhitePieces=signal<string[]>([]);
   score =signal<number>(0);
+  firstTime = signal(true);
   myPair = computed(() =>
     this.classroomStore.challengePairs().find(
       p => p.white === this.classroomStore.studentName() ||
@@ -71,14 +72,14 @@ displayDuel = signal(this.classroomStore.isDuelActive())
     const pair = this.myPair();
     const duel = this.classroomStore.isDuelActive();
     const curtain = untracked(()=>this.classroomStore.curtainClosed())
-
-    if (!document.startViewTransition || curtain) {
+    const firsTime = untracked(()=>this.firstTime())
+    if (!document.startViewTransition || curtain|| firsTime) {
       this.displayMode.set(mode);
       this.displayPair.set(pair);
       this.displayDuel.set(duel);
+      this.firstTime.set(false);
       return;
     }
-
     document.startViewTransition(() => {
       this.displayMode.set(mode);
       this.displayPair.set(pair);
