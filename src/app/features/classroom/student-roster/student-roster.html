@@ -1,5 +1,6 @@
 <div class="student-grid">
   @for (student of store.students(); track student.name) {
+    <!-- Challenge board -->
     @if (getPair(student.name); as pair) {
       @if (pair.white === student.name) {
         @let chFen = getChallengeFen(pair);
@@ -27,6 +28,7 @@
           }
         </mat-card>
       }
+    <!--Exercise or Duel Board  -->
     } @else {
       <mat-card class="student-card"
         [attr.draggable]="!readonly() || null"
@@ -62,19 +64,26 @@
           @if (promotionService.pending() && this.promotionAgainst()===student.name) {
             <app-promotion color="white" (promote)="promotionService.completePromotion($event)"></app-promotion>
           } 
-          <!-- <div class="student-status">
-            <span class="status">{{ student.status }}</span>
-            <span class="feedback">{{ student.feedback }}</span>
-          </div> -->
         </mat-card-content>
         @if (!readonly()) {
           <mat-card-actions style="justify-content: center">
-             <button mat-icon-button matTooltip="Reset board" (click)="handleReset(student.name)"><mat-icon>refresh</mat-icon></button>
             @if (student.awaitingRedo) {
               <button mat-raised-button class="resume-btn" (click)="handleResume(student.name)">Redo</button>
             } @else if (student.awaitingStamp) {
               <button mat-raised-button class="stamp-btn" (click)="handleStamp(student.name)">Stamp</button>
+            <!-- Duel buttons -->
+            }@else if(duelColors()[student.name] !== undefined){ 
+               <button mat-icon-button
+                (click)="toggleDuel(student.name)">
+               <mat-icon>close</mat-icon>
+              </button>
+              <button mat-icon-button
+                (click)="switchDuelSides(student.name)">
+                <mat-icon>swap_horiz</mat-icon>
+              </button>
+            <!-- Exercise buttons -->
             } @else {
+              <button mat-icon-button matTooltip="Reset board" (click)="handleReset(student.name)"><mat-icon>refresh</mat-icon></button>
               <button mat-icon-button
                 [class.active-toggle]="student.autoRedo"
                 [matTooltip]="'Auto redo: ' + (student.autoRedo ? 'ON' : 'OFF')"
@@ -93,18 +102,10 @@
                 <mat-icon fontSet="material-symbols-outlined">autoplay</mat-icon>
               </button>
               <button mat-icon-button
-                [class.active-toggle]="duelColors()[student.name] !== undefined"
-                [matTooltip]="duelColors()[student.name] !== undefined ? 'End duel' : 'Duel'"
+                matTooltip="Duel"
                 (click)="toggleDuel(student.name)">
                 <mat-icon fontSet="material-symbols-outlined">swords</mat-icon>
               </button>
-              @if (duelColors()[student.name] !== undefined) {
-                <button mat-icon-button
-                  matTooltip="Switch sides"
-                  (click)="switchDuelSides(student.name)">
-                  <mat-icon fontSet="material-symbols-outlined">swap_horiz</mat-icon>
-                </button>
-              }
             }
           </mat-card-actions>
         }
