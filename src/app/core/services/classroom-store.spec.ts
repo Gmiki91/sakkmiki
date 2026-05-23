@@ -61,7 +61,7 @@ describe('presence sync', () => {
     // Simulate state update from student
     transport.events$.next({ type: 'student_state', studentState: {
       name: 'Alice', online: true, lastSeen: 0,
-      exIndex: 3, locked: true, awaitingRedo: false, awaitingStamp: false
+      exIndex: 3, locked: true,autoRedo:true,autoProgress:true, awaitingRedo: false, awaitingStamp: false
     }});
     // Alice drops and reconnects
     transport.presenceSync$.next([]);
@@ -213,8 +213,8 @@ describe('student name filtering', () => {
   it('lock fires only for the named student', () => {
     let count = 0;
     aliceStore.lock$.subscribe(() => count++);
-    aliceTransport.events$.next({ type: 'lock', studentName: 'Bob' }); // should not fire
-    aliceTransport.events$.next({ type: 'lock', studentName: 'Alice' }); // should fire
+    aliceTransport.events$.next({ type: 'lock', studentName: 'Bob',value:true }); // should not fire
+    aliceTransport.events$.next({ type: 'lock', studentName: 'Alice',value:true }); // should fire
     expect(count).toBe(1);
   });
 
@@ -314,7 +314,7 @@ describe('wired teacher-student scenarios', () => {
   it('teacher sendLock → student lock$ fires', () => {
     let fired = false;
     aliceStore.lock$.subscribe(() => fired = true);
-    teacherStore.sendLock('Alice');
+    teacherStore.sendLock(true,'Alice');
     expect(fired).toBe(true);
   });
 
@@ -322,7 +322,7 @@ describe('wired teacher-student scenarios', () => {
     return new Promise<void>((resolve) => {
       let fired = false;
       aliceStore.lock$.subscribe(() => fired = true);
-      teacherStore.sendLock('Bob');
+      teacherStore.sendLock(true,'Bob');
       setTimeout(() => { expect(fired).toBe(false); resolve(); }, 50);
     });
   });
@@ -347,10 +347,10 @@ describe('wired teacher-student scenarios', () => {
     expect(aliceStore.loadedExercises().length).toBe(1);
   });
 
-  it('teacher sendCurtain(false) → student curtainClosed becomes false', () => {
-    expect(aliceStore.curtainClosed()).toBe(true);
-    teacherStore.sendCurtain(false);
+  it('teacher sendCurtain(true) → student curtainClosed becomes true', () => {
     expect(aliceStore.curtainClosed()).toBe(false);
+    teacherStore.sendCurtain(true);
+    expect(aliceStore.curtainClosed()).toBe(true);
   });
 
   it('teacher kick → student kick$ fires', () => {

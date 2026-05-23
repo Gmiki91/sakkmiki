@@ -143,7 +143,10 @@ export class ClassroomStore {
 
         return [...map.values()];
       });
-      if (hasNewJoiner) this.transport.send({ type: 'request_student_states' });
+      if (hasNewJoiner) {
+        this.resyncEphemeralState(); // defensive measure next to student_ready handler
+        this.transport.send({ type: 'request_student_states' });
+      }
       this.onStudentsUpdate?.(this.students());
     });
 

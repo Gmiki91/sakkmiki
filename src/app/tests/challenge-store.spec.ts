@@ -225,7 +225,7 @@ describe('Challenge store — FEN tracking on teacher side', () => {
     const store = makeStore(t);
     store.students.set([{
       name: 'Alice', online: true, lastSeen: Date.now(),
-      exIndex: 0, locked: false, awaitingRedo: false, awaitingStamp: false,
+      exIndex: 0, locked: false,autoProgress:true,autoRedo:true, awaitingRedo: false, awaitingStamp: false,
     }]);
 
     t.events$.next({ type: 'student_fen', studentName: 'Alice', fen: 'challenge-board-fen' });
