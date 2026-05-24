@@ -207,7 +207,7 @@ export class RealtimeTransport implements OnDestroy {
           type: 'student_ready',
           name
         });
-
+        this.handlePresence();
         onJoined();
       }
 
