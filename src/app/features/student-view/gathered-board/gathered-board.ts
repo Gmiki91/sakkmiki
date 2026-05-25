@@ -47,14 +47,6 @@ boardConfig = computed<Config>(() => ({
     });
 
     effect(() => {
-      const el = this.chessBoard()?.boardElement?.nativeElement as HTMLElement;
-      if (!el) return;
-      el.addEventListener('pointerdown', (e: MouseEvent) => {
-        if (e.button === 0) e.preventDefault();
-      }, { capture: true });
-    });
-
-    effect(() => {
       const concepts = this.classroomStore.incomingTeachingOverlay();
       if (!concepts?.length) { this.teachingConceptSize = 0; return; }
       if (concepts.length > this.teachingConceptSize) {

@@ -6,6 +6,7 @@
       [class.stamp-mode]="activeTool() === 'stamp'"
       (click)="onBoardClick($event)"
       (mouseup)="onMouseUp($event)"
+      (pointerdown)="$event.preventDefault()"
     >
       <app-chess-board #chessBoard gameMode='class' [config]="boardConfig()"></app-chess-board>
       @for (concept of classroomStore.incomingTeachingOverlay() ?? []; track concept.id) {
