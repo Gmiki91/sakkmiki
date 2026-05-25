@@ -43,6 +43,13 @@ export const TEACHING_CONCEPTS: TeachingConcept[] = [
     squaresNeeded: 1,
     duration: 'persistent',
   },
+   {
+    id: 'phew',
+    label: 'Phew',
+    squaresNeeded: 1,
+    duration: 'persistent',
+    sound: undefined,
+  },
   {
     id: 'tired',
     label: 'Tired',
@@ -67,6 +74,13 @@ export const TEACHING_CONCEPTS: TeachingConcept[] = [
     {
     id: 'rook-attack',
     label: 'Rook attack',
+    squaresNeeded: 0,
+    duration: 'persistent',
+    sound: undefined,
+  },
+    {
+    id: 'queen-threat',
+    label: 'Queen threat',
     squaresNeeded: 0,
     duration: 'persistent',
     sound: undefined,

@@ -107,6 +107,7 @@
           </div>
           <button mat-button (click)="overlayService.cancelSquareSelection()">Cancel</button>
         } @else {
+          <div class="content">
           @for (concept of concepts; track concept.id) {
             <button
               mat-raised-button
@@ -116,6 +117,7 @@
               {{ concept.label }}
             </button>
           }
+           </div>
         }
       </div>
     </div>

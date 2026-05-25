@@ -151,9 +151,14 @@ app-exercise-list {
 }
 
 .concept-palette {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  .content{
+    display: flex;
+    flex-direction: column;
+    height: 50vh;
+    overflow-y:auto;
+    gap: 6px;
+   
+  }
 }
 
 .palette-title {
