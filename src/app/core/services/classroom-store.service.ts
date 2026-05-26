@@ -69,6 +69,7 @@ export class ClassroomStore {
   readonly incomingTeachingOverlay = signal<TeachingConceptListItem[] | null>(null);
   readonly incomingStampAnnotation = signal<StampAnnotation | null>(null);
   readonly incomingStampAnnotationClear = signal<{ studentName: string } | null>(null);
+  readonly lastTeacherFen = signal<string>(STARTING_FEN);
 
   // Duel
   readonly incomingDuelTeacherMove$ = new Subject<{ studentName: string; fen: string; move:Move }>();
@@ -121,7 +122,9 @@ export class ClassroomStore {
     .subscribe((presenceStudents) => {
       const hasNewJoiner = presenceStudents.some(s => !this.previousStudentNames.has(s.name));
       this.previousStudentNames = new Set(presenceStudents.map(s => s.name));
+      console.log('[ClassroomStore] presenceSync$', JSON.stringify(presenceStudents.map(s => s.name)), 'hasNewJoiner:', hasNewJoiner);
       this.students.update(current => {
+        console.log('[ClassroomStore] students before update:', current.length, current.map(s => s.name));
         const map = new Map(current.map(s => [s.name, s]));
         const presenceSet = new Set(presenceStudents.map(p => p.name));
 
@@ -140,7 +143,9 @@ export class ClassroomStore {
           }
         }
 
-        return [...map.values()];
+        const result = [...map.values()];
+        console.log('[ClassroomStore] students after update:', result.length, result.map(s => `${s.name}:${s.online?'ON':'OFF'}`));
+        return result;
       });
       if (hasNewJoiner) this.transport.send({ type: 'request_student_states' });
       this.onStudentsUpdate?.(this.students());
@@ -200,14 +205,39 @@ export class ClassroomStore {
     this.isSpectator.set(false);
   }
 
-  private resyncEphemeralState(): void {
+  private resyncEphemeralState(studentName: string): void {
     this.transport.send({ type: 'curtain', closed: this.curtainClosed() });
     if (this.mushroomType()) this.transport.send({ type: 'mushroom_type', mType: this.mushroomType()! });
-    // this.transport.send({ type: 'request_student_states' });
-    this.transport.send({ type: 'sync_all_challenge_pairs', pairs: this.challengePairs() });
+
     const mode = this.mode();
-    if (mode === 'gathered') this.transport.send({ type: 'gather' });
-    else this.transport.send({ type: 'disperse' }); //normal mode
+    if (mode === 'gathered') {
+      this.transport.send({ type: 'gather' });
+      this.transport.send({ type: 'teacher_fen', fen: this.lastTeacherFen() });
+    } else {
+      this.transport.send({ type: 'disperse' });
+    }
+
+    // Exercise list — prefer per-student assignment over global list
+    const assigned = this.assignedLists()[studentName];
+    if (assigned?.length) {
+      this.transport.send({ type: 'list_assigned', studentName, exercises: assigned });
+    } else if (this.loadedList().length > 0) {
+      this.transport.send({ type: 'list_loaded', exercises: this.loadedList() });
+    }
+
+    // Per-student dropped exercise
+    const dropped = this.droppedExercises()[studentName];
+    if (dropped) {
+      this.transport.send({ type: 'dropped_exercise', studentName, exercise: dropped });
+    }
+
+    // Challenge pairs
+    this.transport.send({ type: 'sync_all_challenge_pairs', pairs: this.challengePairs() });
+    
+    // Whiteboard
+    if (this.whiteBoardText()) {
+      this.transport.send({ type: 'white_board_text', text: this.whiteBoardText() });
+    }
   }
 
   // when student is thrown back to "main board", have an unconfigured board
@@ -231,7 +261,10 @@ export class ClassroomStore {
     this.sharedArrows.set(null);
     this.transport.send({ type: 'disperse' });
   }
-  sendTeacherFen(fen: string): void { this.transport.send({ type: 'teacher_fen', fen }); }
+  sendTeacherFen(fen: string): void {
+    this.lastTeacherFen.set(fen);
+    this.transport.send({ type: 'teacher_fen', fen });
+  }
   sendMushroomType(mType:string):void{this.transport.send({type:'mushroom_type',mType});}
   sendSharedArrows(shapes: DrawShape[], target: 'all' | string = 'all'): void {
     this.transport.send({ type: 'shared_arrows', shapes, target });
@@ -424,7 +457,7 @@ export class ClassroomStore {
       case 'stamp_annotation': this.incomingStampAnnotation.set(event.annotation); break;
       case 'duel_student_move': this.incomingDuelStudentMove$.next(event); break;
       case 'student_ready': 
-        this.resyncEphemeralState();
+        this.resyncEphemeralState(event.name);
         this.resync$.next(event.name);
         break;
     }
@@ -492,7 +525,7 @@ export class ClassroomStore {
       case 'challenge_remove':
         this.challengePairs.update((pairs) =>
           pairs.filter((p) => p.white !== event.pair.white || p.black !== event.pair.black));
-        this.resetFen();
+        if (event.pair.white === myName || event.pair.black === myName) this.resetFen();
         break;
       case 'drawing_clear': this.incomingDrawingClear.set({ studentName: event.studentName }); break;
       case 'drawing_clear_all': this.incomingDrawingClear.set({ studentName: 'all' }); break;

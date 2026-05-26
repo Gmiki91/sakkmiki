@@ -305,6 +305,7 @@ export class RealtimeTransport implements OnDestroy {
 
     const state = this.channel.presenceState();
     const all = Object.values(state).flat() as any[];
+    console.log('[RealtimeTransport] presenceState', JSON.stringify(all.map(p => ({ role: p.role, name: p.name, displayName: p.displayName }))));
 
     const students: StudentPresence[] = all
       .filter(p => p.role === 'student')
