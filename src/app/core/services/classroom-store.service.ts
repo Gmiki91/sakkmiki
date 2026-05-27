@@ -246,9 +246,6 @@ export class ClassroomStore {
   // Send methods (teacher)
   // ----------------------------------------------------------------
 
-  requestFen(studentName:string){
-    this.transport.send({ type: 'request_fen', target: studentName });
-  }
   gather(): void {
     this.mode.set('gathered');
     this.transport.send({ type: 'gather' });
@@ -539,8 +536,6 @@ export class ClassroomStore {
         this.incomingDuelTeacherMove$.next({ studentName: event.studentName, fen: event.fen, move: event.move});
         break;
       case 'white_board_text': this.whiteBoardText.set(event.text);break;
-      case 'request_fen':if (event.target === this.studentName()) 
-        this.broadcastStudentFen(this.studentName(),this.currentStudentFen());break;
       case 'curtain': this.curtainClosed.set(event.closed); break;
       case 'duel_start':
         if (event.studentName === this.studentName()) {

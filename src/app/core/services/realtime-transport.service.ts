@@ -44,7 +44,6 @@ export type BroadcastEvent =
   | { type: 'lock'; value:boolean,studentName: string }
   | { type: 'kick'; studentName: string }
   | { type: 'student_fen'; studentName: string; fen: string }
-  | { type: 'request_fen'; target:string }
   | { type: 'drawing_points'; studentName: string; strokeId: string; color: string; points: Point[] }
   | { type: 'drawing_commit'; strokeId: string }
   | { type: 'drawing_color'; studentName: string; color: string }

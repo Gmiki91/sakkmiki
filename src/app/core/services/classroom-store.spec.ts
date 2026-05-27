@@ -27,7 +27,7 @@ describe('resyncStudentGameState', () => {
   });
 
   it('student_ready also triggers ephemeral resync (sends curtain state)', () => {
-    teacherStore.sendCurtain(false);
+    teacherStore.sendCurtain(true);
     teacherTransport.clear();
     teacherTransport.events$.next({ type: 'student_ready', name: 'Alice' });
     expect(teacherTransport.sentOfType('curtain').length).toBeGreaterThan(0);
@@ -104,12 +104,12 @@ describe('resyncEphemeralState', () => {
     const transport = new FakeRealtimeTransport();
     const store = makeStore(transport);
     store.joinAsTeacher('room-1');
-    store.sendCurtain(false); // open the curtain
+    store.sendCurtain(true); // close the curtain
     transport.clear();
 
     transport.events$.next({ type: 'student_ready', name: 'Alice' });
     const curtainEvent = transport.sentOfType('curtain').at(-1) as any;
-    expect(curtainEvent?.closed).toBe(false);
+    expect(curtainEvent?.closed).toBe(true);
   });
 });
 describe('challenge pair logic', () => {
