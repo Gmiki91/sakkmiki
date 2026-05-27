@@ -72,7 +72,7 @@ export class StudentRoster {
   private lastExIndex: Record<string, number> = {};
 
   constructor() {
-    // resync student state on (re)connect
+    // resync student state on student (re)connect
     this.store.resync$.pipe(takeUntilDestroyed()).subscribe(studentName => {
       const pair = this.getPair(studentName);
       if (pair) {
@@ -92,13 +92,8 @@ export class StudentRoster {
           position: 0, listId: '', instruction: '',
         };
         this.store.sendDuelStart(studentName, duelChess.fen(), teacherColor === 'w' ? 'b' : 'w', ex);
-        // TODO sending empty Move object might be wrong 
         this.store.sendDuelTeacherMove(studentName, duelChess.fen(), {} as Move);
         return;
-      }
-     
-      if (this.store.mode() === 'normal') {
-        this.store.requestFen(studentName);
       }
     });
 

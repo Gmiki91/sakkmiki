@@ -185,10 +185,6 @@ export class ClassroomStore {
         this.isJoined.set(true);
         this.supabase.touchClassroom(classroomId).catch(() => {});
         this.trackLobbyPresence(classroomId);
-        // Broadcast current FEN on reconnect
-        if (this.currentStudentFen() !== STARTING_FEN) {
-          this.broadcastStudentFen(name, this.currentStudentFen());
-        }
         onJoined();
       },
     );
@@ -206,15 +202,14 @@ export class ClassroomStore {
   }
 
   private resyncEphemeralState(studentName: string): void {
-    this.transport.send({ type: 'curtain', closed: this.curtainClosed() });
+    // Only broadcast non-default state — teacher reconnect resets signals to defaults,
+    // and broadcasting empty/default values would overwrite students' valid state.
+    if (this.curtainClosed()) this.transport.send({ type: 'curtain', closed: true });
     if (this.mushroomType()) this.transport.send({ type: 'mushroom_type', mType: this.mushroomType()! });
 
-    const mode = this.mode();
-    if (mode === 'gathered') {
+    if (this.mode() === 'gathered') {
       this.transport.send({ type: 'gather' });
       this.transport.send({ type: 'teacher_fen', fen: this.lastTeacherFen() });
-    } else {
-      this.transport.send({ type: 'disperse' });
     }
 
     // Exercise list — prefer per-student assignment over global list
@@ -231,8 +226,10 @@ export class ClassroomStore {
       this.transport.send({ type: 'dropped_exercise', studentName, exercise: dropped });
     }
 
-    // Challenge pairs
-    this.transport.send({ type: 'sync_all_challenge_pairs', pairs: this.challengePairs() });
+    // Only broadcast existing pairs — empty array would clear all students' pairs
+    if (this.challengePairs().length > 0) {
+      this.transport.send({ type: 'sync_all_challenge_pairs', pairs: this.challengePairs() });
+    }
     
     // Whiteboard
     if (this.whiteBoardText()) {
@@ -513,7 +510,10 @@ export class ClassroomStore {
       case 'sync_challenge_pair': {
         const { pair } = event;
         if (pair.white === myName || pair.black === myName)
-          this.challengePairs.update((pairs) => [...pairs, pair]);
+          this.challengePairs.update((pairs) => {
+            if (pairs.some(p => p.white === pair.white && p.black === pair.black)) return pairs;
+            return [...pairs, pair];
+          });
         break;
       }
       // ensure a reconnecting student gets their current pair state

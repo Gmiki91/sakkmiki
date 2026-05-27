@@ -100,6 +100,7 @@ export class ExerciseBoard  {
       const autoRedo = untracked(() => this.classroomStore.autoRedo());
       const autoProgress = untracked(() => this.classroomStore.autoProgress());
       this.classroomStore.broadcastStudentState({online:true,lastSeen:Date.now(),  exIndex,locked, awaitingRedo, awaitingStamp,autoProgress,autoRedo });
+      this.classroomStore.broadcastStudentFen(this.classroomStore.studentName(), untracked(() => this.exerciseFen()));
     });
 
     // Reset board when exercise changes
