@@ -2,7 +2,7 @@ import { Injectable, signal, untracked } from '@angular/core';
 
 export type SoundEffect = 'move' | 'take' |'stamp'|'gasp'|'bite'| 'fanfare' | 'cheering'|'bravo'|'shield'|'curtain'|'gunshot'|
 'homer'|'bite1'|'bite2'|'bite3'|'bite4'|'bite5'|'bite6'|'lost'|'won'|'wrongMove'|'success'|'error'|'jailLocks'|'snoring'|'poison'|
-'openingBell';
+'openingBell'|'horse1'|'horse2'|'phew';
 
 @Injectable({ providedIn: 'root' })
 export class SoundService {
@@ -34,7 +34,10 @@ export class SoundService {
     curtain:new Audio('/sounds/curtain.mp3'),
     poison:new Audio('/sounds/poison.mp3'),
     openingBell:new Audio('/sounds/opening-bell.mp3'),
-    gunshot:new Audio('/sounds/gunshot.mp3')
+    gunshot:new Audio('/sounds/gunshot.mp3'),
+    horse1:new Audio('/sounds/horse1.mp3'),
+    horse2:new Audio('/sounds/horse2.mp3'),
+    phew:new Audio('/sounds/phew.mp3'),
   };
 
   play(sound: SoundEffect): void {

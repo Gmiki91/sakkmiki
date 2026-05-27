@@ -42,13 +42,28 @@ export const TEACHING_CONCEPTS: TeachingConcept[] = [
     label: 'Alarmed',
     squaresNeeded: 1,
     duration: 'persistent',
+    sound: 'gasp',
   },
-   {
+  {
     id: 'phew',
     label: 'Phew',
     squaresNeeded: 1,
     duration: 'persistent',
-    sound: undefined,
+    sound: 'phew',
+  },
+  {
+    id: 'poison',
+    label: 'Poison',
+    squaresNeeded: 1,
+    duration: 'persistent',
+    sound: 'poison',
+  },
+  {
+    id: 'target',
+    label: 'Target',
+    squaresNeeded: 1,
+    duration: 'persistent',
+    sound: 'gunshot',
   },
   {
     id: 'tired',
@@ -58,11 +73,32 @@ export const TEACHING_CONCEPTS: TeachingConcept[] = [
     sound: 'snoring',
   },
   {
+    id: 'pin',
+    label: 'Pin',
+    squaresNeeded: 0,
+    duration: 'persistent',
+    sound: 'horse1',
+  },
+  {
+    id: 'fork',
+    label: 'Fork',
+    squaresNeeded: 0,
+    duration: 'persistent',
+    sound: 'horse2',
+  },
+  {
+    id: 'skewer',
+    label: 'Skewer',
+    squaresNeeded: 0,
+    duration: 'persistent',
+    sound: undefined,
+  },
+  {
     id: 'surprise',
     label: 'Surprise',
     squaresNeeded: 0,
     duration: 'persistent',
-    sound: undefined,
+    sound: 'gasp',
   },
   {
     id: 'rook-guard',
@@ -71,27 +107,21 @@ export const TEACHING_CONCEPTS: TeachingConcept[] = [
     duration: 'persistent',
     sound: undefined,
   },
-    {
+  {
     id: 'rook-attack',
     label: 'Rook attack',
     squaresNeeded: 0,
     duration: 'persistent',
     sound: undefined,
   },
-    {
+  {
     id: 'queen-threat',
     label: 'Queen threat',
     squaresNeeded: 0,
     duration: 'persistent',
     sound: undefined,
   },
-    {
-    id: 'target',
-    label: 'Target',
-    squaresNeeded: 1,
-    duration: 'persistent',
-    sound: 'gunshot',
-  },
+
   {
     id: 'castling1',
     label: 'Castling protects',
@@ -112,12 +142,5 @@ export const TEACHING_CONCEPTS: TeachingConcept[] = [
     squaresNeeded: 0,
     duration: 'persistent',
     sound: undefined,
-  },
-  {
-    id: 'poison',
-    label: 'Poison',
-    squaresNeeded: 1,
-    duration: 'persistent',
-    sound: 'poison',
   },
 ];

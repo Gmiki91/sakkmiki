@@ -110,6 +110,7 @@
           <div class="content">
           @for (concept of concepts; track concept.id) {
             <button
+              style="padding: 10px;"
               mat-raised-button
               [class.concept-active]="isConceptActive(concept.id)"
               (click)="overlayService.startConcept(concept)"
