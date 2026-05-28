@@ -522,6 +522,7 @@ export class ClassroomStore {
       case 'challenge_remove':
         this.challengePairs.update((pairs) =>
           pairs.filter((p) => p.white !== event.pair.white || p.black !== event.pair.black));
+        this.challengeMove.set(null);
         if (event.pair.white === myName || event.pair.black === myName) this.resetFen();
         break;
       case 'drawing_clear': this.incomingDrawingClear.set({ studentName: event.studentName }); break;
