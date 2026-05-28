@@ -321,6 +321,7 @@ export class StudentRoster {
         exercise: result.exercise,
         scoreDiffWin: result.scoreDiffWin || undefined,
       };
+      this.store.challengeMove.set(null);
       this.store.challengePairs.update(pairs => [...pairs, pair]);
       this.store.syncChallengePair(pair);
     });

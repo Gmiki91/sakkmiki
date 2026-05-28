@@ -50,7 +50,7 @@ export class ChallengeBoard {
     turnColor: this.challengeChess.turn() === 'w' ? 'white' : 'black',
     movable: {
       free: false,
-      color: this.myColor(),
+      color: this.challengeChess.isGameOver()?undefined: this.myColor(),
       dests: getValidMoves(this.challengeChess),
       events: { after: (orig, dest) => this.handleChallengeMove(orig, dest) },
       showDests: true,
@@ -98,12 +98,11 @@ export class ChallengeBoard {
         this.promotion.emit({piece:event.move.promotion,color:event.move.color,scoreDelta: delta});
       }
       loadChess(this.challengeChess, event.fen);
-      if (event.over) {
-        this.soundService.play('lost');
-        this.challengeChess.setTurn(event.move.color)
-      }
       this.challengeFen.set(this.challengeChess.fen());
       this.challengeLastMove.set([event.move.from as Key, event.move.to as Key]);
+      if (event.over) {
+        this.soundService.play('lost');
+      }
     });
 
     // Incoming arrows from teacher

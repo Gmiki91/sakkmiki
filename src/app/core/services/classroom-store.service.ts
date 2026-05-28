@@ -506,11 +506,13 @@ export class ClassroomStore {
         if (event.studentName === myName) this.lock$.next(event.value); break;
       case 'sync_challenge_pair': {
         const { pair } = event;
-        if (pair.white === myName || pair.black === myName)
+        if (pair.white === myName || pair.black === myName){
           this.challengePairs.update((pairs) => {
             if (pairs.some(p => p.white === pair.white && p.black === pair.black)) return pairs;
             return [...pairs, pair];
           });
+          this.challengeMove.set(null)
+        }
         break;
       }
       // ensure a reconnecting student gets their current pair state
