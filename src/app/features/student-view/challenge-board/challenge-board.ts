@@ -97,12 +97,10 @@ export class ChallengeBoard {
         this.localScore.update(s => s + delta);
         this.promotion.emit({piece:event.move.promotion,color:event.move.color,scoreDelta: delta});
       }
+      loadChess(this.challengeChess, event.fen);
       if (event.over) {
-        this.challengeChess.move({ from:event.move.from,to:event.move.to, promotion: event.move.promotion });
         this.soundService.play('lost');
         this.challengeChess.setTurn(event.move.color)
-      } else {
-        loadChess(this.challengeChess, event.fen);
       }
       this.challengeFen.set(this.challengeChess.fen());
       this.challengeLastMove.set([event.move.from as Key, event.move.to as Key]);
