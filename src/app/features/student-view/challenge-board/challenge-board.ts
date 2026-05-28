@@ -98,7 +98,7 @@ export class ChallengeBoard {
         this.promotion.emit({piece:event.move.promotion,color:event.move.color,scoreDelta: delta});
       }
       if (event.over) {
-        this.challengeChess.move({ from:event.move.from,to:event.move.to, promotion: 'q' });
+        this.challengeChess.move({ from:event.move.from,to:event.move.to, promotion: event.move.promotion });
         this.soundService.play('lost');
         this.challengeChess.setTurn(event.move.color)
       } else {
