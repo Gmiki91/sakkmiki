@@ -3,11 +3,13 @@ name: CI
 on:
   push:
     branches:
-      - '**'
-      - '!main'
+      - '**'       # runs on everything
+  pull_request:
+    branches:
+      - 'master'   # extra safety for PRs targeting master
 
 jobs:
-  unit:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,11 +18,12 @@ jobs:
           node-version: 22
           cache: 'npm'
       - run: npm ci
-      - run: npm run test
+      - run: npm run build       # catch build errors early
+      - run: npm run test        # unit tests
 
   integration:
+    needs: build-and-test
     runs-on: ubuntu-latest
-    needs: unit
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

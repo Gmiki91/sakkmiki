@@ -9,8 +9,6 @@
         <app-chess-board
           #chessBoard
           [config]="boardConfig"
-          [mushroomMode]="isGathered() && demoExercise()?.exerciseType === 'mushroom'"
-          [style.--mushroom-emoji]="'&quot;' + demoExercise()?.mushroomType + '&quot;'"
           (handleDrop)="onDrop($event)"
         ></app-chess-board>
         <app-drawing-canvas
