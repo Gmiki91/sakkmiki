@@ -212,12 +212,12 @@ export class ClassroomStore {
       this.transport.send({ type: 'teacher_fen', fen: this.lastTeacherFen() });
     }
 
-    // Exercise list — prefer per-student assignment over global list
+    // Exercise list — always use list_assigned to target only this specific student
+    // This prevents existing students from receiving list_loaded and resetting their progress
     const assigned = this.assignedLists()[studentName];
-    if (assigned?.length) {
-      this.transport.send({ type: 'list_assigned', studentName, exercises: assigned });
-    } else if (this.loadedList().length > 0) {
-      this.transport.send({ type: 'list_loaded', exercises: this.loadedList() });
+    const exercises = assigned?.length ? assigned : this.loadedList();
+    if (exercises.length > 0) {
+      this.transport.send({ type: 'list_assigned', studentName, exercises });
     }
 
     // Per-student dropped exercise
@@ -418,6 +418,8 @@ export class ClassroomStore {
   private handleTeacherEvents(event: BroadcastEvent): void {
     switch (event.type) {
       case 'student_state':
+        // Reactivate student if they were marked permanently offline
+        this.transport.reactivateStudent(event.studentState.name);
         this.students.update(list =>{
           const state = event.studentState;
           return list.map(s => s.name === state.name
@@ -450,10 +452,6 @@ export class ClassroomStore {
         this.incomingDrawingColor.set({ studentName: event.studentName, color: event.color }); break;
       case 'stamp_annotation': this.incomingStampAnnotation.set(event.annotation); break;
       case 'duel_student_move': this.incomingDuelStudentMove$.next(event); break;
-      case 'student_ready': 
-        this.resyncEphemeralState(event.name);
-        this.resync$.next(event.name);
-        break;
     }
   }
 

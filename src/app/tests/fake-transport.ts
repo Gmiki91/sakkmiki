@@ -30,6 +30,7 @@ export class FakeRealtimeTransport {
   joinAsSpectator() {}
   leave() { return Promise.resolve(); }
   ngOnDestroy() {}
+  reactivateStudent() {}
 }
 
 export function wireTransports(a: FakeRealtimeTransport, b: FakeRealtimeTransport) {

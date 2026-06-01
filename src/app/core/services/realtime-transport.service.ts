@@ -55,7 +55,6 @@ export type BroadcastEvent =
   | { type: 'stamp_annotation_clear_all' }
   | { type: 'white_board_text', text:string}
   | { type: 'curtain'; closed: boolean }
-  | { type: 'student_ready'; name: string }
   | { type: 'duel_teacher_move'; studentName: string; fen: string; move:Move }
   | { type: 'duel_student_move'; studentName: string; fen: string; move:Move }
   | { type: 'duel_start'; studentName: string; fen: string; studentColor: 'w' | 'b'; exercise: Exercise; scoreDiffWin?: number; timerMinutes?: number }
@@ -68,27 +67,11 @@ export type BroadcastEvent =
 export class RealtimeTransport implements OnDestroy {
   private supabase = inject(SupabaseService);
   private channel: any = null;
-  private reconnectTimer: any = null;
   private connectionId = 0;
-  private destroyed = false;
-
-  private lastJoin:
-    | {
-        mode: 'teacher';
-        channelId: string;
-      }
-    | {
-        mode: 'student';
-        channelId: string;
-        name: string;
-        onJoined: () => void;
-      }
-    | {
-        mode: 'spectator';
-        channelId: string;
-        displayName: string;
-      }
-    | null = null;
+  private lastStudentNames: string[] = [];
+  private offlineGracePeriods = new Map<string, any>(); // Track pending offline timers per student
+  private graceStudentNames = new Set<string>(); // Students in grace period (included in presence sync)
+  private permanentlyOffline = new Set<string>(); // Students marked offline after grace period expires
 
   readonly events$ = new Subject<BroadcastEvent>();
   readonly presenceSync$ = new Subject<StudentPresence[]>();
@@ -97,25 +80,6 @@ export class RealtimeTransport implements OnDestroy {
   // =====================================================
   // PUBLIC
   // =====================================================
-
-  joinAsTeacher(channelId: string): void {
-    this.lastJoin = { mode: 'teacher', channelId };
-    void this.connectTeacher(channelId);
-  }
-
-  joinAsStudent(
-    channelId: string,
-    name: string,
-    onJoined: () => void
-  ): void {
-    this.lastJoin = { mode: 'student', channelId, name, onJoined };
-    void this.connectStudent(channelId, name, onJoined);
-  }
-
-  joinAsSpectator(channelId: string, displayName: string): void {
-    this.lastJoin = { mode: 'spectator', channelId, displayName };
-    void this.connectSpectator(channelId, displayName);
-  }
 
   async send(event: BroadcastEvent): Promise<void> {
     if (!this.channel) return;
@@ -131,13 +95,27 @@ export class RealtimeTransport implements OnDestroy {
     }
   }
 
+  // Reactivate a permanently offline student (called when they send a broadcast event)
+  reactivateStudent(name: string): void {
+    if (this.permanentlyOffline.has(name)) {
+      this.permanentlyOffline.delete(name);
+      console.log(`[RealtimeTransport] Student ${name} reactivated from permanently offline`);
+      this.handlePresence();
+    }
+  }
+
   async leave(): Promise<void> {
-    this.lastJoin = null;
     await this.cleanup();
   }
 
   ngOnDestroy(): void {
-    this.destroyed = true;
+    // Cleanup all grace period timers
+    for (const timer of this.offlineGracePeriods.values()) {
+      clearTimeout(timer);
+    }
+    this.offlineGracePeriods.clear();
+    this.graceStudentNames.clear();
+    this.permanentlyOffline.clear();
     void this.cleanup();
     this.events$.complete();
     this.presenceSync$.complete();
@@ -148,7 +126,7 @@ export class RealtimeTransport implements OnDestroy {
   // CONNECT
   // =====================================================
 
-  private async connectTeacher(channelId: string): Promise<void> {
+  async joinAsTeacher(channelId: string): Promise<void> {
     await this.cleanup();
 
     const id = ++this.connectionId;
@@ -159,7 +137,11 @@ export class RealtimeTransport implements OnDestroy {
         if (id !== this.connectionId) return;
         this.events$.next(payload);
       })
-      .on('presence', { event: 'sync' }, () => {
+      .on('presence', { event: 'join' }, () => {
+        if (id !== this.connectionId) return;
+        this.handlePresence();
+      })
+      .on('presence', { event: 'leave' }, () => {
         if (id !== this.connectionId) return;
         this.handlePresence();
       });
@@ -169,15 +151,12 @@ export class RealtimeTransport implements OnDestroy {
 
       if (status === 'SUBSCRIBED') {
         await this.channel.track({ role: 'teacher' });
-      }
-
-      if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-        this.scheduleReconnect(id);
+        this.handlePresence(); // Initial sync on first subscription
       }
     });
   }
 
-  private async connectStudent(
+  async joinAsStudent(
     channelId: string,
     name: string,
     onJoined: () => void
@@ -201,22 +180,12 @@ export class RealtimeTransport implements OnDestroy {
           role: 'student',
           name
         });
-
-        await this.send({
-          type: 'student_ready',
-          name
-        });
-        this.handlePresence();
         onJoined();
-      }
-
-      if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-        this.scheduleReconnect(id);
       }
     });
   }
 
-  private async connectSpectator(
+  async joinAsSpectator(
     channelId: string,
     displayName: string
   ): Promise<void> {
@@ -230,7 +199,11 @@ export class RealtimeTransport implements OnDestroy {
         if (id !== this.connectionId) return;
         this.events$.next(payload);
       })
-      .on('presence', { event: 'sync' }, () => {
+      .on('presence', { event: 'join' }, () => {
+        if (id !== this.connectionId) return;
+        this.handlePresence();
+      })
+      .on('presence', { event: 'leave' }, () => {
         if (id !== this.connectionId) return;
         this.handlePresence();
       });
@@ -240,42 +213,9 @@ export class RealtimeTransport implements OnDestroy {
 
       if (status === 'SUBSCRIBED') {
         await this.channel.track({ role: 'spectator', displayName });
-      }
-
-      if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-        this.scheduleReconnect(id);
+        this.handlePresence(); // Initial sync on first subscription
       }
     });
-  }
-
-  // =====================================================
-  // RECONNECT
-  // ======================================================
-
-  private scheduleReconnect(id: number): void {
-    if (this.reconnectTimer || this.destroyed) return;
-    if (id !== this.connectionId) return;
-
-    this.reconnectTimer = setTimeout(() => {
-      this.reconnectTimer = null;
-
-      if (!this.lastJoin) return;
-
-      if (this.lastJoin.mode === 'teacher') {
-        void this.connectTeacher(this.lastJoin.channelId);
-      } else if (this.lastJoin.mode === 'student') {
-        void this.connectStudent(
-          this.lastJoin.channelId,
-          this.lastJoin.name,
-          this.lastJoin.onJoined
-        );
-      } else if (this.lastJoin.mode === 'spectator') {
-        void this.connectSpectator(
-          this.lastJoin.channelId,
-          this.lastJoin.displayName
-        );
-      }
-    }, 3000);
   }
 
   // =====================================================
@@ -283,10 +223,12 @@ export class RealtimeTransport implements OnDestroy {
   // =====================================================
 
   private async cleanup(): Promise<void> {
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
+    // Clear all grace period timers
+    for (const timer of this.offlineGracePeriods.values()) {
+      clearTimeout(timer);
     }
+    this.offlineGracePeriods.clear();
+    this.graceStudentNames.clear();
 
     if (this.channel) {
       const old = this.channel;
@@ -303,15 +245,76 @@ export class RealtimeTransport implements OnDestroy {
     if (!this.channel) return;
 
     const state = this.channel.presenceState();
-    const all = Object.values(state).flat() as any[];
-    console.log('[RealtimeTransport] presenceState', JSON.stringify(all.map(p => ({ role: p.role, name: p.name, displayName: p.displayName }))));
+    if (!state) return;
 
-    const students: StudentPresence[] = all
+    const all = Object.values(state).flat() as any[];
+    const onlineStudents = new Set(all
       .filter(p => p.role === 'student')
-      .map(p => ({
-        role: 'student',
-        name: p.name
-      }));
+      .map(p => p.name));
+
+    // Active students = currently online, minus permanently offline
+    const activeStudents = new Set(
+      [...onlineStudents].filter(name => !this.permanentlyOffline.has(name))
+    );
+
+    // Start grace periods for previously-online students who went offline.
+    // Do NOT cancel existing grace periods on reconnect — let the timer expire naturally.
+    // At expiration, we check if the student is actually online.
+    for (const name of this.lastStudentNames) {
+      if (!activeStudents.has(name) && !this.offlineGracePeriods.has(name) && !this.permanentlyOffline.has(name)) {
+        const timer = setTimeout(() => {
+          this.offlineGracePeriods.delete(name);
+          this.graceStudentNames.delete(name);
+
+          // Check if the student reconnected during the grace period
+          const currentState = this.channel?.presenceState();
+          if (currentState) {
+            const allNow = Object.values(currentState).flat() as any[];
+            const isOnline = allNow.some(p => p.role === 'student' && p.name === name);
+            if (isOnline) {
+              console.log(`[RealtimeTransport] Student ${name} grace period expired, stayed online`);
+              this.emitPresenceSync();
+              return;
+            }
+          }
+
+          this.permanentlyOffline.add(name);
+          console.log(`[RealtimeTransport] Student ${name} offline grace period expired, marked permanently offline`);
+          this.emitPresenceSync();
+        }, 15000);
+        this.offlineGracePeriods.set(name, timer);
+        this.graceStudentNames.add(name);
+        console.log(`[RealtimeTransport] Student ${name} went offline, started 15s grace period`);
+      }
+    }
+
+    this.emitPresenceSync();
+  }
+
+  private emitPresenceSync(): void {
+    if (!this.channel) return;
+
+    const state = this.channel.presenceState();
+    if (!state) return;
+
+    const all = Object.values(state).flat() as any[];
+    const trackedStudentNames = new Set(
+      all.filter(p => p.role === 'student').map(p => p.name)
+    );
+
+    // Build student list: currently tracked students + grace period students, minus permanently offline
+    const visibleNames = new Set<string>();
+    for (const name of trackedStudentNames) {
+      if (!this.permanentlyOffline.has(name)) visibleNames.add(name);
+    }
+    for (const name of this.graceStudentNames) {
+      if (!this.permanentlyOffline.has(name)) visibleNames.add(name);
+    }
+
+    const students: StudentPresence[] = [...visibleNames].map(name => ({
+      role: 'student',
+      name
+    }));
 
     const spectators: SpectatorPresence[] = all
       .filter(p => p.role === 'spectator')
@@ -320,7 +323,15 @@ export class RealtimeTransport implements OnDestroy {
         displayName: p.displayName
       }));
 
-    this.presenceSync$.next(students);
-    this.spectatorSync$.next(spectators);
+    // Check if list actually changed (avoid in-place sort mutation)
+    const currentNames = [...visibleNames].sort().join(',');
+    const lastNames = [...this.lastStudentNames].sort().join(',');
+
+    if (currentNames !== lastNames) {
+      console.log('[RealtimeTransport] presenceState CHANGED', JSON.stringify(students.map(s => s.name)));
+      this.lastStudentNames = [...visibleNames];
+      this.presenceSync$.next(students);
+      this.spectatorSync$.next(spectators);
+    }
   }
 }

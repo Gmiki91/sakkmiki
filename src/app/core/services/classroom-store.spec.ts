@@ -5,34 +5,6 @@ import { RealtimeTransport } from './realtime-transport.service';
 import { SupabaseService } from './supabase.service';
 import { ExerciseList } from '../../shared/models/exercise-list.model';
 import { Move } from 'chess.js';
-describe('resyncStudentGameState', () => {
-  let teacherTransport: FakeRealtimeTransport;
-  let teacherStore: ClassroomStore;
-
-  beforeEach(() => {
-    teacherTransport = new FakeRealtimeTransport();
-    teacherStore = makeStore(teacherTransport);
-    teacherStore.joinAsTeacher('room-1');
-    teacherTransport.presenceSync$.next([{ role: 'student', name: 'Alice' }]);
-  });
-
-  it('student_ready emits the student name on resync$', () => {
-    return new Promise<void>((resolve) => {
-      teacherStore.resync$.subscribe(name => {
-        expect(name).toBe('Alice');
-        resolve();
-      });
-      teacherTransport.events$.next({ type: 'student_ready', name: 'Alice' });
-    });
-  });
-
-  it('student_ready also triggers ephemeral resync (sends curtain state)', () => {
-    teacherStore.sendCurtain(true);
-    teacherTransport.clear();
-    teacherTransport.events$.next({ type: 'student_ready', name: 'Alice' });
-    expect(teacherTransport.sentOfType('curtain').length).toBeGreaterThan(0);
-  });
-});
 describe('presence sync', () => {
   let store: ClassroomStore;
   let transport: FakeRealtimeTransport;
@@ -88,30 +60,6 @@ describe('presence sync', () => {
   });
 });
 
-describe('resyncEphemeralState', () => {
-  it('sends gather event when student_ready fires and teacher is in gathered mode', () => {
-    const transport = new FakeRealtimeTransport();
-    const store = makeStore(transport);
-    store.joinAsTeacher('room-1');
-    store.gather();
-    transport.clear();
-
-    transport.events$.next({ type: 'student_ready', name: 'Alice' });
-    expect(transport.sentOfType('gather').length).toBe(1);
-  });
-
-  it('sends current curtain state when student_ready fires', () => {
-    const transport = new FakeRealtimeTransport();
-    const store = makeStore(transport);
-    store.joinAsTeacher('room-1');
-    store.sendCurtain(true); // close the curtain
-    transport.clear();
-
-    transport.events$.next({ type: 'student_ready', name: 'Alice' });
-    const curtainEvent = transport.sentOfType('curtain').at(-1) as any;
-    expect(curtainEvent?.closed).toBe(true);
-  });
-});
 describe('challenge pair logic', () => {
   let transport: FakeRealtimeTransport;
   let store: ClassroomStore;
