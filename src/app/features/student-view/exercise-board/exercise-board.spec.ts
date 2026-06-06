@@ -75,7 +75,7 @@ describe('ExerciseBoard', () => {
     it('correct move advances moveHistory and does not lock',  async () => {
       component.handleMove('e7', 'e5'); // correct first move
 
-      vi.advanceTimersByTime(300);
+      vi.advanceTimersByTime(2100);
 
       expect((component as any).moveHistory()).toContain('e5');
       expect(component.isLocked()).toBe(false);
@@ -103,7 +103,7 @@ describe('ExerciseBoard', () => {
       // Play through the full solution: e5 (player), Nf3 (computer), Nc6 (player)
       component.handleMove('e7', 'e5');
 
-      vi.advanceTimersByTime(300);
+      vi.advanceTimersByTime(2100);
 
        // computer plays Nf3
       component.handleMove('b8', 'c6'); // final player move
@@ -118,7 +118,7 @@ describe('ExerciseBoard', () => {
       (component as any).exerciseChess.load(PUZZLE_EXERCISE.fen, { skipValidation: true });
 
       component.handleMove('e7', 'e5');
-      vi.advanceTimersByTime(300);
+      vi.advanceTimersByTime(2100);
 
       component.handleMove('b8', 'c6');
       vi.advanceTimersByTime(2100);
