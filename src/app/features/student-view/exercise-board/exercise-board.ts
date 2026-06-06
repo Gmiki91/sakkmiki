@@ -232,7 +232,6 @@ export class ExerciseBoard  {
     const hint = this.currentExercise()?.moveHints?.find(h => h.move === move.san);
 
     if (solution) {
-      this.isLocked.set(false);
       this.playSound(move);
       this.updateStatus();
       this.moveHistory.set(newHistory);
@@ -241,6 +240,17 @@ export class ExerciseBoard  {
         this.exerciseSolved();
       } else {
         const nextIndex = newHistory.length;
+
+        // Computer's move
+        const computerThinkingTime = 2000;
+        this.isLocked.set(true);
+        this.feedback.set('🤖.');
+        const states = ['🤖..', '🤖...'];
+        let i = 0;
+        const id = setInterval(() => {
+          this.feedback.set(states[i]);
+          i = (i + 1) % states.length;
+        }, computerThinkingTime/3);
         setTimeout(() => {
           const computerMove = this.exerciseChess.move(solution[nextIndex]);
           this.playSound(computerMove);
@@ -248,7 +258,10 @@ export class ExerciseBoard  {
           this.exerciseLastMove.set([computerMove.from as Key, computerMove.to as Key]);
           this.moveHistory.set([...newHistory, solution[nextIndex]]);
           this.pieceOverlay()?.hide();
-        }, 250);
+          clearInterval(id);
+          this.isLocked.set(false);
+          this.feedback.set('');
+        }, computerThinkingTime);
       }
     } else {
       this.soundService.play('error');
