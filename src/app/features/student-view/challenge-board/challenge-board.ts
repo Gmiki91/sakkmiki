@@ -50,7 +50,7 @@ export class ChallengeBoard {
     turnColor: this.challengeChess.turn() === 'w' ? 'white' : 'black',
     movable: {
       free: false,
-      color: this.challengeChess.isGameOver()?undefined: this.myColor(),
+      color: this.myColor(),
       dests: getValidMoves(this.challengeChess),
       events: { after: (orig, dest) => this.handleChallengeMove(orig, dest) },
       showDests: true,
@@ -102,8 +102,7 @@ export class ChallengeBoard {
       this.challengeLastMove.set([event.move.from as Key, event.move.to as Key]);
       if (event.over) {
         this.soundService.play('lost');
-        if(!this.challengeChess.isGameOver())
-          this.challengeChess.setTurn(event.move.color) //it is a custom gameover, dont move a muscle!
+        this.challengeChess.setTurn(event.move.color); //it is a custom gameover, dont move a muscle!
       }
     });
 
