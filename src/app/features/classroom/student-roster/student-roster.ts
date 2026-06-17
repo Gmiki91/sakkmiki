@@ -339,6 +339,54 @@ export class StudentRoster {
       p => p.white === studentName || p.black === studentName) ?? null;
   }
 
+  reassignChallenge(pair: ChallengePair): void {
+    const dialogRef = this.dialog.open(GameSetupDialog, {
+      data: { mode: 'challenge', white: pair.white, black: pair.black, exercise: pair.exercise },
+      minWidth: 400,
+    });
+    dialogRef.afterClosed().subscribe((result: GameSetupResult) => {
+      if (!result) return;
+      const updatedPair: ChallengePair = {
+        ...pair,
+        exercise: result.exercise,
+        scoreDiffWin: result.scoreDiffWin || undefined,
+      };
+      this.store.challengePairs.update(pairs =>
+        pairs.map(p => (p.white === pair.white && p.black === pair.black ? updatedPair : p)),
+      );
+      this.store.challengeMove.set(null);
+      this.store.syncChallengePair(updatedPair);
+    });
+  }
+
+  reassignDuel(studentName: string): void {
+    const currentEx = this.duelExercises()[studentName];
+    const dialogRef = this.dialog.open(GameSetupDialog, {
+      data: { mode: 'duel', studentName, exercise: currentEx },
+      minWidth: 400,
+    });
+    dialogRef.afterClosed().subscribe((result: GameSetupResult) => {
+      if (!result) return;
+      const fen = result.exercise.fen;
+      const chess = new Chess(fen, { skipValidation: true });
+      this.duelChessMap.set(studentName, chess);
+      this.duelExercises.update(e => ({ ...e, [studentName]: result.exercise }));
+      this.duelOriginalFens.update(f => ({ ...f, [studentName]: fen }));
+      this.duelConfigs.update(c => ({
+        ...c,
+        [studentName]: this.buildDuelConfig(studentName, chess),
+      }));
+      this.store.sendDuelStart(
+        studentName,
+        chess.fen(),
+        this.duelColors()[studentName] === 'w' ? 'b' : 'w',
+        result.exercise,
+        result.scoreDiffWin || undefined,
+        result.timerMinutes || undefined,
+      );
+    });
+  }
+
   removePair(pair: ChallengePair): void {
     this.store.challengePairs.update(pairs =>
       pairs.filter(p => p.white !== pair.white || p.black !== pair.black));

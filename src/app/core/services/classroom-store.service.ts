@@ -506,7 +506,12 @@ export class ClassroomStore {
         const { pair } = event;
         if (pair.white === myName || pair.black === myName){
           this.challengePairs.update((pairs) => {
-            if (pairs.some(p => p.white === pair.white && p.black === pair.black)) return pairs;
+            const idx = pairs.findIndex(p => p.white === pair.white && p.black === pair.black);
+            if (idx !== -1) {
+              const updated = [...pairs];
+              updated[idx] = pair;
+              return updated;
+            }
             return [...pairs, pair];
           });
           this.challengeMove.set(null)
