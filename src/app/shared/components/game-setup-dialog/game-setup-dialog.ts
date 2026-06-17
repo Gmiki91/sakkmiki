@@ -5,8 +5,12 @@ import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { FormsModule } from '@angular/forms';
+import { Config } from '@lichess-org/chessground/config';
 import { ExerciseService } from '../../../core/services/exercise.service';
 import { Exercise } from '../../../shared/models/exercise.model';
+import { ChessBoard } from '../chess-board/chess-board';
+import { STARTING_FEN } from '../../utils/chess.utils';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 export type GameSetupMode = 'challenge' | 'duel';
 export type GameSetupData = {
@@ -14,6 +18,7 @@ export type GameSetupData = {
   white?: string;
   black?: string;
   studentName?: string;
+  exercise?: Exercise;
 };
 
 export type GameSetupResult = {
@@ -31,6 +36,7 @@ export type GameSetupResult = {
     MatIconModule,
     MatChipsModule,
     FormsModule,
+    ChessBoard,
   ],
   templateUrl: './game-setup-dialog.html',
   styleUrl: './game-setup-dialog.scss',
@@ -55,9 +61,22 @@ export class GameSetupDialog {
   );
 
   searchQuery = signal('');
-  selectedExercise = signal<Exercise | null>(null);
+  selectedExercise = signal<Exercise | null>(this.dialogData.exercise ?? null);
   scoreDiffWin = signal(0);
   timerMinutes = signal(0);
+
+  dialogReady = signal(false);
+  previewConfig = computed<Config>(() => {
+    const ex = this.selectedExercise();
+    return {
+      fen: ex?.fen ?? STARTING_FEN,
+      orientation: 'white',
+      coordinates: false,
+      movable: { free: false, color: undefined },
+      draggable: { enabled: false },
+      highlight: { lastMove: false, check: true },
+    };
+  });
 
   filteredExercises = computed(() => {
     let list = this.allExercises();
@@ -65,6 +84,12 @@ export class GameSetupDialog {
     if (q) list = list.filter((e) => e.title.toLowerCase().includes(q));
     return list;
   });
+
+  constructor(){
+    //without this, the size of the board does not adhere to the values set by me 
+    this.dialogRef.afterOpened().pipe(takeUntilDestroyed()).subscribe(()=>this.dialogReady.set(true));
+  }
+
   selectExercise(ex: Exercise): void {
     this.selectedExercise.set(ex);
   }

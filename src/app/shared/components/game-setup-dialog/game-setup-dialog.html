@@ -1,33 +1,58 @@
 <h2 mat-dialog-title>{{ title() }}</h2>
-<mat-dialog-content style="overflow-x:hidden">
-   <mat-form-field appearance="outline" class="search-field">
-      <mat-label>Search</mat-label>
-      <input matInput [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)">
-    </mat-form-field>
-  <div class="exercise-list">
-    @for (ex of filteredExercises(); track ex.id) {
-      <div class="exercise-item"
-        [class.selected]="selectedExercise()?.id === ex.id"
-        (click)="selectExercise(ex)">
-        <span class="ex-title">{{ ex.title }}</span>
-        @if (selectedExercise()?.id === ex.id) {
-          <mat-icon class="check-icon">check</mat-icon>
-        }
+<mat-dialog-content style="overflow-x: hidden">
+  <mat-form-field appearance="outline" class="search-field">
+    <mat-label>Search</mat-label>
+    <input matInput [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" />
+  </mat-form-field>
+  <div class="dialog-body">
+    <div class="exercise-list">
+      @for (ex of filteredExercises(); track ex.id) {
+        <div
+          class="exercise-item"
+          [class.selected]="selectedExercise()?.id === ex.id"
+          (click)="selectExercise(ex)"
+        >
+          <span class="ex-title">{{ ex.title }}</span>
+          @if (selectedExercise()?.id === ex.id) {
+            <mat-icon class="check-icon">check</mat-icon>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="board-preview">
+      @if(dialogReady()){
+        <app-chess-board [config]="previewConfig()"></app-chess-board>
+      }
+      <div class="options-row">
+        <mat-form-field appearance="outline" class="option-field">
+          <mat-label>Score threshold</mat-label>
+          <input
+            matInput
+            type="number"
+            min="0"
+            [ngModel]="scoreDiffWin()"
+            (ngModelChange)="scoreDiffWin.set($event)"
+          />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="option-field">
+          <mat-label>Time limit</mat-label>
+          <input
+            disabled
+            matInput
+            type="number"
+            min="0"
+            [ngModel]="timerMinutes()"
+            (ngModelChange)="timerMinutes.set($event)"
+          />
+        </mat-form-field>
       </div>
-    }
-  </div>
-  <div class="options-row">
-    <mat-form-field appearance="outline" class="option-field">
-      <mat-label>Score threshold (0 = disabled)</mat-label>
-      <input matInput type="number" min="0" [ngModel]="scoreDiffWin()" (ngModelChange)="scoreDiffWin.set($event)" />
-    </mat-form-field>
-    <mat-form-field appearance="outline" class="option-field">
-      <mat-label>Time limit (mins, 0 = no limit)</mat-label>
-      <input disabled matInput type="number" min="0" [ngModel]="timerMinutes()" (ngModelChange)="timerMinutes.set($event)" />
-    </mat-form-field>
+    </div>
   </div>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button (click)="cancel()">Cancel</button>
-  <button mat-raised-button color="primary" [disabled]="!selectedExercise()" (click)="confirm()">Start</button>
+  <button mat-raised-button color="primary" [disabled]="!selectedExercise()" (click)="confirm()">
+    Start
+  </button>
 </mat-dialog-actions>
