@@ -111,6 +111,11 @@ export class BoardCreator implements OnInit, AfterViewInit {
 
   setFen(value: string) {
     this.currentFen.set(value.split(' ')[0] ?? '');
+    this.whiteCastlingKingSide.set(false);
+    this.blackCastlingKingSide.set(false);
+    this.whiteCastlingQueenSide.set(false);
+    this.blackCastlingQueenSide.set(false);
+
   }
 
   resetBoard() {
