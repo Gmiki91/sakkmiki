@@ -72,6 +72,11 @@
               <button mat-raised-button class="resume-btn" (click)="handleResume(student.name)">Redo</button>
             } @else if (student.awaitingStamp) {
               <button mat-raised-button class="stamp-btn" (click)="handleStamp(student.name)">Stamp</button>
+              <button mat-icon-button
+                matTooltip="Duel"
+                (click)="toggleDuel(student.name)">
+              <mat-icon fontSet="material-symbols-outlined">swords</mat-icon>
+            </button>
             <!-- Duel buttons -->
             }@else if(duelColors()[student.name] !== undefined){ 
               <button mat-icon-button (click)="reassignDuel(student.name)"><mat-icon>edit</mat-icon></button>
