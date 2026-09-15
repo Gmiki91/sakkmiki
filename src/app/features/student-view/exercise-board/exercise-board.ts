@@ -100,7 +100,6 @@ export class ExerciseBoard  {
       const autoRedo = untracked(() => this.classroomStore.autoRedo());
       const autoProgress = untracked(() => this.classroomStore.autoProgress());
       this.classroomStore.broadcastStudentState({online:true,lastSeen:Date.now(),  exIndex,locked, awaitingRedo, awaitingStamp,autoProgress,autoRedo });
-      this.classroomStore.broadcastStudentFen(this.classroomStore.studentName(), untracked(() => this.exerciseFen()));
     });
 
     // Reset board when exercise changes
@@ -207,6 +206,17 @@ export class ExerciseBoard  {
     const size = this.loadedList().length - 1;
     if (this.exIndex() < size) {
       this.exIndex.update(n => n + 1);
+      // Broadcast updated index immediately to reduce race with FEN updates
+      this.classroomStore.broadcastStudentState({
+        online: true,
+        lastSeen: Date.now(),
+        exIndex: this.exIndex(),
+        locked: this.isLocked(),
+        awaitingRedo: this.isWaitingForRedo(),
+        awaitingStamp: this.isWaitingForStamp(),
+        autoProgress: this.classroomStore.autoProgress(),
+        autoRedo: this.classroomStore.autoRedo(),
+      });
     } else {
       this.feedback.set('Minden feladatot megoldottál!');
       this.isWaitingForStamp.set(true);
