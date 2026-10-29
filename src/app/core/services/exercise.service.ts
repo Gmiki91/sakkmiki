@@ -19,10 +19,11 @@ export class ExerciseService {
     });
   }
 
-  async addExerciseList(list: ExerciseListInput) {
-    await this.withLoading(async () => {
+  async addExerciseList(list: ExerciseListInput): Promise<Exercise | null> {
+   return await this.withLoading(async () => {
       const newList = await this.supabase.saveExerciseList(list);
       this.exerciseLists.update((lists) => [...lists, { ...newList, exercises: [],teacherId:newList.teacher_id }]);
+      return newList;
     });
   }
   

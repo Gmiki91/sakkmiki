@@ -71,7 +71,7 @@ export class ExercisesLayout {
       this.router.navigate(['/exercises']);
     }
   }
-  addList() {
+  async addList() {
     if (this.isListCreationActive()) {
       const teacherId = this.auth.currentUser()?.id;
       if(!teacherId){
@@ -79,7 +79,8 @@ export class ExercisesLayout {
        return;
       }  
       const list: ExerciseListInput = {teacherId, title: this.title(), type: this.exerciseType() };
-      this.exerciseService.addExerciseList(list);
+      const newList = await this.exerciseService.addExerciseList(list);
+      if(newList) this.selectedListId.set(newList.id);
       this.isListCreationActive.set(false);
     } else {
       this.isListCreationActive.set(true);
