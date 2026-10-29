@@ -115,13 +115,16 @@ export class DrawingService {
   }
 
   // ----------------------------------------------------------------
-  // Student-side: incoming clear from teacher
+  // Student-side: incoming clear
   // ----------------------------------------------------------------
 
-  clearLocal(): void {
-    this.localStrokes.set([]);
-    this.localAnnotations.set([]);
-    this.cancelPending();
+  clearLocalByTeacher(): void {
+    this.clearLocal()
+  }
+
+  clearLocalByStudent(): void {
+    this.clearLocal()
+    this.classroomStore.sendDrawingClearByStudent(this.classroomStore.studentName());
   }
 
   // ----------------------------------------------------------------
@@ -187,8 +190,20 @@ export class DrawingService {
       if (!event) return;
       const myName = this.classroomStore.studentName();
       if (event.studentName === myName || event.studentName === 'all') {
-        this.clearLocal();
+        this.clearLocalByTeacher();
       }
+    });
+
+    // Incoming drawing clear from student
+    effect(() => {
+      const event = this.classroomStore.incomingDrawingClearByStudent();
+      if (!event) return;
+       this.allStrokes.update(strokes =>
+      strokes.filter(s => s.studentName !== event.studentName)
+    );
+    this.allAnnotations.update(annotations =>
+      annotations.filter(a => a.studentName !== event.studentName)
+    );
     });
   }
 
@@ -203,6 +218,12 @@ export class DrawingService {
 
     this.pendingPoints = [];
     this.throttleTimer = null;
+  }
+
+  private clearLocal(){
+    this.localStrokes.set([]);
+    this.localAnnotations.set([]);
+    this.cancelPending();
   }
 
   private cancelPending(): void {

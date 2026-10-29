@@ -49,6 +49,7 @@ export type BroadcastEvent =
   | { type: 'drawing_commit'; strokeId: string }
   | { type: 'drawing_color'; studentName: string; color: string }
   | { type: 'drawing_clear'; studentName: string }
+  | { type: 'drawing_clear_by_student'; studentName: string }
   | { type: 'drawing_clear_all' }
   | { type: 'teaching_overlay_update'; concepts: TeachingConceptListItem[] }
   | { type: 'stamp_annotation'; studentName: string; annotation: StampAnnotation }

@@ -66,6 +66,7 @@ export class ClassroomStore {
   readonly incomingDrawingCommit = signal<{ strokeId: string } | null>(null);
   readonly incomingDrawingColor = signal<{ studentName: string; color: string } | null>(null);
   readonly incomingDrawingClear = signal<{ studentName: string } | null>(null);
+  readonly incomingDrawingClearByStudent = signal<{ studentName: string } | null>(null);
   readonly incomingTeachingOverlay = signal<TeachingConceptListItem[] | null>(null);
   readonly incomingStampAnnotation = signal<StampAnnotation | null>(null);
   readonly incomingStampAnnotationClear = signal<{ studentName: string } | null>(null);
@@ -367,6 +368,7 @@ export class ClassroomStore {
     this.transport.send({ type: 'drawing_color', studentName: this.studentName(), color });
   }
   sendDrawingClear(studentName: string): void { this.transport.send({ type: 'drawing_clear', studentName }); }
+  sendDrawingClearByStudent(studentName: string): void { this.transport.send({ type: 'drawing_clear_by_student', studentName }); }
   sendDrawingClearAll(): void { this.transport.send({ type: 'drawing_clear_all' }); }
 
   // ----------------------------------------------------------------
@@ -452,6 +454,7 @@ export class ClassroomStore {
         this.incomingDrawingColor.set({ studentName: event.studentName, color: event.color }); break;
       case 'stamp_annotation': this.incomingStampAnnotation.set(event.annotation); break;
       case 'duel_student_move': this.incomingDuelStudentMove$.next(event); break;
+      case 'drawing_clear_by_student': this.incomingDrawingClearByStudent.set({ studentName: event.studentName }); break;
     }
   }
 

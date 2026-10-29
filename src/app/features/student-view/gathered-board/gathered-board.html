@@ -35,4 +35,11 @@
     [(activeStampIcon)]="activeStampIcon"
     (colorSelected)="onColorSelected($event)"
   ></app-drawing-toolbar>
+  <button
+    mat-icon-button
+    matTooltip="Clear drawings"
+    (click)="drawingService.clearLocalByStudent()"
+  >
+    <mat-icon>cleaning_services</mat-icon>
+  </button>
 </div>
