@@ -1,5 +1,6 @@
 import { inject, Injectable, OnDestroy } from '@angular/core';
-import { Subject } from 'rxjs';
+import { firstValueFrom, Subject } from 'rxjs';
+import { filter, timeout } from 'rxjs/operators';
 import { SupabaseService } from './supabase.service';
 import { DrawShape } from '@lichess-org/chessground/draw';
 import { ChallengePair } from '../../shared/models/challenge-pair.model';
@@ -68,6 +69,8 @@ export class RealtimeTransport implements OnDestroy {
   private supabase = inject(SupabaseService);
   private channel: any = null;
   private connectionId = 0;
+  private subscribedConnectionId: number | null = null;
+  private readonly subscriptionStatuses$ = new Subject<{ connectionId: number; status: string }>();
   private lastStudentNames: string[] = [];
   private offlineGracePeriods = new Map<string, any>(); // Track pending offline timers per student
   private graceStudentNames = new Set<string>(); // Students in grace period (included in presence sync)
@@ -82,9 +85,32 @@ export class RealtimeTransport implements OnDestroy {
   // =====================================================
 
   async send(event: BroadcastEvent): Promise<void> {
-    if (!this.channel) return;
+    const channel = this.channel;
+    const connectionId = this.connectionId;
+    if (!channel) return;
 
-    const result = await this.channel.send({
+    if (this.subscribedConnectionId !== connectionId) {
+      let status: { connectionId: number; status: string };
+      try {
+        status = await firstValueFrom(this.subscriptionStatuses$.pipe(
+          filter(update => update.connectionId !== connectionId ||
+            update.status === 'SUBSCRIBED' || update.status === 'CLOSED'),
+          timeout({ first: 15000 })
+        ));
+      } catch {
+        if (this.channel === channel && this.connectionId === connectionId) {
+          console.warn('Broadcast skipped: Realtime channel did not reconnect within 15 seconds.');
+        }
+        return;
+      }
+
+      if (status.connectionId !== connectionId || status.status !== 'SUBSCRIBED') return;
+    }
+
+    if (this.channel !== channel || this.connectionId !== connectionId ||
+        this.subscribedConnectionId !== connectionId) return;
+
+    const result = await channel.send({
       type: 'broadcast',
       event: 'classroom',
       payload: event
@@ -115,6 +141,7 @@ export class RealtimeTransport implements OnDestroy {
     }
     this.offlineGracePeriods.clear();
     this.graceStudentNames.clear();
+    this.subscriptionStatuses$.complete();
     this.permanentlyOffline.clear();
     void this.cleanup();
     this.events$.complete();
@@ -130,6 +157,7 @@ export class RealtimeTransport implements OnDestroy {
     await this.cleanup();
 
     const id = ++this.connectionId;
+    this.subscribedConnectionId = null;
 
     this.channel = this.supabase.client
       .channel(channelId)
@@ -148,6 +176,7 @@ export class RealtimeTransport implements OnDestroy {
 
     this.channel.subscribe(async (status: string) => {
       if (id !== this.connectionId) return;
+      this.handleSubscriptionStatus(id, status);
 
       if (status === 'SUBSCRIBED') {
         await this.channel.track({ role: 'teacher' });
@@ -164,6 +193,7 @@ export class RealtimeTransport implements OnDestroy {
     await this.cleanup();
 
     const id = ++this.connectionId;
+    this.subscribedConnectionId = null;
 
     this.channel = this.supabase.client
       .channel(channelId)
@@ -174,6 +204,7 @@ export class RealtimeTransport implements OnDestroy {
 
     this.channel.subscribe(async (status: string) => {
       if (id !== this.connectionId) return;
+      this.handleSubscriptionStatus(id, status);
 
       if (status === 'SUBSCRIBED') {
         await this.channel.track({
@@ -192,6 +223,7 @@ export class RealtimeTransport implements OnDestroy {
     await this.cleanup();
 
     const id = ++this.connectionId;
+    this.subscribedConnectionId = null;
 
     this.channel = this.supabase.client
       .channel(channelId)
@@ -210,6 +242,7 @@ export class RealtimeTransport implements OnDestroy {
 
     this.channel.subscribe(async (status: string) => {
       if (id !== this.connectionId) return;
+      this.handleSubscriptionStatus(id, status);
 
       if (status === 'SUBSCRIBED') {
         await this.channel.track({ role: 'spectator', displayName });
@@ -230,11 +263,20 @@ export class RealtimeTransport implements OnDestroy {
     this.offlineGracePeriods.clear();
     this.graceStudentNames.clear();
 
-    if (this.channel) {
-      const old = this.channel;
-      this.channel = null;
+    const old = this.channel;
+    const oldConnectionId = this.connectionId;
+    this.channel = null;
+    this.subscribedConnectionId = null;
+    this.subscriptionStatuses$.next({ connectionId: oldConnectionId, status: 'CLOSED' });
+
+    if (old) {
       await this.supabase.client.removeChannel(old);
     }
+  }
+
+  private handleSubscriptionStatus(connectionId: number, status: string): void {
+    this.subscribedConnectionId = status === 'SUBSCRIBED' ? connectionId : null;
+    this.subscriptionStatuses$.next({ connectionId, status });
   }
 
   // =====================================================
