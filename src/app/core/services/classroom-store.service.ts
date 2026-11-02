@@ -162,20 +162,20 @@ export class ClassroomStore {
   // ----------------------------------------------------------------
 
   joinAsTeacher(classroomId: string): void {
-    this.classroomId.set(classroomId);
+    this.setClassroom(classroomId);
     this.isSpectator.set(false);
     this.transport.joinAsTeacher(classroomId);
     this.trackLobbyPresence(classroomId);
   }
 
   joinAsSpectator(classroomId: string, displayName: string): void {
-    this.classroomId.set(classroomId);
+    this.setClassroom(classroomId);
     this.isSpectator.set(true);
     this.transport.joinAsSpectator(classroomId, displayName);
   }
 
   joinAsStudent(name: string, classroomId: string, onJoined: () => void, onError: () => void): void {
-    this.classroomId.set(classroomId);
+    this.setClassroom(classroomId);
     this.studentName.set(name);
     this.isJoined.set(false);
     this.isSpectator.set(false);
@@ -189,6 +189,15 @@ export class ClassroomStore {
         onJoined();
       },
     );
+  }
+
+  private setClassroom(classroomId: string): void {
+    if (this.classroomId() !== classroomId) {
+      this.students.set([]);
+      this.spectators.set([]);
+      this.previousStudentNames.clear();
+    }
+    this.classroomId.set(classroomId);
   }
 
   broadcastStudentState(state: Omit<StudentState, 'name' | 'fen'>): void {

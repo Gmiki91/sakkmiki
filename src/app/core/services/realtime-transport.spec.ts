@@ -61,4 +61,22 @@ describe('RealtimeTransport', () => {
       payload: event,
     });
   });
+
+  it('does not carry presence from a previous classroom into the next one', async () => {
+    const presenceSync = vi.fn();
+    transport.presenceSync$.subscribe(presenceSync);
+
+    await transport.joinAsTeacher('room-1');
+    await statusHandler?.('SUBSCRIBED');
+    const joinHandler = channel.on.mock.calls[1][2] as (payload: unknown) => void;
+    channel.presenceState.mockReturnValue({ room1: [{ role: 'student', name: 'Alice' }] });
+    joinHandler({});
+    expect(presenceSync).toHaveBeenLastCalledWith([{ role: 'student', name: 'Alice' }]);
+
+    await transport.joinAsTeacher('room-2');
+    channel.presenceState.mockReturnValue({ room2: [{ role: 'student', name: 'Bob' }] });
+    await statusHandler?.('SUBSCRIBED');
+
+    expect(presenceSync).toHaveBeenLastCalledWith([{ role: 'student', name: 'Bob' }]);
+  });
 });

@@ -28,6 +28,16 @@ describe('presence sync', () => {
     expect(store.students()[0].online).toBe(false);
   });
 
+  it('does not carry students into another classroom', () => {
+    transport.presenceSync$.next([{ role: 'student', name: 'Alice' }]);
+
+    store.joinAsTeacher('room-2');
+
+    expect(store.students()).toEqual([]);
+    transport.presenceSync$.next([{ role: 'student', name: 'Bob' }]);
+    expect(store.students().map(student => student.name)).toEqual(['Bob']);
+  });
+
   it('preserves exIndex and locked state when student reconnects', () => {
     transport.presenceSync$.next([{ role: 'student', name: 'Alice' }]);
     // Simulate state update from student

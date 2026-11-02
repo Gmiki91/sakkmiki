@@ -263,6 +263,8 @@ export class RealtimeTransport implements OnDestroy {
     }
     this.offlineGracePeriods.clear();
     this.graceStudentNames.clear();
+    this.lastStudentNames = [];
+    this.permanentlyOffline.clear();
 
     const old = this.channel;
     const oldConnectionId = this.connectionId;
