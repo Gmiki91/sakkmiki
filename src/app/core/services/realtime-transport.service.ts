@@ -26,7 +26,7 @@ export type BroadcastEvent =
   | { type: 'gather' }
   | { type: 'disperse' }
   | { type: 'teacher_fen'; fen: string }
-  | { type: 'mushroom_type'; mType: string }
+  | { type: 'mushroom_type'; enabled: boolean; mType: string | null }
   | { type: 'shared_arrows'; shapes: DrawShape[]; target: 'all' | string }
   | { type: 'miniboard_arrows'; shapes: DrawShape[]; studentName: string }
   | { type: 'list_loaded'; exercises: Exercise[] }

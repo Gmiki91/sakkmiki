@@ -103,6 +103,7 @@ export class ClassroomStore {
   readonly stamp$ = new Subject<string>();
   readonly lock$ = new Subject<boolean>();
   readonly kick$ = new Subject<string>();
+  readonly mushroomMode = signal(false);
   readonly mushroomType = signal<string|null>(null);
   readonly whiteBoardText = signal<string>('');
 
@@ -215,11 +216,12 @@ export class ClassroomStore {
     // Only broadcast non-default state — teacher reconnect resets signals to defaults,
     // and broadcasting empty/default values would overwrite students' valid state.
     if (this.curtainClosed()) this.transport.send({ type: 'curtain', closed: true });
-    if (this.mushroomType()) this.transport.send({ type: 'mushroom_type', mType: this.mushroomType()! });
-
     if (this.mode() === 'gathered') {
       this.transport.send({ type: 'gather' });
       this.transport.send({ type: 'teacher_fen', fen: this.lastTeacherFen() });
+      this.sendMushroomMode(this.mushroomMode(), this.mushroomType());
+    } else if (this.mushroomMode() || this.mushroomType()) {
+      this.sendMushroomMode(this.mushroomMode(), this.mushroomType());
     }
 
     // Exercise list — always use list_assigned to target only this specific student
@@ -269,7 +271,11 @@ export class ClassroomStore {
     this.lastTeacherFen.set(fen);
     this.transport.send({ type: 'teacher_fen', fen });
   }
-  sendMushroomType(mType:string):void{this.transport.send({type:'mushroom_type',mType});}
+  sendMushroomMode(enabled: boolean, mType: string | null = null): void {
+    this.mushroomMode.set(enabled);
+    this.mushroomType.set(mType);
+    this.transport.send({ type: 'mushroom_type', enabled, mType });
+  }
   sendSharedArrows(shapes: DrawShape[], target: 'all' | string = 'all'): void {
     this.transport.send({ type: 'shared_arrows', shapes, target });
   }
@@ -480,7 +486,10 @@ export class ClassroomStore {
         this.resetFen();
         break;
       case 'teacher_fen': this.teacherFen.set(event.fen); break;
-      case 'mushroom_type': this.mushroomType.set(event.mType); break;
+      case 'mushroom_type':
+        this.mushroomMode.set(event.enabled);
+        this.mushroomType.set(event.mType);
+        break;
       case 'list_loaded':
         this.loadedExercises.set(event.exercises);
         this.assignedExercises.set([]);

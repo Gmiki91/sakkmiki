@@ -63,7 +63,7 @@ export class BoardCreator implements OnInit, AfterViewInit {
   turnOrder = model<'w' | 'b'>('w');
   currentFen = model<string>(BARE_STARTING_FEN);
   mushroomType = model<string>('');
-  mushroomTypes = ['🍄','🍫','🍬','🍦', '🍔', '🥤', '🍩' ,'🎃', '♥️', '🎁', '🎈', '⭐', '🌼','🍀','🌻','⚽'];
+  mushroomTypes = ['🍄','🍫','🍬','🍦', '🍔', '🥤', '🍩' ,'🎃', '♥️', '🎁', '🎈', '⭐', '🌼','🍀','🌻','⚽','⚪'];
 
   lastMove = signal<LastMove | null>(null);
   isRecordingLastMove = signal(false);

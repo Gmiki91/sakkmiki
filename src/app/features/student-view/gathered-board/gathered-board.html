@@ -8,7 +8,13 @@
       (mouseup)="onMouseUp($event)"
       (pointerdown)="$event.preventDefault()"
     >
-      <app-chess-board #chessBoard gameMode='class' [config]="boardConfig()"></app-chess-board>
+      <app-chess-board
+        #chessBoard
+        gameMode="class"
+        [config]="boardConfig()"
+        [mushroomMode]="classroomStore.mushroomMode()"
+        [style.--mushroom-emoji]='"\"" + (classroomStore.mushroomType() ?? "🍄") + "\""'
+      ></app-chess-board>
       @for (concept of classroomStore.incomingTeachingOverlay() ?? []; track concept.id) {
         <app-teaching-overlay
           [conceptId]="concept.id"

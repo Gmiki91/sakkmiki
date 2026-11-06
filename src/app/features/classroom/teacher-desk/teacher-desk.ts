@@ -79,8 +79,7 @@ export class TeacherDesk {
         this.chessBoard()?.api.set({ fen: ex.fen, lastMove: [] });
         if (this.isGathered()) {
           this.store.sendTeacherFen(ex.fen);
-          if(ex.mushroomType)this.store.sendMushroomType(ex.mushroomType);
-          else this.store.sendMushroomType('');
+          this.store.sendMushroomMode(ex.exerciseType === 'mushroom', ex.mushroomType ?? null);
           this.drawingService.clearAllOnFenChange();
         }
       }
@@ -121,6 +120,8 @@ export class TeacherDesk {
   }
 
   gather(): void {
+    const exercise = this.demoExercise();
+    this.store.sendMushroomMode(exercise?.exerciseType === 'mushroom', exercise?.mushroomType ?? null);
     if(this.chessBoard()?.api!==undefined) this.store.sendTeacherFen(this.chessBoard()!.api.getFen());
     this.drawingService.clearAllOnFenChange();
     this.store.gather();
@@ -134,12 +135,15 @@ export class TeacherDesk {
     const fen = this.demoExercise()? this.demoExercise()!.fen : STARTING_FEN;
     this.chessBoard()?.api?.set({ fen, lastMove: [] });
     this.store.sendTeacherFen(fen);
+    const exercise = this.demoExercise();
+    this.store.sendMushroomMode(exercise?.exerciseType === 'mushroom', exercise?.mushroomType ?? null);
     this.drawingService.clearAllOnFenChange();
   }
 
   clearBoard(): void {
     this.chessBoard()?.api?.set({ fen: EMPTY_BOARD_FEN, lastMove: [] });
     this.store.sendTeacherFen(EMPTY_BOARD_FEN);
+    this.store.sendMushroomMode(false);
     this.drawingService.clearAllOnFenChange();
     this.demoExercise.set(null);
   }

@@ -262,6 +262,17 @@ describe('wired teacher-student scenarios', () => {
     expect(aliceStore.mode()).toBe('gathered');
   });
 
+  it('teacher mushroom mode → student gathered board receives mode and emoji', () => {
+    teacherStore.sendMushroomMode(true, '🍄');
+    expect(teacherStore.mushroomMode()).toBe(true);
+    expect(aliceStore.mushroomMode()).toBe(true);
+    expect(aliceStore.mushroomType()).toBe('🍄');
+
+    teacherStore.sendMushroomMode(false);
+    expect(aliceStore.mushroomMode()).toBe(false);
+    expect(aliceStore.mushroomType()).toBeNull();
+  });
+
   it('teacher disperse → student mode becomes normal', () => {
     teacherStore.gather();
     teacherStore.disperse();
